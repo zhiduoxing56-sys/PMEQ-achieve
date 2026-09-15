@@ -73,3 +73,32 @@ They are not, by themselves, a complete cryptographic security proof. The
 cryptographic argument for splitting additionally relies on `crypto/rand`
 providing a uniform unpredictable first share, which makes either individual
 share independent of the secret in its declared finite domain.
+
+## PHASE 2 Anchor representation audit and implementation record
+
+- PHASE 2A audit completed.
+- PHASE 2B clean-room AnchorIndexEncode implementation completed.
+- old source migrated = 0
+- old HMAC implementation copied = 0
+- third-party dependencies = 0
+
+PHASE 2B implements only the canonical Anchor logical-key encoder, 256-bit key
+generation/validation, and the HMAC-SHA256-based opaque 128-bit Anchor value.
+Key provisioning, key serialization, cloud state, bucket mapping,
+IndexOutsource, query-token generation, runners, and 128-bit DPF implementation
+remain outside this phase.
+
+- correctness audit: **PASS** — canonical-encoding and HMAC known-answer
+  vectors, deterministic/key/qgram sensitivity, exact-width, field-boundary,
+  UTF-8, four-code-point, no-normalization, zero-key, entropy-failure, and
+  freshness wiring tests passed under `go test ./...` and
+  `go test -race ./...`.
+- single-party structural audit: **PASS** — the exact exported API and
+  production import allowlist passed automated checks; no raw logical-key
+  bypass, legacy 64-bit Anchor API, key serialization, key logging, cloud
+  state, bucket implementation, or third-party dependency is present.
+
+These results are correctness and structural party-view evidence, not a
+complete cryptographic proof. The cryptographic argument additionally relies
+on the standard PRF security of HMAC-SHA256 and on preserving the stated key
+ownership boundary.

@@ -68,7 +68,31 @@ z_B = Trunc128(
 )
 ```
 
-`k_B` is held only by the DO and authorized Query User. CS0 and CS1 do not know it.
+The engineering meaning of concatenation inside `w_B` is the following
+canonical, length-delimited byte encoding:
+
+```text
+U32BE(len(UTF8("BSMJ"))) || UTF8("BSMJ")
+|| U32BE(len(UTF8("area"))) || UTF8("area")
+|| U32BE(len(UTF8("name"))) || UTF8("name")
+|| U32BE(len(UTF8("id"))) || UTF8("id")
+|| U32BE(len(UTF8(qgram))) || UTF8(qgram)
+```
+
+Every length is the UTF-8 byte length. A qgram must be valid UTF-8 and contain
+exactly four Unicode code points. Encoding preserves the exact input bytes and
+case: it performs no NFC, NFKC, case folding, whitespace trimming, or other
+normalization.
+
+`k_B` is exactly 256 bits and is held only by the DO and authorized Query User.
+CS0 and CS1 do not know it. The DO and authorized Query User must call the one
+shared canonical encoder; role-specific duplicate encoders are forbidden.
+`Trunc128` means copying bytes 0 through 15 of the complete HMAC-SHA256 digest
+directly into an opaque 16-byte value, with no integer reinterpretation.
+
+Bucket mapping is not defined by PHASE 2B. In particular, this specification
+does not yet choose whether a future bucket function consumes a logical key or
+`z_B`; that decision belongs to PHASE 3.
 
 Anchor Match uses a 128-bit DPF with security parameter 128 and GGM depth 128. The old 64-bit DPF is permanently retired from the production path.
 
