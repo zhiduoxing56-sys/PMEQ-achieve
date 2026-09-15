@@ -59,3 +59,11 @@ At minimum, the single-party audit must examine:
 - derivable correspondence.
 
 If any item permits CS0 or CS1 acting alone to recover prohibited information, the stage is a **security FAIL**.
+
+## Authorized reconstruction boundary
+
+The foundational `internal/reconstruct` package is an explicit authorized
+reconstruction boundary. A share type must not provide its own reconstruction
+method. Once a CS-facing package exists, it must not import
+`internal/reconstruct`; this import boundary is part of every subsequent
+single-party API/state/view audit.

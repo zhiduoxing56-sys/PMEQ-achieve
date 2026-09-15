@@ -41,3 +41,35 @@ Bulk copying any package, crate, or cmd is prohibited. Compatibility shells are 
 - Candidate Compaction
 
 Anchor Aggregation is explicitly excluded from the direct-migration list.
+
+## PHASE 1 audit and implementation record
+
+- PHASE 1A audit completed.
+- PHASE 1B clean-room implementation completed.
+- old source migrated = 0
+- third-party dependencies = 0
+
+The PHASE 1B foundational domains are deliberately distinct:
+
+- `F_2` for Boolean-bit sharing;
+- `Z/(2^32)` for 32-bit wrapping integer sharing;
+- `Z/(2^64)` for 64-bit wrapping integer sharing.
+
+ASS multiplication is intentionally absent. PHASE 1B provides only secure
+DO-side splitting, authorized reconstruction, and party-local linear addition
+and subtraction. It does not claim that a multiplication-capable ASS protocol
+has been completed.
+
+- correctness audit: **PASS** — exhaustive bit tests, integer boundary and
+  wrapping tests, 10,000-sample Ring32 and Ring64 round trips, additive and
+  subtractive homomorphism checks, entropy-read failure checks, and freshness
+  wiring regression all passed under `go test ./...` and `go test -race ./...`.
+- single-party structural audit: **PASS** — each production share type contains
+  exactly one private local mathematical value; package import boundaries and
+  the exact exported share API inventory passed automated regression checks.
+
+These results are correctness evidence and structural party-view evidence.
+They are not, by themselves, a complete cryptographic security proof. The
+cryptographic argument for splitting additionally relies on `crypto/rand`
+providing a uniform unpredictable first share, which makes either individual
+share independent of the secret in its declared finite domain.
