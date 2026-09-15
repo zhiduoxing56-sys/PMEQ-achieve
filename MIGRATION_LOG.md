@@ -102,3 +102,32 @@ These results are correctness and structural party-view evidence, not a
 complete cryptographic proof. The cryptographic argument additionally relies
 on the standard PRF security of HMAC-SHA256 and on preserving the stated key
 ownership boundary.
+
+## PHASE 2D 128-bit Anchor DPF record
+
+- PHASE 2C design audit completed and manually approved with the corrections
+  frozen in the current engineering specification.
+- PHASE 2D is a clean-room 128-bit Anchor DPF implementation.
+- old DPF source migrated = 0
+- old DPF source copied = 0
+- third-party dependencies = 0
+- output group = `F_2`
+- production PRG = AES-128 seed-as-key with four fixed, distinct domain blocks
+- DPF key serialization = deferred
+
+The implementation contains no Boolean secure multiplication or B2A protocol;
+those remain explicit future dependencies. The generator uses
+`crypto/rand.Reader` with complete reads. The old 64-bit DPF, old arithmetic
+output/wire format, and Target DPF are not present.
+
+Correctness evidence includes independent OpenSSL PRG vectors, an independent
+OpenSSL-backed full DPF vector, direct 128-layer correction-invariant checks,
+edge and high/low-half regressions, 100,000 deterministic randomized alpha
+cases with both match and non-match evaluation, entropy failure tests, and a
+10,000-pair old/new reconstruction-semantics differential audit. These tests
+do not establish the cryptographic security of the PRG or DPF.
+
+The single-party structural audit checks that a cloud evaluation receives only
+one opaque key and one public point and returns one local `F_2` share. Key fields
+are unexported, and no alpha, peer key, peer root seed, runtime modulus, wire
+format, key logging, or third-party dependency is present.

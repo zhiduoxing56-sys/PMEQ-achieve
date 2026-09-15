@@ -94,7 +94,51 @@ Bucket mapping is not defined by PHASE 2B. In particular, this specification
 does not yet choose whether a future bucket function consumes a logical key or
 `z_B`; that decision belongs to PHASE 3.
 
-Anchor Match uses a 128-bit DPF with security parameter 128 and GGM depth 128. The old 64-bit DPF is permanently retired from the production path.
+Anchor Match uses a 128-bit DPF with security parameter 128 and GGM depth 128.
+Its input `Point` is the Anchor `Value`'s 16 bytes copied verbatim. Tree levels
+consume byte 0 through byte 15 and consume each byte from its most-significant
+bit to its least-significant bit. This traversal convention does not reinterpret
+the Anchor value as an integer.
+
+The DPF output group is `F_2`, `beta = 1`, and each local evaluation returns one
+`share.BitShare`. Future per-slot `Validity` and `PositionPredicate` values must
+also be `share.BitShare`. Computing
+
+```text
+Match AND Validity AND PositionPredicate
+```
+
+requires two future secure `F_2` multiplications. After the complete Boolean
+filter, every processed or retained slot must undergo an explicit B2A conversion
+before entering the current integer Record Aggregation interface. If a later
+review formally changes the PHASE 5 aggregation design, the exact B2A placement
+may be reviewed again, but the cross-domain conversion must not be silently
+omitted. Boolean secure multiplication and B2A are not implemented in PHASE 2D;
+both must pass independent correctness and single-party view audits before
+PHASE 4 posting filtering is complete.
+
+The DPF PRG uses each 128-bit seed `s` as an AES-128 key with four exact,
+distinct 16-byte domain blocks:
+
+```text
+C_L = 00000000000000000000000000000000
+C_R = 00000000000000000000000000000001
+C_T = 00000000000000000000000000000002
+C_V = 00000000000000000000000000000003
+
+G(s) = AES_s(C_L) || AES_s(C_R)
+       || MSB(AES_s(C_T)[0]) || second-MSB(AES_s(C_T)[0])
+Convert(s) = MSB(AES_s(C_V)[0])
+```
+
+Its security argument relies on AES-128 PRF/PRP security for a random
+seed-as-key evaluated on fixed, distinct input blocks, providing the
+pseudorandom expansion required by the GGM/DPF construction. Tests provide
+correctness evidence only; they do not prove PRG security.
+
+DPF key serialization is deferred until a reviewed query-token schema exists.
+The old 64-bit DPF and Target DPF are permanently retired from the production
+path.
 
 ### Padding and validity
 

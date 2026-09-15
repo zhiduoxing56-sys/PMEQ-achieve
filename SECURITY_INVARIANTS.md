@@ -67,3 +67,23 @@ reconstruction boundary. A share type must not provide its own reconstruction
 method. Once a CS-facing package exists, it must not import
 `internal/reconstruct`; this import boundary is part of every subsequent
 single-party API/state/view audit.
+
+## DPF role and package boundaries
+
+The 128-bit Anchor DPF evaluation boundary accepts one cloud's opaque `Key` and
+one public `Point` and returns only that cloud's `share.BitShare`. A cloud object
+must not hold the query alpha, the peer key, or the peer root seed.
+
+`internal/dpf128/internal/core` is a compiler-enforced nested Go `internal`
+boundary: packages outside the `internal/dpf128` subtree cannot import its key
+constructors or protocol fields. `internal/dpf128/gen` is different: it is a
+policy-separated trusted generator package, not a compiler-enforced cloud
+boundary. Every future CS-facing package is forbidden from importing
+`pmeq/internal/dpf128/gen`; this rule must be enforced by import-graph regression
+tests when such a package is introduced.
+
+The DPF key has no wire encoding in PHASE 2D. Production code must not log or
+format its root seed, correction words, or final correction bit. Passing the
+structural party-view audit is not a proof of the underlying DPF security,
+which additionally relies on the stated AES-based PRG assumption and on CS0
+and CS1 remaining non-colluding.
