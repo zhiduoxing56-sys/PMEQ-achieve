@@ -131,3 +131,72 @@ The single-party structural audit checks that a cloud evaluation receives only
 one opaque key and one public point and returns one local `F_2` share. Key fields
 are unexported, and no alpha, peer key, peer root seed, runtime modulus, wire
 format, key logging, or third-party dependency is present.
+
+## PHASE 3B Target routing foundation record
+
+- PHASE 3B-BRIDGE-DESIGN review passed; **OPTION 4 approved**.
+- Target stored representation changed from `Z = Z0 XOR Z1` over encoded points
+  to additive Ristretto255 point shares `T = T0 + T1`. This is a representation
+  change only; Target Match remains full-256-bit Private Equality.
+- migrated source files = 0
+- copied source lines = 0
+- copied packages = 0
+- new direct third-party dependency = `github.com/gtank/ristretto255 v0.2.0`
+  (transitively `filippo.io/edwards25519 v1.1.0`). No other dependency was
+  added; no Rust or C++ build is used.
+
+### Old KHPRF / private-equality reference status
+
+The old 256-bit private-equality prototype was audited as an **algorithm
+reference, correctness oracle, and benchmark baseline only**. Its confirmed
+interface is:
+
+    XOR-share input -> Boolean Beaver AND-tree -> XOR-share equality bit
+
+Status: **REFERENCE / MIGRATION CANDIDATE**, not a new production
+implementation. It is **not** present in the clean repository; PHASE 8 migrates
+or ports it as an independent Go implementation. The old Rust crate, workspace,
+drivers, wire magic, and controller are not migrated.
+
+### PHASE 8 adapter communication (corrected)
+
+The OPTION 4 adapter shares a private 256-bit input **per group**. For `g`
+groups in a bucket:
+
+    CS0 -> CS1:  32 * g bytes
+    CS1 -> CS0:  32 * g bytes
+    per party sent: 32 * g bytes ; per party sent+received: 64 * g bytes
+    both parties total sent: 64 * g bytes
+
+Earlier notes recorded "64 B per bucket", which is wrong by a factor of `g`.
+The adapter belongs to PHASE 8 and is not implemented here.
+
+### PHASE 3B evidence
+
+- 100,000 routing consistency cases: two parties combining only their own
+  `kappa_J` and `kappa_w` shares and evaluating only their own partial point
+  recombine to the full group point.
+- 100,000 point-share reconstruction cases.
+- 100,000 OPTION 4 equal cases and 100,000 unequal cases.
+- Known-answer vectors whose expected values were produced independently:
+  HMAC digests and canonical frames by the Python standard library, and scalar,
+  base-point, and group-point encodings by curve25519-dalek 4.1.3 (Rust). The
+  locked base point encoding is
+  `44bc37cc66414c556078145a5e869039ced44c8056a05eeccc0b66600f9f175f`.
+- Entropy-failure, partial-read-failure, and split-freshness tests.
+- Structural single-party audit: share types are plain value types holding one
+  local value; no reconstruction, opening, revealing, or formatting entry point
+  exists.
+
+These results are correctness and structural party-view evidence. They are not
+a cryptographic proof; the argument additionally relies on the PRF security of
+HMAC-SHA512 and HMAC-SHA256, on Ristretto255 canonical-encoding injectivity, and
+on CS0 and CS1 remaining non-colluding.
+
+### Carried-forward open items
+
+- SHORT-STRING COMPLETENESS = OPEN (644 `area`, 4,047 `area_alias` records).
+  No out-of-domain policy is frozen and no short-string index exists.
+- B RE-EVALUATION = OPEN. PHASE 3B requires only `B = 2^k` and does not freeze a
+  production width.
+- Paper modified = no; it will be synchronised once the protocol is stable.

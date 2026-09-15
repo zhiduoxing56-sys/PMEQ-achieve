@@ -160,7 +160,67 @@ Use exact-K secure compaction.
 
 ### Target match
 
-Target DPF is permanently retired. The Target stored group key is `Z = Z0 XOR Z1`, where `Z0` and `Z1` are each 256 bits. Target Match is full-256-bit Private Equality.
+Target DPF is permanently retired.
+
+**OPTION 4 is approved.** The Target stored group key is the KHPRF group point
+
+```text
+T = (kappa_J + kappa_w) * P          (Ristretto255)
+```
+
+shared additively in the group:
+
+```text
+T = T0 + T1
+```
+
+Each party's production state holds only its own `canonical 32-byte encoding of
+T_u`. `Enc(T0) XOR Enc(T1)` has no protocol meaning. No cloud may reconstruct
+`T`, and no production type or function may reconstruct, open, or reveal a full
+target point or scalar.
+
+Target Match remains **full-256-bit Private Equality**, evaluated over the two
+parties' locally computed private inputs:
+
+```text
+CS0: A = Enc(Y0 - T0)
+CS1: B = Enc(T1 - Y1)
+```
+
+with `Y_u = PartEval(kappa_u)` and `Y0 + Y1 = T` on a match. Each party encodes
+its own difference locally; the canonical encoding never enters a multi-party
+computation. The equality identity is
+
+```text
+Y = T  <=>  Enc(Y0 - T0) = Enc(T1 - Y1)
+```
+
+which holds because Ristretto255 canonical encoding is injective on the group.
+
+### Target routing primitives (PHASE 3B)
+
+- Master key: `k_T`, 256 bits, held only by the DO and an authorized Query User.
+- Canonical encoding: the single length-delimited `Frame` encoder. No bare
+  string concatenation.
+- Scalar mapping: `HMAC-SHA512(k_T, Frame(domain, ...))` -> 64 bytes ->
+  `Scalar.SetUniformBytes`. `Element.SetUniformBytes` must not substitute for
+  the scalar mapping, and `k_T` is never a plain hash message field.
+- Base point: `P = Element.SetUniformBytes(SHA512("PMEQ-TARGET-KHPRF-POINT-V1"))`.
+  The canonical generator is deliberately not used.
+- Bucket component: `HMAC-SHA256(k_T, Frame(domain, ...))`, first `k` bits
+  MSB-first, combined by XOR in `F_2^k`. `B = 2^k`; no modulo reduction.
+  The current production width is not fixed by PHASE 3B (`B RE-EVALUATION
+  OPEN`); the primitive only requires a power of two.
+
+### Open items carried forward
+
+- **SHORT-STRING COMPLETENESS = OPEN.** Strings shorter than `q` cannot be
+  indexed by the `q`-gram chain. The live counts are 644 `area` records and
+  4,047 `area_alias` records. No policy is frozen here: an out-of-domain
+  restriction is **not** adopted, and no short-string index is implemented.
+- **B RE-EVALUATION = OPEN.** The bucket width is not re-frozen in PHASE 3B.
+- The paper is **not modified** by PHASE 3B; it will be synchronised once the
+  protocol is stable.
 
 ### Secure permutation
 
@@ -198,6 +258,10 @@ Old Z128 aggregation rows/wrapper must not be migrated into production because p
 - **PHASE 1:** foundational domains / sharing types.
 - **PHASE 2:** AnchorIndexEncode HMAC-128 + 128-bit DPF.
 - **PHASE 3:** entirely new IndexOutsource production schema.
+- **PHASE 3B:** Target routing foundation primitives (approved OPTION 4
+  representation; keyed scalar mapping; fixed KHPRF base point; additive point
+  and scalar sharing; domain-separated bucket components). Primitive layer only:
+  no IndexOutsource, no private equality, no Beaver, no B2A, no runner.
 - **PHASE 4:** Position + secret Validity.
 - **PHASE 5:** solve hiding of `phi_h` in Anchor Aggregation again.
 - **PHASE 6:** Candidate Compaction.
