@@ -1,5 +1,97 @@
 # PMEQ Migration Audit Log
 
+## PHASE 5B2 — complete Anchor record aggregation
+
+Begin HEAD a39c25a1fea24b5e2ba6394771b94eaa071b5370; status clean.
+AnchorBucketBits=16 / B=65536 is now frozen. Both base indexes use posting
+tiers 4/16/64/256/1024/4096/8192/16384. Uniform stays experiment baseline only.
+Full raw recalculation: Anchor real/padded=906584/1961824 (2.163974x), groups
+110115, nonempty=53383; Target real/padded=480945/1317260 (2.738899x), groups
+310331, nonempty=64902 at target bits=16. Target width remains a separate
+parameter. Anchor max same-record/same-qgram occurrences=2, attained by
+"land" in "Falkland Islands"; hence filtered F<=2<64. Max query r/C=14.
+
+`internal/aggregation` adds offline, one-use masked SCMP composition, separate
+rho/sigma party states, the old two-stage masked-scatter algebra, local C,
+Keep, and independently generated global payload under LayoutID. N=120071.
+z is converted F2->Z128 before alignment, avoiding N-wide conversion.
+No old leaking adapter, BigState posting rows, StaticPerm combined state or
+old controller was copied. Existing incidence mathematics is unchanged.
+Reference: old src/bin/permutation_agg_proto.rs build_static/run_perm_online;
+SCMP: vendor/ezpc_fss/pubdiv.cpp, dcf.cpp and tools/llama_scmp128_ffi.cpp.
+New Go code reexpresses the existing equations; zero old source lines or
+C++ primitive sources were copied into the clean repository.
+
+Correctness: 1000 seeded random normal queries plus p50/p95/p99 workload
+queries on the full tiered Anchor index. Real HMAC/DPF/Beaver are used;
+SCMP is explicitly TEST ORACLE FOR COMPOSITION ONLY. F,z,Y,C,Keep and payload
+coordinates all checked, zero errors. Synthetic tests cover repeats, duplicate
+postings, dummy slots, cross-bucket records, no candidates, multiple candidates,
+tau=0, lambda=1 and lambda=r. Native unmodified LLAMA independently passed
+100000 comparisons: corrected errors=0; omitted-rb errors=49788. Native Keep
+batch N=120071 x 5 rounds also had zero errors. Native sources in /tmp were
+byte-compared to the read-only old repository. No native algorithm was edited.
+
+Final measured query components (ms), both clouds' local work; native SCMP
+rows use the median of 5 independent component runs at the actual wire count:
+
+| workload query | x->F | F->z | z B2A | permutation | C sum | C->Keep | sum |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| p50 Kozushima (Kōzushima) | .274452 | .076062 | .003361 | .734700 | .242421 | 63.644457 | 64.975453 |
+| p95 Negrilla de Palencia | 169.295278 | 3.500107 | .068516 | 2.809816 | .638434 | 63.644457 | 239.956608 |
+| p99 Saint-Pierre-d'Oléron | 450.060250 | 4.856601 | .089408 | 2.208225 | .493100 | 63.644457 | 521.352041 |
+
+SUM OF MEASURED COMPONENTS, not monolithic or two-process E2E latency.
+Query percentiles select workloads by intrinsic P, not latency percentiles.
+SCMP reference timings are excluded. Go component measurements include
+in-memory masked exchanges; native comparison includes local masked opening,
+both Eval calls and rb correction. No network/RTT timing is claimed.
+
+| query | r | sum D | sum T | sum DT | static A bytes | offline total bytes | online bytes |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| p50 | 2 | 160 | 332 | 35968 | 71936 | 70120013 | 795320 |
+| p95 | 5 | 6560 | 8700 | 25342848 | 50685696 | 177262158 | 52218120 |
+| p99 | 5 | 9616 | 9780 | 68338560 | 136677120 | 351013902 | 138234360 |
+
+Offline totals separate Beaver, permutation correlations and external SCMP
+keys/masks, as detailed in internal/aggregation/README.md. Native key codec is
+284 bytes per key per cloud. Native offline KeyGen medians: F p50=.131830ms,
+p95=4.470490ms, p99=6.271160ms; Keep=82.289800ms. These are SCMP component
+preprocessing times, not total DO preprocessing times.
+
+N=120071 permutation r=1/2/4/6: online .520367/1.056507/2.103846/3.144846ms;
+correlated preprocessing 1.348055/3.326704/6.087911/8.397106ms;
+online bytes 240142/480284/960568/1440852, correlated bytes
+720426/1440852/2881704/4322556. Each is a real local component invocation.
+Full 1000-query correctness run max RSS=1314148 KiB, swaps=0. Separate native
+SCMP max RSS=79508 KiB; these are separate processes, not a combined peak.
+Representative Go heap samples=749169504/716164168/475993560 bytes, not a
+continuous peak profiler. Full static incidence estimate=1521004240 bytes;
+global payload arrays=11526816 bytes, including Go alignment padding.
+
+Important storage limitation: eager rho/sigma arrays for every nonempty bucket
+would total 102556003088 bytes, so this full permutation table was NOT built.
+Only provisioned accessed invocations are materialized. The component supports
+offline provisioned packets; no claim of a ready all-bucket resident pool is
+made and no query-time dealer service was added. Per bucket factors=1921136
+bytes. No further full-table performance expansion was attempted.
+
+Posting KappaJoinShare/BucketJoinShare have no online production consumer and
+are DEPRECATED / REDUNDANT, retained for later cleanup. Paper modified=NO.
+Compaction and Target routing not started. No new aggregation protocol.
+
+Reproduce Go: PMEQ_AGG_STATS=1 go test ./internal/indexbuild -run TestAggregation -v;
+PMEQ_AGG_FULL=1 go test ./internal/aggregation -count=1 -timeout=30m -v.
+Native audit harness /tmp/phase5b2-scmp.cpp includes the unchanged old FFI source
+from /tmp/phase5a-dmpf; build with g++ -O3 -std=c++17 -march=native -maes
+-msse2 -msse4.1 -mpclmul, pubdiv/dcf/prng and cryptoTools Defines/Log/AES/PRNG
+sources, -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread.
+Runs: /tmp/phase5b2-scmp 100000 1; batch sizes 160,6560,9616,120071 each 5 runs.
+Additional native regression enumerated all 64 x 14 value/threshold pairs
+repeatedly for 100000 comparisons, including F=1 at threshold=1.
+Final gofmt, go test ./..., go vet ./... and git diff --check PASS.
+No concurrency was introduced; race was not rerun and is not a gate.
+
 ## PHASE 0 record
 
 - Old repository: `/home/tenggn/projects/new-pmeq`

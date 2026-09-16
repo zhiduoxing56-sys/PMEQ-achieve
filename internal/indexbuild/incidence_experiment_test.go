@@ -174,7 +174,7 @@ func TestFullIncidenceExperiment(t *testing.T) {
 		by[b.id] = b
 		total += len(b.slots)
 	}
-	if total != 1994592 {
+	if total != 1961824 {
 		t.Fatal("tier regression", total)
 	}
 	hot := append([]incidenceBucket{}, bs...)

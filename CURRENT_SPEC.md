@@ -109,8 +109,8 @@ Match AND Validity AND PositionPredicate
 ```
 
 with two batched Beaver multiplications in `F_2`. Its final output is the
-party-local posting hit share `x_{h,s}` in `F_2`; B2A is deliberately deferred
-to the PHASE 5 aggregation boundary and is not implemented.
+party-local posting hit share `x_{h,s}` in `F_2`; B2A is implemented at the
+PHASE 5 aggregation boundary, not inside filtering.
 
 The DPF PRG uses each 128-bit seed `s` as an AES-128 key with four exact,
 distinct 16-byte domain blocks:
@@ -138,7 +138,7 @@ path.
 ### Padding and validity
 
 Production padding is the frozen per-group tier ladder
-`{4,16,64,256,1024,4096,16384}`. Each group's public `PadWidth` is the
+`{4,16,64,256,1024,4096,8192,16384}`. Each group's public `PadWidth` is the
 smallest tier greater than or equal to its real posting count. `PadWidth`
 reveals the corresponding coarse real-size class and is allowed structural
 leakage. Validity remains secret-shared per slot: `real = 1`, `dummy = 0`.
@@ -244,7 +244,7 @@ and validity. It contains no join value or routing payload.
 Padding is per group. For a nonempty group with `n` real postings:
 
 ```text
-PadWidth(n) = min { L in {4,16,64,256,1024,4096,16384} : L >= n }.
+PadWidth(n) = min { L in {4,16,64,256,1024,4096,8192,16384} : L >= n }.
 ```
 
 An input group larger than 16,384 is an error; there is no dynamic tier, exact
@@ -271,10 +271,10 @@ shares, full Target point, or derivation key.
   indexed by the `q`-gram chain. The live counts are 644 `area` records and
   4,047 `area_alias` records. No policy is frozen here: an out-of-domain
   restriction is **not** adopted, and no short-string index is implemented.
-- **B RE-EVALUATION = OPEN.** The bucket width is not re-frozen in PHASE 3B.
-- **PHASE 5 PAYLOAD ALIGNMENT = OPEN.** The base posting payload is frozen for
-  PHASE 3C1, but its eventual secure aggregation/compaction alignment remains a
-  PHASE 5 dependency.
+- **Anchor B = 65536 FROZEN in PHASE 5B2.** AnchorBucketBits=16. The Target
+  bucket-width primitive remains independently parameterized.
+- **PHASE 5 PAYLOAD ALIGNMENT = CLOSED in PHASE 5B2.** Keep and fresh DO-generated
+  per-record payload use the same hidden global LayoutID. Compaction remains future work.
 - The paper is **not modified** by PHASE 3C3; it will be synchronised once the
   protocol is stable.
 
@@ -304,8 +304,8 @@ Each cloud token contains only its DPF key, public bucket ID, `pid`, and masked
 bounds. Filtering iterates variable-width group slot slices and returns
 `x = Match AND Validity AND PositionPredicate` as `F_2` shares. It performs no
 record aggregation, compaction, Target filtering, or B2A. IndexOutsource is
-sealed; B final choice, short-string completeness, and PHASE 5 payload
-alignment remain open. The paper is not modified by PHASE 4A.
+sealed. PHASE 5B2 freezes Anchor B and implements payload alignment;
+short-string completeness remains open. The paper is unchanged.
 
 ### Secure permutation
 
@@ -359,14 +359,51 @@ range checks. This stage returns F, not [F>0].
 Static incidence shares are reusable. B2A/vector triples are one-time offline
 material. Online messages are only masked d/e differences. BigState posting
 conversion/evaluation is unnecessary for this direct A*x boundary and is not
-migrated. No F->z, permutation, C, Keep, compaction or routing is implemented.
+migrated. The PHASE 5B1 package still ends at F; PHASE 5B2 completes the
+following stages in `internal/aggregation`, without compaction or routing.
 
-Next-stage interface remains F -> z -> global alignment -> Keep[gamma]. The
+The implemented next-stage interface is F -> z -> global alignment -> Keep[gamma]. The
 DO independently creates fresh per-record ID/KJoin/JoinBucket shares at the
 same hidden gamma/Global LayoutID. Payload must not be folded from posting
-shares. Existing posting KappaJoinShare/BucketJoinShare are POTENTIALLY
-REDUNDANT AFTER PHASE5 and remain unchanged. Payload implementation, final B,
-and short-string completeness remain OPEN; the paper is unchanged.
+shares. Posting KappaJoinShare/BucketJoinShare are DEPRECATED / REDUNDANT for
+the new aggregation path, retained until a later schema cleanup. Short-string
+completeness remains OPEN; the paper is unchanged.
+
+### PHASE 5B2 complete Anchor record aggregation
+
+AnchorBucketBits=16, B=65536. All base indexes use the posting tiers
+4/16/64/256/1024/4096/8192/16384; uniform bucket-max is experiment baseline only.
+The full raw-data maximum same-record/same-qgram occurrence count is 2.
+Thus correctly filtered F<=2<64. F->z and C->Keep use external LLAMA signed
+SCMP Bin=7, Bout=1; local raw evaluation output has key.rb removed. Fresh
+input masks and masked query-user bounds are one-time offline material.
+
+z is converted once from F2 to Z128 before alignment, reusing existing B2A.
+DO fixes N_global=120071 and a random gamma and LayoutID. It independently
+shares (record ID, KJoin, JoinBucket) once per record at gamma; posting payloads
+are never folded. D local coordinates are embedded into N_global, unused
+coordinates and appended zeros complete pi to a permutation.
+
+DO samples uniform rho and sets sigma[rho[i]]=pi[i]. CS0 holds only rho;
+CS1 only sigma. Two-stage masked scatter is the existing old permutation
+mathematics, not a new aggregation protocol. Fresh a1,c1,a2,c2 yield
+b1=scatter(rho,a1)-c1, b2=scatter(sigma,a2)-c2. CS0 material is c1,a2,b2;
+CS1 material is a1,b1,c2. Online CS1 sends d1=x1-a1; CS0 computes
+r0=scatter(rho,x0+d1)+c1 and sends d2=r0-a2. Outputs are
+y0=b2 and y1=scatter(sigma,b1+d2)+c2. All arithmetic is modulo 128.
+
+Each cloud locally sums aligned vectors. Normal queries require 1<=r<=14
+and 0<=tau<r; lambda=r-tau, C<=14. Final CandidateInput has LayoutID,
+KeepShare[] and Payload[] with equal global lengths. This is the sole future
+compaction input; no compaction or routing is implemented here.
+
+The offline interface can provision chosen bucket invocations before queries;
+no online method accepts raw records or dealer mapping. Experiments simulate
+this pool in a trusted coordinator. Eager full permutations for every bucket
+are not materialized: their static memory must be reported separately.
+Composition tests use explicitly test-only SCMP reference keys; real SCMP
+performance comes only from the external LLAMA component. No monolithic
+native Go/LLAMA E2E or persistent index format is claimed. Paper modified=NO.
 
 ## 7. Phase gates
 

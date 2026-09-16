@@ -19,7 +19,7 @@ IndexOutsource
 - **IndexOutsource:** PHASE 3C3 base builder implemented in memory for raw
   MusicBrainz `area`/`area_alias`: q=4 code-point postings, Anchor q-gram
   groups, Target `(joinID,qgram)` groups, party-local fresh shares, and frozen
-  per-group tiers `{4,16,64,256,1024,4096,16384}`. The uniform per-bucket
+  per-group tiers `{4,16,64,256,1024,4096,8192,16384}`. The uniform per-bucket
   maximum is experiment baseline only. Persistent format is not implemented.
 - **Anchor Match:** 128-bit DPF is wired to tiered Anchor groups and replicated
   locally to their variable-width slots.
@@ -28,8 +28,10 @@ IndexOutsource
   inputs use the external validated LLAMA SCMP (`Bin=7`, `Bout=1`) boundary.
   Two batched F2 Beaver layers produce secret posting-hit shares. Native LLAMA
   remains external, and B2A belongs to PHASE 5.
-- **Anchor Record Aggregation:** mathematical specification frozen; no current production implementation; PHASE 5 blocker.
-- **Anchor Keep:** depends on secure aggregation and comparison.
+- **Anchor Record Aggregation:** PHASE 5B2 implements the hidden-incidence,
+  external SCMP, Z128 B2A, two-stage permutation and local count composition.
+- **Anchor Keep:** masked external SCMP produces F2 Keep aligned with a
+  DO-generated per-record global payload under the same LayoutID.
 - **Candidate Compaction:** candidate primitive exists; awaits a later independent migration audit.
 - **KHPRF Routing:** design frozen; awaits a later independent migration audit.
 - **Target Private Equality:** OPTION 4 approved. The Target stored group key is
@@ -73,9 +75,9 @@ None of the paths above may re-enter the production graph through a compatibilit
 
 IndexOutsource is sealed. Anchor filtering now ends at `x_{h,s}` F2 hit shares.
 B2A and hidden incidence aggregation through local-record F are now implemented
-by PHASE 5B1. F->z, global alignment, C, Keep, Compaction, online KHPRF routing,
-Private Equality, Target filtering, Candidate ID Generation, and a full
-Candidate Discovery runner remain unimplemented.
+by PHASE 5B1. PHASE 5B2 adds F->z, global alignment, C, Keep and payload.
+Compaction, online KHPRF routing, Private Equality, Target filtering, Candidate
+ID Generation, and a full Candidate Discovery runner remain unimplemented.
 
 PHASE 5B1: F2 posting shares -> batched Z128 B2A -> chunked scalar-vector Beaver
 with secret-shared incidence -> F shares. T is physical bucket slots; D is an
@@ -83,7 +85,7 @@ independent power-of-two record-coordinate capacity. DO-only mapping never
 enters party state. Static A, one-time triples, and masked-opening traffic are
 accounted separately. Benchmarks execute real Beaver algebra in a single
 trusted coordinator with in-memory openings; no network latency is claimed.
-Per-record payload is a later DO-generated Global LayoutID array aligned with
+Per-record payload is a DO-generated Global LayoutID array aligned with
 Keep, never an aggregation of the posting routing fields.
 
 Future Position Filtering is variable-width compatible: it must iterate each
@@ -93,5 +95,8 @@ their hidden record relation independently of group width, so variable
 `PadWidth` is not an interface blocker. PHASE 3C3 does not implement either
 stage.
 
-SHORT-STRING COMPLETENESS, the final bucket-width choice (`B RE-EVALUATION`),
-and PHASE 5 payload/aggregation alignment remain OPEN. The paper is unchanged.
+SHORT-STRING COMPLETENESS remains OPEN. Anchor B=65536 and the new posting
+ladder are frozen in PHASE 5B2. Payload/Keep alignment is implemented; payload
+rerandomization during future compaction/selection remains that phase's duty.
+SCMP remains an external validated primitive. Timing reports are SUM OF
+MEASURED COMPONENTS, not monolithic E2E. The paper is unchanged.

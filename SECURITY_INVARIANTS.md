@@ -12,7 +12,7 @@ Neither cloud acting alone may obtain:
 - complete Target stored group key;
 - posting-to-record correspondence;
 - gamma;
-- complete permutation;
+- complete local-to-global permutation pi (a random rho or sigma factor alone is permitted);
 - the other party's share;
 - final candidate identity.
 
@@ -187,5 +187,31 @@ row-equality/nonzero-column attack but are not a cryptographic proof.
 
 No sparse plaintext index, record ordinal, phi/rho, peer coefficient shares,
 or full dealer state may enter a cloud object. F reconstruction is test-only.
-Future global payload is shared independently per record and bound to the
+Global payload is shared independently per record and bound to the
 same Global LayoutID as Keep; posting payload must not be folded.
+
+## PHASE 5B2 alignment and comparison
+
+Anchor B=65536 is frozen. Posting tiers are
+4/16/64/256/1024/4096/8192/16384. Public W=8192 reveals 4097..8192;
+W=16384 now reveals 8193..16384. Uniform padding is baseline only.
+The existing public D capacity class remains distinct from posting PadWidth.
+
+DealerLayout alone holds gamma/record IDs. Stage0 holds LayoutID and rho;
+Stage1 holds LayoutID and sigma, never pi or the other factor. PartyPayload
+contains only LayoutID and local ID/scalar/bucket shares. CandidateInput binds
+local Keep and payload by the identical LayoutID and length. Static payload
+does not authorize releasing local candidate payloads without the future
+compaction/selection rerandomization already required above.
+
+Permutation preprocessing is one-time: CS0 has c1,a2,b2 and CS1 a1,b1,c2.
+Only x1-a1 and r0-a2 cross the online boundary; neither cloud receives both
+the mask and masked value. Each factor is uniformly distributed independent
+of pi; fresh vector masks hide dynamic values across repeated invocations.
+No combined StaticPerm/controller state is copied from the old repository.
+
+F->z and C->Keep open only value+fresh R, not value or R. Bound masks belong
+only to the authorized user. LLAMA keys are party-local and rb is removed.
+The full-data F<=2 and normal-query C<=14 bounds justify signed Bin=7.
+Comparison and permutation packets reject repeated consumption. Reference
+SCMP is test-only composition code and never performance evidence.

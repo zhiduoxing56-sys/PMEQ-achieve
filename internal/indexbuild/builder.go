@@ -17,9 +17,13 @@ import (
 
 const Q = 4
 
+// AnchorBucketBits is the frozen PHASE 5B2 Anchor production parameter.
+// Explicit Build parameters remain available for historical experiment tests.
+const AnchorBucketBits = 16
+
 var ErrTierOverflow = errors.New("indexbuild: real group size exceeds maximum padding tier")
 
-var tierLadder = [...]int{4, 16, 64, 256, 1024, 4096, 16384}
+var tierLadder = [...]int{4, 16, 64, 256, 1024, 4096, 8192, 16384}
 
 // TierWidth returns the smallest frozen padding tier that covers realSize.
 // Groups are never empty; callers passing a non-positive size receive an error.
@@ -36,9 +40,11 @@ func TierWidth(realSize int) (int, error) {
 }
 
 type AnchorPartySlot struct {
-	RecordIDShare   share.Ring64Share
-	PositionShare   share.Ring32Share
-	ValidityShare   share.BitShare
+	RecordIDShare share.Ring64Share
+	PositionShare share.Ring32Share
+	ValidityShare share.BitShare
+	// Deprecated: aggregation generates independent per-record global payloads.
+	// Retained until the next posting-schema cleanup.
 	KappaJoinShare  targetcrypto.ScalarShare
 	BucketJoinShare targetcrypto.BucketShare
 }
