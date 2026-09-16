@@ -126,9 +126,9 @@ func TestExportedShareAPIInventory(t *testing.T) {
 	}
 }
 
-func TestNoMultiPartyProductionStruct(t *testing.T) {
+func TestShareProductionStructsArePartyLocal(t *testing.T) {
 	root := internalRoot(t)
-	files, err := filepath.Glob(filepath.Join(root, "*", "*.go"))
+	files, err := filepath.Glob(filepath.Join(root, "share", "*.go"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,8 +145,8 @@ func TestNoMultiPartyProductionStruct(t *testing.T) {
 			if !ok {
 				return true
 			}
-			if file.Name.Name != "share" || len(st.Fields.List) != 1 {
-				t.Errorf("unexpected production struct in %s", path)
+			if len(st.Fields.List) != 1 {
+				t.Errorf("share struct in %s has %d fields, want one party-local value", path, len(st.Fields.List))
 			}
 			return true
 		})

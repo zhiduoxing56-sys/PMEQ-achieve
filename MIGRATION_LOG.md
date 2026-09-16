@@ -200,3 +200,38 @@ on CS0 and CS1 remaining non-colluding.
 - B RE-EVALUATION = OPEN. PHASE 3B requires only `B = 2^k` and does not freeze a
   production width.
 - Paper modified = no; it will be synchronised once the protocol is stable.
+
+## PHASE 3C1 base index builder record
+
+- trusted offline package: `internal/indexbuild`
+- input: raw MusicBrainz fullexport `20260905-002519` COPY text tables `area`
+  and `area_alias`
+- output: in-memory-only public metadata plus separate CS0 and CS1 indexes
+- persistent index format implemented = no
+- full-dataset index generated = no
+
+The new parser performs field splitting before PostgreSQL COPY text unescaping,
+recognizes raw `\N`, validates exact physical column counts (14 for `area`, 16
+for `area_alias`), supports the required simple, octal, and hexadecimal
+escapes, rejects illegal escapes, preserves empty strings and whitespace, and
+validates projected text as UTF-8.
+
+The old repository files actually consulted were:
+
+- `index/index.go`: only the `[]rune` sliding-window idea and the requirement to
+  preserve repeated q-gram occurrences;
+- `psmj/index.go`: only the physical projection indices for `area_alias` and a
+  warning example of why the old q-gram-only/opaque-tag grouping path must not
+  be copied.
+
+The old `strings.Split` readers were not correct COPY text parsers and were not
+migrated. No old production index schema, generated index, E2E driver, wire
+format, package, helper, or source line was copied. Copied old source lines =
+0; migrated old helpers = 0. The parser and builder are new implementations
+with new unit, real-data integration, reconstruction, freshness-wiring, and
+party-state structural tests.
+
+PHASE 3C1 freezes q=4 code-point positions, Anchor identity `qgram`, Target
+identity `(joinID,qgram)`, MSB-first Anchor prefix buckets, XOR Target buckets,
+the minimal party-local slot schemas, and uniform per-bucket maximum `L_pad`.
+Short-string policy, final B choice, and PHASE 5 payload alignment remain OPEN.

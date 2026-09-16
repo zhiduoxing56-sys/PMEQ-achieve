@@ -16,7 +16,11 @@ IndexOutsource
 
 ## Current stage status
 
-- **IndexOutsource:** awaiting an entirely new implementation.
+- **IndexOutsource:** PHASE 3C1 base builder implemented in memory for raw
+  MusicBrainz `area`/`area_alias`: q=4 code-point postings, Anchor q-gram
+  groups, Target `(joinID,qgram)` groups, party-local fresh shares, and uniform
+  per-bucket maximum padding. Persistent format and full-dataset build are not
+  implemented.
 - **Anchor Match:** design frozen; primitive awaiting migration verification.
 - **Anchor Position Filtering:** comparison primitive awaiting migration/re-verification.
 - **Anchor Record Aggregation:** mathematical specification frozen; no current production implementation; PHASE 5 blocker.
@@ -59,3 +63,14 @@ IndexOutsource
 - BFV / MBFV / CWMatch production chain.
 
 None of the paths above may re-enter the production graph through a compatibility interface.
+
+## PHASE 3C1 boundary and open dependencies
+
+The base slot payload ends at secret-shared record ID, code-point position, and
+validity, plus the Anchor-only future routing shares. Position Filtering,
+Boolean multiplication, B2A, Aggregation, Compaction, online KHPRF routing,
+Private Equality, Target filtering, Candidate ID Generation, and a full
+Candidate Discovery runner remain unimplemented.
+
+SHORT-STRING COMPLETENESS, the final bucket-width choice (`B RE-EVALUATION`),
+and PHASE 5 payload/aggregation alignment remain OPEN. PHASE 4 has not started.

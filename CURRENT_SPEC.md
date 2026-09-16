@@ -212,6 +212,49 @@ which holds because Ristretto255 canonical encoding is injective on the group.
   The current production width is not fixed by PHASE 3B (`B RE-EVALUATION
   OPEN`); the primitive only requires a power of two.
 
+### Base outsourced index schema (PHASE 3C1)
+
+PHASE 3C1 implements the trusted-DO, in-memory base index builder for the raw
+MusicBrainz `area` and `area_alias` COPY text tables. It does not define a
+persistent index format and does not generate the full-dataset index.
+
+Q-grams are exactly four Unicode code points. For `r := []rune(name)`, the
+builder emits every `string(r[i:i+4])` at zero-based code-point position `i`,
+including repeated occurrences. There is no byte slicing, normalization,
+trimming, or case folding. Names shorter than four code points are counted and
+excluded from this main index; the completeness policy remains open.
+
+The Anchor logical group identity is the q-gram. Its public group value is
+`z_B = anchorindex.Encode(k_B, qgram)`. Its bucket is the first `k` bits of
+`z_B`, MSB-first, for `1 <= k <= 16`. Each Anchor party slot contains exactly
+one local share of the record ID, position, validity, `kappa_J`, and `beta_J`.
+
+The Target logical group identity is the tuple `(area_alias.area, qgram)`, not
+the q-gram alone. The DO derives the full group point only during trusted
+construction and stores one additive Ristretto point share per party. The
+Target bucket is
+
+```text
+JoinBucketComponent(k_T, area_alias.area, k)
+XOR WordBucketComponent(k_T, qgram, k).
+```
+
+Each Target party slot contains exactly one local share of alias ID, position,
+and validity. It contains no join value or routing payload.
+
+Padding is uniform per nonempty physical bucket: `L_pad` is the maximum real
+posting count among groups in that bucket, and every group is padded to that
+length. Real validity is shared from one. Dummy record ID, position, validity,
+Anchor scalar, and Anchor bucket component are all shared afresh from semantic
+zero; no local all-zero convention or plaintext dummy flag exists. Group count
+and `L_pad` are public experimental metadata. No tier, cap/overflow, dummy
+group, or ORAM policy is implemented.
+
+The public metadata contains only `q`, both bucket widths, and for each
+nonempty Anchor/Target bucket its bucket ID, `L_pad`, and group count. Party
+state contains no plaintext name, q-gram, join ID, raw record, peer share, both
+shares, full Target point, or derivation key.
+
 ### Open items carried forward
 
 - **SHORT-STRING COMPLETENESS = OPEN.** Strings shorter than `q` cannot be
@@ -219,6 +262,9 @@ which holds because Ristretto255 canonical encoding is injective on the group.
   4,047 `area_alias` records. No policy is frozen here: an out-of-domain
   restriction is **not** adopted, and no short-string index is implemented.
 - **B RE-EVALUATION = OPEN.** The bucket width is not re-frozen in PHASE 3B.
+- **PHASE 5 PAYLOAD ALIGNMENT = OPEN.** The base posting payload is frozen for
+  PHASE 3C1, but its eventual secure aggregation/compaction alignment remains a
+  PHASE 5 dependency.
 - The paper is **not modified** by PHASE 3B; it will be synchronised once the
   protocol is stable.
 
