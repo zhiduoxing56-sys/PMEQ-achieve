@@ -1,5 +1,101 @@
 # PMEQ Migration Audit Log
 
+## PHASE 5B3 — alignment state compaction and preprocessing freeze
+
+Begin HEAD 75a4d9e6d5eeeb8747aaf29cb6dc8f153fa2b362; status clean.
+No aggregation mathematics changed: hidden incidence, F->z, DO gamma/pi,
+two-stage permutation, C, Keep, payload, Anchor B=65536 and the finalized tiers
+4/16/64/256/1024/4096/8192/16384 are unchanged.
+
+Per bucket, crypto/rand generates a fresh 32-byte static rhoSeed. AES-256-CTR
+uses that seed as key, IV ASCII "PMEQ-RHO-PRG-V1!", little-endian uint32 stream
+words, and descending Fisher-Yates with rejection of words below 2^32 mod bound.
+CS0 receives only LayoutID/BucketID/rhoSeed; CS1 only LayoutID/BucketID/sigma[]uint32.
+DO sets sigma[rho[i]]=pi[i]. All permutation coordinates, including DO pi/gamma,
+now use uint32; local loop indices/lengths and record IDs are not coordinates.
+CS0 lazily expands only the accessed invocation's rho[]uint32. The seed is
+party-local representation, not a secret shared with CS1. Security uses the
+cryptographic PRG assumption; 256 bits do not information-theoretically sample N!.
+
+N=120071, nonempty Anchor buckets=53383. Comparable factor-data bytes:
+
+| representation | CS0/bucket | CS1/bucket | combined/bucket | CS0 total | CS1 total | combined total |
+|---|---:|---:|---:|---:|---:|---:|
+| old []int factors | 960568 | 960568 | 1921136 | 51278001544 | 51278001544 | 102556003088 |
+| new seed / []uint32 | 32 | 480284 | 480316 | 1708256 | 25639000772 | 25640709028 |
+
+Reduction=3.999733509x. These figures exclude metadata/headers/allocator/map
+overhead consistently. On this Go runtime sizeof(Stage0)=50 and sizeof(Stage1)=48;
+including these structs and sigma backing data gives 25644232306 bytes, still
+excluding allocator rounding and lookup containers. The remaining ~25.64 GB is
+not claimed to fit the experiment RAM budget; no full factor table was allocated.
+The coordinator holds selected party objects and loads accessed sigma only.
+
+Correctness: 100000 fresh random pi/rho pairs, lengths randomly selected from
+1..256 except 10 full-N=120071 cases, passed permutation validity, deterministic
+seed expansion and sigma[rho[i]]=pi[i] with zero errors. Independent unbuffered
+AES-CTR expansion and a fixed N=16 KAT freeze stream/endianness/rejection details.
+Static factor reuse with fresh masks passed, including nonzero dynamic inputs.
+Reflect audits check exact CS0/CS1 fields and uint32 coordinate types; there is
+no peer factor/mask/pi/gamma in either static party object. These are correctness
+and structural regressions, not a claim of cryptographic proof by testing.
+
+Full PHASE5B2 regression rerun: 1000 seeded random normal MusicBrainz queries
+plus p50/p95/p99 workload representatives; F/z/Y/C/Keep/payload all zero errors.
+HMAC/DPF/incidence/Beaver/permutation are real; SCMP remains the explicitly
+test-only composition reference, with PHASE5B2's unchanged validated native
+LLAMA component. Full run 263.82s; max RSS=1302540 KiB, no swaps. PHASE5B2
+permutation tests were rerun. Test pool registries consumed 1003 distinct query
+tickets per party; this does NOT mean all 1003 queries' correlated materials
+were simultaneously preallocated in RAM. Trusted test preprocessing simulates
+offline packets before the online stages, with no online party DO/raw-DB call.
+
+N=120071 benchmark, 2 warmups + 10 measured, sequential per-query occurrences:
+
+| r | expansion ms p50/p95 | online excluding expansion ms p50/p95 | paired total ms p50/p95 | online bytes |
+|---|---:|---:|---:|---:|
+| 1 | .367863 / .402022 | .374752 / .570924 | .734766 / .952874 | 240142 |
+| 2 | .836360 / 1.093395 | .793969 / 1.036237 | 1.650156 / 2.079847 | 480284 |
+| 4 | 1.711339 / 1.779306 | 1.753419 / 1.924717 | 3.463046 / 3.670367 | 960568 |
+| 6 | 2.672767 / 2.848462 | 2.477459 / 2.781451 | 5.151430 / 5.485716 | 1440852 |
+
+Quantiles use ceil((n-1)*p); paired totals are computed per sample before sorting.
+This is measured local work of both parties with in-memory messages, not TCP/E2E.
+Expansion is online local compute and is included by the existing Message2 wrapper.
+Temporary rho backing=480284 bytes. Per-invocation measured additional HeapAlloc
+and TotalAlloc both=980008 bytes; no GC ran inside any measured window. The
+temporary peak includes rho plus opening/output arrays; excludes already-existing
+sigma, input shares and one-time preprocessing. Sequential r=1/2/4/6 keeps this
+increment constant. Memory sampling/forced pre-window GC are outside timings.
+Isolated benchmark process max RSS=90368 KiB. No full-table memory claim is made.
+
+PoolConfig.PreprocessingPoolSize=Q_pool is explicit with no frozen/default value.
+One query packet contains r one-time sub-invocations and final Keep material.
+PartyPool is a lifecycle registry (not serialization/material storage): offline
+Provision -> Seal -> online Consume. Reuse, unknown IDs, online refill and budget
+overflow are tested. Existing correlated packets keep their own one-use guards.
+PoolStorage=Q_pool*S_offline for equal-capacity packets, sum_i S_offline(i) for
+heterogeneous packets. OfflineShape keeps PHASE5B2's aggregation byte formula;
+PHASE4 material is added separately if budgeting the complete Anchor chain.
+
+STATIC: payload shares, LayoutID, DO-only gamma, bucket A shares, rhoSeed/sigma,
+outsourced index/DPF evaluation state. Query DPF keys are still query-generated.
+ONE-TIME: SCMP masks/keys, B2A and incidence Beaver triples, permutation masks,
+final Keep threshold material. Current Keep has no additional Keep Beaver triples;
+any such future triples must also be one-time. No unlimited-query/no-preprocessing
+claim is made. Exhaustion requires another offline epoch, never query-time DO.
+
+PHASE5 = SEALED: aggregation correctness, hidden posting mapping, aligned
+Keep/payload, quantified static storage, explicit finite one-time model, and
+no query-time DO/raw DB access all pass. No new protocol, bit packing, persistent
+format, symmetric second direction, Candidate Compaction or Target routing.
+Paper modified=NO. Short-string completeness remains OPEN.
+
+Reproduce: go test ./internal/aggregation -run 'TestSeed|TestCompact|TestOfflinePool|TestStaticCompact' -count=1 -v;
+PMEQ_AGG_FULL=1 go test ./internal/aggregation -run 'TestReal1000Queries|TestPermutation120071Benchmark' -count=1 -timeout=30m -v.
+Final validation: gofmt clean; go test ./... PASS; go vet ./... PASS;
+git diff --check PASS. No new concurrency; race was not required or rerun.
+
 ## PHASE 5B2 — complete Anchor record aggregation
 
 Begin HEAD a39c25a1fea24b5e2ba6394771b94eaa071b5370; status clean.

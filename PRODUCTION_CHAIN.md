@@ -30,6 +30,9 @@ IndexOutsource
   remains external, and B2A belongs to PHASE 5.
 - **Anchor Record Aggregation:** PHASE 5B2 implements the hidden-incidence,
   external SCMP, Z128 B2A, two-stage permutation and local count composition.
+  PHASE 5B3 stores only a CS0-local rhoSeed and CS1 uint32 sigma per bucket;
+  rho expands lazily for an accessed invocation. Q_pool is a finite offline
+  one-use query-material budget, separate from reusable static state.
 - **Anchor Keep:** masked external SCMP produces F2 Keep aligned with a
   DO-generated per-record global payload under the same LayoutID.
 - **Candidate Compaction:** candidate primitive exists; awaits a later independent migration audit.
@@ -100,3 +103,22 @@ ladder are frozen in PHASE 5B2. Payload/Keep alignment is implemented; payload
 rerandomization during future compaction/selection remains that phase's duty.
 SCMP remains an external validated primitive. Timing reports are SUM OF
 MEASURED COMPONENTS, not monolithic E2E. The paper is unchanged.
+
+PHASE 5B3 retains the PHASE 5B2 mathematics and freezes preprocessing semantics:
+PoolStorage=Q_pool*S_offline for equal-capacity query packets, or the sum of
+packet capacities for heterogeneous queries. Q_pool has no frozen numeric value.
+Static payload/LayoutID/DO gamma/incidence shares/index/rhoSeed/sigma are reusable;
+SCMP masks/keys, B2A/incidence triples, permutation masks and Keep threshold
+material are one-time. Query DPF tokens remain query-generated. Keep has no
+additional Beaver triples in the current implementation.
+
+The factor footprint is 25640709028 bytes for all 53383 nonempty buckets,
+not including metadata/allocator overhead. This is quantified static storage,
+not a full-table resident-memory claim. Only accessed sigma and transient rho
+are loaded for experiments. No persistent format, query-time DO service, or
+raw DB lookup was added. Candidate Compaction and Target routing remain not started.
+
+**PHASE5 = SEALED.** Correctness, hidden posting correspondence, aligned payload,
+static storage accounting and finite offline-preprocessing lifecycle gates pass.
+Next phase is Candidate Compaction, which is not started by this change. Short-string
+completeness remains OPEN; SCMP remains an external validated component.

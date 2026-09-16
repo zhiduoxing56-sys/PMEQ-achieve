@@ -68,7 +68,7 @@ func TestAggregationFullDomain(t *testing.T) {
 		}
 		products += uint64(D * T)
 	}
-	t.Logf("STATIC full A shares bytes=%d; nonempty=%d; full rho/sigma arrays bytes=%d (not materialized); per accessed bucket rho/sigma bytes=%d", 2*products, len(totals), uint64(len(totals))*120071*16, 120071*16)
+	t.Logf("STATIC full A shares bytes=%d; nonempty=%d; old rho/sigma arrays bytes=%d; PHASE5B3 CS0 seed bytes=%d CS1 sigma bytes=%d combined=%d (full table not materialized)", 2*products, len(totals), uint64(len(totals))*120071*16, uint64(len(totals))*32, uint64(len(totals))*120071*4, uint64(len(totals))*(32+120071*4))
 }
 
 func TestAggregationNewFullLayout(t *testing.T) {

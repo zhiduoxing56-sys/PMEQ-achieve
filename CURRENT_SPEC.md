@@ -384,8 +384,9 @@ shares (record ID, KJoin, JoinBucket) once per record at gamma; posting payloads
 are never folded. D local coordinates are embedded into N_global, unused
 coordinates and appended zeros complete pi to a permutation.
 
-DO samples uniform rho and sets sigma[rho[i]]=pi[i]. CS0 holds only rho;
-CS1 only sigma. Two-stage masked scatter is the existing old permutation
+DO samples rho and sets sigma[rho[i]]=pi[i]. In PHASE 5B3 rho is generated
+from a fresh crypto/rand 32-byte seed using the frozen PRG below. CS0 holds
+only this seed representation of rho; CS1 only uint32 sigma. Two-stage masked scatter is the existing old permutation
 mathematics, not a new aggregation protocol. Fresh a1,c1,a2,c2 yield
 b1=scatter(rho,a1)-c1, b2=scatter(sigma,a2)-c2. CS0 material is c1,a2,b2;
 CS1 material is a1,b1,c2. Online CS1 sends d1=x1-a1; CS0 computes
@@ -399,11 +400,80 @@ compaction input; no compaction or routing is implemented here.
 
 The offline interface can provision chosen bucket invocations before queries;
 no online method accepts raw records or dealer mapping. Experiments simulate
-this pool in a trusted coordinator. Eager full permutations for every bucket
-are not materialized: their static memory must be reported separately.
+this pool in a trusted coordinator. Full static factors are quantified below,
+not confused with one-time query material or all materialized in RAM.
 Composition tests use explicitly test-only SCMP reference keys; real SCMP
 performance comes only from the external LLAMA component. No monolithic
 native Go/LLAMA E2E or persistent index format is claimed. Paper modified=NO.
+
+### PHASE 5B3 static representation and preprocessing freeze
+
+N_global=120071, Anchor B=65536 and posting tiers
+4/16/64/256/1024/4096/8192/16384 remain frozen; aggregation mathematics is unchanged.
+Per bucket, DO uses crypto/rand to generate rhoSeed[32]. ExpandRho v1 is:
+AES-256-CTR(key=rhoSeed, IV=ASCII "PMEQ-RHO-PRG-V1!"), interpreting successive
+four stream bytes as little-endian uint32; descending Fisher-Yates from N-1
+to 1. For bound=i+1, reject words v below 2^32 mod bound, then j=v mod bound.
+The CTR counter follows Go's standard big-endian increment. This rejection
+removes modulo bias; the resulting permutation is computationally pseudorandom,
+not information-theoretically uniform over S_N from only 256 seed bits.
+
+CS0 static state is exactly LayoutID, BucketID, rhoSeed. CS1 static state is
+exactly LayoutID, BucketID, sigma []uint32. DO computes sigma[rho[i]]=pi[i].
+Neither party receives pi/gamma or the peer factor. rhoSeed is CS0-local
+representation, NOT a shared secret. CS0 expands only the accessed invocation's
+rho []uint32 and releases it afterwards; CS1 loads only the accessed sigma.
+No startup all-bucket rho expansion exists. pi/gamma permutation coordinates
+also use uint32; loop indices and lengths may use int, but coordinate arrays do not.
+
+For 53383 nonempty buckets, factor data alone: CS0=1708256 bytes,
+CS1=25639000772, combined=25640709028, versus 102556003088 previously.
+Per bucket: 32 + 4*N = 480316 bytes (old 16*N=1921136). This is 3.999733509x
+smaller, NOT a claim that all CS1 state now fits the experiment RAM limit.
+Layout/bucket metadata, slice headers, map and allocator overhead are separate.
+The experiment holds selected party-state objects; no new persistence or
+compression format is defined.
+
+`PreprocessingPoolSize = Q_pool` is a public system parameter, without a
+frozen/default numeric value. One packet means one complete query invocation:
+r independently masked qchunk subpackets plus final Keep threshold material.
+It is prepared in an offline epoch and consumed once. A sealed party-local
+packet registry rejects duplicate/unknown consumption, exhaustion and online
+refill. The registry is lifecycle/accounting, not a serializer or a store of
+peer materials; typed party-local correlated packets retain their one-use guards.
+Tests generate only their required packets in the trusted offline coordinator.
+
+PoolStorage = Q_pool * per-query offline material
+
+This equality uses an equal-capacity packet class. For heterogeneous workloads,
+PoolStorage=sum_i S_offline(i), or Q_pool times a declared capacity upper bound;
+do not multiply a percentile by Q_pool and claim a complete pool size.
+The PHASE5 aggregation-only byte count (both parties) remains:
+S_agg=4P+8T+6Dsum+6Nr+(2*K_SCMP+2)*(Dsum+N)+(r+1).
+K_SCMP=284 for the measured external codec. Static state is excluded. If the
+pool covers Anchor filtering too, add its independently accounted PHASE4
+position/Boolean preprocessing; S_agg is not that larger pool's total.
+These are correlated-material payload bytes; PacketID registry/container
+metadata and allocator overhead are separate, not hidden in S_agg.
+
+STATIC REUSABLE: global payload shares, LayoutID, DO-only gamma, bucket A
+shares, rhoSeed/sigma, and outsourced index/DPF evaluation points and parameters.
+Query DPF tokens are still query-generated, not reclassified as static keys.
+ONE-TIME: SCMP input/bound/output masks and keys, B2A triples, incidence Beaver
+triples, permutation masks, final Keep threshold material. Keep currently uses
+SCMP and has no separate Keep Beaver triples; any future such triples would
+also be one-time, never static. No unlimited-query/no-preprocessing claim is made.
+
+An online cloud consumes only previously provisioned local state. Exhaustion
+requires a new offline provisioning epoch, never query-time DO or raw DB access.
+Future Candidate Compaction remains a separate, not-started phase. Paper modified=NO.
+
+PHASE5 = SEALED (PHASE 5B3): Anchor aggregation correctness passes, posting
+mapping remains hidden in party-local incidence shares, Keep/payload share one
+LayoutID, static factor storage is quantified, finite one-time preprocessing
+is explicit, and online party APIs require neither DO nor raw DB access.
+This seals the normal-query aggregation component, not short-string completeness,
+an all-bucket resident store, a persistent material pool, or a monolithic E2E runner.
 
 ## 7. Phase gates
 

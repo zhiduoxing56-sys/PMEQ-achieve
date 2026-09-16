@@ -22,7 +22,7 @@ type PartyPayload struct {
 // DealerLayout alone owns plaintext IDs and gamma. Never embed in cloud state.
 type DealerLayout struct {
 	LayoutID [16]byte
-	gamma    map[uint64]int
+	gamma    map[uint64]uint32
 	N        int
 }
 
@@ -32,7 +32,7 @@ func GeneratePayload(ids []uint64, kt targetcrypto.MasterKey, targetBits int) (*
 	if e != nil {
 		return nil, PartyPayload{}, PartyPayload{}, e
 	}
-	d := &DealerLayout{gamma: map[uint64]int{}, N: n}
+	d := &DealerLayout{gamma: map[uint64]uint32{}, N: n}
 	if _, e = rand.Read(d.LayoutID[:]); e != nil {
 		return nil, PartyPayload{}, PartyPayload{}, e
 	}
@@ -69,14 +69,12 @@ func GeneratePayload(ids []uint64, kt targetcrypto.MasterKey, targetBits int) (*
 
 // Alignment embeds the existing DO incidence coordinates, then completes pi
 // randomly, including unused rows and the appended public-zero coordinates.
-func (d *DealerLayout) Alignment(local incidence.DealerLayout, slots []incidence.Posting) (*Stage0, *Stage1, error) {
+func (d *DealerLayout) Alignment(bucket uint16, local incidence.DealerLayout, slots []incidence.Posting) (*Stage0, *Stage1, error) {
 	if local.D > d.N || len(local.Coordinates) != len(slots) {
 		return nil, nil, ErrShape
 	}
-	pi := make([]int, d.N)
-	for i := range pi {
-		pi[i] = -1
-	}
+	pi := make([]uint32, d.N)
+	assigned := make([]bool, d.N)
 	used := make([]bool, d.N)
 	for s, p := range slots {
 		if !p.Real {
@@ -87,17 +85,18 @@ func (d *DealerLayout) Alignment(local incidence.DealerLayout, slots []incidence
 		if !ok || j < 0 || j >= local.D {
 			return nil, nil, ErrShape
 		}
-		if pi[j] >= 0 && pi[j] != g {
+		if assigned[j] && pi[j] != g {
 			return nil, nil, ErrShape
 		}
 		pi[j] = g
+		assigned[j] = true
 		used[g] = true
 	}
 	tail, e := permutation(d.N)
 	if e != nil {
 		return nil, nil, e
 	}
-	free := []int{}
+	free := []uint32{}
 	for _, g := range tail {
 		if !used[g] {
 			free = append(free, g)
@@ -105,7 +104,7 @@ func (d *DealerLayout) Alignment(local incidence.DealerLayout, slots []incidence
 	}
 	off := 0
 	for j := range pi {
-		if pi[j] < 0 {
+		if !assigned[j] {
 			if off >= len(free) {
 				return nil, nil, ErrShape
 			}
@@ -113,7 +112,7 @@ func (d *DealerLayout) Alignment(local incidence.DealerLayout, slots []incidence
 			off++
 		}
 	}
-	return SplitPermutation(d.LayoutID, pi)
+	return SplitPermutation(d.LayoutID, bucket, pi)
 }
 
 type CandidateInput struct {
