@@ -331,3 +331,31 @@ width. Future Position Filtering can iterate group-local slot slices; future
 hidden Aggregation is independent of group padding width. PHASE 4 was not
 started. B final choice, short-string completeness, and PHASE 5 payload
 alignment remain OPEN. Paper modified = no.
+
+## PHASE 4A Anchor filtering foundation
+
+PHASE 4A connects non-overlapping query q-chunks to the existing Anchor HMAC,
+bucket function, 128-bit DPF, variable tier groups, secret validity, masked
+position comparisons, and two batched F2 Beaver layers. The output is an F2
+posting-hit share; no B2A or record aggregation was added.
+
+The current raw MusicBrainz snapshot independently yielded Anchor/Target
+maximum positions `54/62` and maximum indexed rune lengths `58/66`. The public
+domain is therefore `U_pos=62`, with minimal signed-SCMP `Bin=7`. A 100,000-case
+Ring32 reduction audit, exhaustive clipped-interval tests, real 5,000-record
+k=8/k=14 integrations, dummy suppression, and repeated-occurrence tests pass.
+
+The real external EzPC/LLAMA `keyGenSCMP`/`evalSCMP` implementation was copied
+only to `/tmp` and built with `Bout=1`. It passed 100,000 comparisons and
+100,000 interval checks. A dedicated regression produced zero corrected errors
+and 100,000 errors when `rb` removal was intentionally omitted. The clean repo
+contains only an opaque adapter contract and masked-input algebra; its
+plaintext reference backend is test-only composition oracle code.
+
+Old sources actually consulted were `vendor/ezpc_fss/pubdiv.{h,cpp}`,
+`group_element.h`, `dcf.cpp`, `cmd/llama-scmp-audit/main.cpp`,
+`tools/llama_scmp128_ffi.cpp`, and `tools/final_filter.cpp`. Zero old C++ source
+lines or old drivers/controllers were copied into this repository. The LLAMA
+algorithm remains external; the old BFV position path is retired. Paper
+modified = no. B final choice, short strings, and PHASE 5 payload alignment
+remain OPEN.

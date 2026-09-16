@@ -35,6 +35,31 @@ Only the following leakage is currently permitted:
 
 No other leakage may be treated as permitted unless it is explicitly frozen by a reviewed specification decision.
 
+## PHASE 4 Anchor filtering boundary
+
+The authorized Query User alone derives the plaintext Anchor HMAC point and
+generates the two DPF keys. A cloud receives only its own opaque DPF key, the
+public accessed bucket ID, a one-time `pid`, and the two masked bounds. It must
+not receive `Q`, the q-chunk, `k_B`, alpha, or its peer's key.
+
+Each position preprocessing `pid` is one-use for one query occurrence against
+one bucket. Query-user state contains only `pid, eta_L, eta_R`; each cloud's
+state contains only its own additive rho shares and opaque SCMP key shares.
+Preprocessing is independent of the query and bucket contents. Clouds batch
+open only `p+rho`, never `p` or rho. LLAMA `evalSCMP` output includes the local
+`key.rb`; failing to subtract it before Boolean composition is forbidden.
+
+The test-only plaintext SCMP backend is an oracle for composition correctness
+only. It is not a production backend and none of its timings may be reported as
+secure Position Filter performance. Real performance evidence comes from the
+external unmodified EzPC/LLAMA primitive sources copied into `/tmp` for build;
+no C++ SCMP source enters this repository.
+
+The two Boolean multiplication layers use independent one-time Beaver triples
+and one batched opening per layer. Party 0 alone adds the public `d AND e` term.
+The result remains an F2 share; reconstructing hits or silently converting to
+an integer inside PHASE 4 is prohibited.
+
 ## Required stage audits
 
 **Correctness PASS does not imply security PASS.**

@@ -101,21 +101,16 @@ bit to its least-significant bit. This traversal convention does not reinterpret
 the Anchor value as an integer.
 
 The DPF output group is `F_2`, `beta = 1`, and each local evaluation returns one
-`share.BitShare`. Future per-slot `Validity` and `PositionPredicate` values must
-also be `share.BitShare`. Computing
+`share.BitShare`. Per-slot `Validity` and `PositionPredicate` values are also
+`share.BitShare`. PHASE 4A computes
 
 ```text
 Match AND Validity AND PositionPredicate
 ```
 
-requires two future secure `F_2` multiplications. After the complete Boolean
-filter, every processed or retained slot must undergo an explicit B2A conversion
-before entering the current integer Record Aggregation interface. If a later
-review formally changes the PHASE 5 aggregation design, the exact B2A placement
-may be reviewed again, but the cross-domain conversion must not be silently
-omitted. Boolean secure multiplication and B2A are not implemented in PHASE 2D;
-both must pass independent correctness and single-party view audits before
-PHASE 4 posting filtering is complete.
+with two batched Beaver multiplications in `F_2`. Its final output is the
+party-local posting hit share `x_{h,s}` in `F_2`; B2A is deliberately deferred
+to the PHASE 5 aggregation boundary and is not implemented.
 
 The DPF PRG uses each 128-bit seed `s` as an AES-128 key with four exact,
 distinct 16-byte domain blocks:
@@ -283,6 +278,35 @@ shares, full Target point, or derivation key.
 - The paper is **not modified** by PHASE 3C3; it will be synchronised once the
   protocol is stable.
 
+### Anchor filtering foundation (PHASE 4A)
+
+Query signatures are non-overlapping complete four-code-point chunks. For
+`r := []rune(Q)`, occurrence `h` is `string(r[4h:4h+4])` at zero-based rune
+position `4h`; an incomplete tail is dropped and repeated chunks remain
+distinct occurrences. Database names continue to use overlapping q-grams.
+
+The MusicBrainz snapshot has maximum real Anchor/Target positions `54/62` and
+maximum indexed rune lengths `58/66`. Thus public `U_pos=62` and the minimal
+signed LLAMA width is `Bin=7`, satisfying `U_pos+1 < 2^(Bin-1)`. Each cloud
+reduces its stored Ring32 share modulo `2^Bin` locally; positions are never
+reconstructed and reshared.
+
+For `L=max(0,pQ-tau)` and `R=min(U_pos,pQ+tau)`, external validated LLAMA SCMP
+with `Bout=1` supplies shares of `[p>=L]` and `[p>=R+1]`; their XOR is the
+inclusive position predicate. The clean Go repository implements the masked
+input algebra and an opaque SCMP adapter, not LLAMA itself. Each one-use `pid`
+has query-user `(pid,eta_L,eta_R)` and party-local `(pid,Bin,rho_L[],rho_R[],
+lower keys[],upper keys[])`; preprocessing depends only on `Bin`, capacity,
+and fresh randomness. Evaluation subtracts each key's local `rb` output mask.
+
+The authorized-user `anchorquery` package derives Anchor HMAC/DPF material.
+Each cloud token contains only its DPF key, public bucket ID, `pid`, and masked
+bounds. Filtering iterates variable-width group slot slices and returns
+`x = Match AND Validity AND PositionPredicate` as `F_2` shares. It performs no
+record aggregation, compaction, Target filtering, or B2A. IndexOutsource is
+sealed; B final choice, short-string completeness, and PHASE 5 payload
+alignment remain open. The paper is not modified by PHASE 4A.
+
 ### Secure permutation
 
 Retain the two-party secure permutation primitive.
@@ -323,7 +347,8 @@ Old Z128 aggregation rows/wrapper must not be migrated into production because p
   representation; keyed scalar mapping; fixed KHPRF base point; additive point
   and scalar sharing; domain-separated bucket components). Primitive layer only:
   no IndexOutsource, no private equality, no Beaver, no B2A, no runner.
-- **PHASE 4:** Position + secret Validity.
+- **PHASE 4:** Anchor filtering foundation implemented through F2 posting-hit
+  shares; native LLAMA remains an external validated component.
 - **PHASE 5:** solve hiding of `phi_h` in Anchor Aggregation again.
 - **PHASE 6:** Candidate Compaction.
 - **PHASE 7:** KHPRF Routing.
