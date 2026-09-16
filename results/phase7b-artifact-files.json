@@ -1,0 +1,42 @@
+[
+  {
+    "path": "artifacts/phase7b/build-audit.json",
+    "bytes": 3629,
+    "sha256": "2ea4a78aff699b971574624a1b5ece125fd3e4169c1fe35609ec79d8d095b876"
+  },
+  {
+    "path": "artifacts/phase7b/cs0.payload.bin",
+    "bytes": 5043028,
+    "sha256": "cf7bce677e15fe1c38d0dc5beb79dfe6b9b57b4619e49acb7ae13c579dc81c7c"
+  },
+  {
+    "path": "artifacts/phase7b/cs0.psmj.bin",
+    "bytes": 29204994,
+    "sha256": "c5efe2eb81c06a81724c0ef2a5ff3855bc02d9cc2d39a11e6d481c848de0ec12"
+  },
+  {
+    "path": "artifacts/phase7b/cs1.payload.bin",
+    "bytes": 5043028,
+    "sha256": "17c63976f5a3c136865cbb10fda36631a7a8946f0b90c749d1f60ba640134350"
+  },
+  {
+    "path": "artifacts/phase7b/cs1.psmj.bin",
+    "bytes": 29204994,
+    "sha256": "8f459e1dbff36c0beb25fdceb7009e20c2a9b18183e096c299e70983ac71ba42"
+  },
+  {
+    "path": "artifacts/phase7b/manifest.json",
+    "bytes": 652,
+    "sha256": "ebcd00e19840ff1e761052de3f6303ceb21c922a19d25e906869d7b9aa4a50ae"
+  },
+  {
+    "path": "artifacts/phase7b/payload-manifest.json",
+    "bytes": 565,
+    "sha256": "14fde19650cf82b03e9f0fc651b92b1ee459a602e59d7a190546d82661cc2b23"
+  },
+  {
+    "path": "artifacts/phase7b/route-audit.json",
+    "bytes": 152,
+    "sha256": "4d0632b19e216bf2c02485b0d7f6fc8f41a2a6b3822386064b276540fbd3ad5b"
+  }
+]

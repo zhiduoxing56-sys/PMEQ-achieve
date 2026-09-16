@@ -760,3 +760,55 @@ passed. Ordinary tests, full race (including existing 100k suites, no short
 mode), vet, native-tag vet, gofmt and diff checks passed. Private Routing
 complete=YES. Final code/metadata were migrated byte-identically from the
 isolated validation copy to the specified repository before commit.
+
+## PHASE 7B — final Target index layout
+
+Begin HEAD `3afa024328d60d86396c97ebfa3947e3a8daf3ba`; clean. Old repository
+read-only. One commit: `phase 7: finalize target index layout`. Paper modified=NO.
+
+**TargetBucketBits=16; B=65536; Target B final choice=FROZEN; PSMJ=SEALED.**
+Anchor bits remain independently16. No PHASE5, compaction, routing, KHPRF,
+Option4, logical group, group-point, padding, or Position algebra was changed.
+Production changes are final artifact serialization/validation, a fixed-width
+Target builder wrapper, and a manifest-bound routing entry point. Existing
+experimental constructors remain available for historical tests.
+
+PHASE7 did NOT persist detailed workload rows. This phase restores them by the
+same seeded native full-chain replay, recording actual fresh compaction outputs.
+All 1003 queries/466105 routes and positive/negative/repeat/present-pair aggregates
+match prior evidence; original randomized CompactionIDs/order were not recoverable
+and are not falsely claimed to have been recovered. Plaintext trace is test-only.
+
+Same logical groups/k_T sweep k8/10/12/14/15/16: total padded slots=1317260 at
+every width. k15→k16 reduces query p95/p99 comparisons by50.46%/49.93% and
+slots by50.21%/49.92%, with only449918 extra bytes/party (899836 both) and one
+additional public bucket-ID bit. k14→k16 adds679252 bytes/party. This satisfies
+the user's selection rule. All distributions and independent projection
+assumptions are in results/phase7b-results.md and companion CSVs.
+
+Final Build: logical/crypto11.172237082s; sharing/padding15.42065327s;
+in-memory total26.592892175s. Build sampled heap peak306432264 bytes, process
+build-end RSS high-water323956 KiB, swap0. Each final PSMJ file is29204994 bytes.
+Full materialization/codec roundtrip and all310331 points/480945 real slots/
+836315 dummy slots pass, plus10000 random samples of each category. Maximum
+real group16, existing8-tier ladder unchanged. Party schema allow-list passes.
+Final routing against persisted PSMJ files:1003 queries/466105 routes, errors0.
+
+The existing PHASE5 offline payload API provisions120071 final-width tuples,
+5043028 bytes/party including the new codec header. KJoin definition unchanged;
+all payloads reconstructed correctly in the trusted audit. Its fresh LayoutID
+requires matching PHASE5 DealerLayout/alignment; no old coordinate state is
+relabelled. No persistent Anchor alignment artifact is claimed by this phase.
+Artifacts are local under artifacts/phase7b; large party-share .bin files are
+ignored by git, public manifests/hashes and evidence are committed. Each cloud
+receives only its own files. No plaintext oracle trace enters party state.
+
+PE source migrated=0. Existing standalone validated PE benchmark was rerun 5
+times at 100000 comparisons with0 errors; no query compute latency is extrapolated
+from its single batch size. Communication and real LLAMA Position estimates
+are explicitly projections, not Target integrated measurements.
+
+gofmt, go test ./..., go vet ./..., native-tag vet, git diff --check: PASS.
+Additional race checks for new artifact packages/indexbuild/routing: PASS.
+PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
+Target Private Equality/Target Position/Target Aggregation started=no.

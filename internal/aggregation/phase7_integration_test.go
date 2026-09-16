@@ -4,6 +4,7 @@ package aggregation
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"github.com/gtank/ristretto255"
 	mathrand "math/rand"
 	"os"
@@ -245,6 +246,8 @@ type routingQueryContext struct {
 	u, v     targetrouting.QueryToken
 	text     string
 	positive bool
+	anchor   string
+	tau      int
 }
 
 func beforeTargetRouting(t *testing.T, h *harness, Q string, tau int) any {
@@ -316,7 +319,7 @@ func beforeTargetRouting(t *testing.T, h *harness, Q string, tau int) any {
 		}
 		seen[c.QGram] = true
 	}
-	return routingQueryContext{u, v, selected.Name, positive}
+	return routingQueryContext{u, v, selected.Name, positive, Q, tau}
 }
 func afterTargetRouting(t *testing.T, h *harness, a, b CompactedCandidates, ctx any) {
 	if ctx == nil {
@@ -326,6 +329,17 @@ func afterTargetRouting(t *testing.T, h *harness, a, b CompactedCandidates, ctx 
 	c := ctx.(routingQueryContext)
 	left, right := routePair(t, x, a, b, c.u, c.v)
 	words := anchorfilter.QueryChunks(c.text)
+	if path := os.Getenv("PMEQ_ROUTING_WORKLOAD"); path != "" {
+		joins := make([]uint64, a.K)
+		for i := range joins {
+			joins[i] = uint64(a.RecordIDShare[i].Value() + b.RecordIDShare[i].Value())
+		}
+		record := map[string]any{"Query": x.queries - 1, "Anchor": c.anchor, "Tau": c.tau, "Target": c.text, "Positive": c.positive, "CompactionID": a.CompactionID, "Joins": joins, "Words": words}
+		f, e := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		must(t, e)
+		must(t, json.NewEncoder(f).Encode(record))
+		must(t, f.Close())
+	}
 	if left.CompactionID != a.CompactionID || right.CompactionID != a.CompactionID || len(left.Routes) != a.K*len(words) {
 		t.Fatal("routing association")
 	}

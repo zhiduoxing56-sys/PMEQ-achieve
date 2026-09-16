@@ -1,0 +1,46 @@
+{
+  "Version": 1,
+  "IndexID": [
+    174,
+    252,
+    253,
+    254,
+    75,
+    51,
+    255,
+    162,
+    58,
+    81,
+    235,
+    247,
+    199,
+    71,
+    34,
+    215
+  ],
+  "Q": 4,
+  "AnchorBucketBits": 16,
+  "TargetBucketBits": 16,
+  "Tiers": [
+    4,
+    16,
+    64,
+    256,
+    1024,
+    4096,
+    8192,
+    16384
+  ],
+  "LogicalGroups": 310331,
+  "RealPostings": 480945,
+  "PaddedSlots": 1317260,
+  "NonemptyBuckets": 64902,
+  "PartyBytes": [
+    29204994,
+    29204994
+  ],
+  "PartySHA256": [
+    "c5efe2eb81c06a81724c0ef2a5ff3855bc02d9cc2d39a11e6d481c848de0ec12",
+    "8f459e1dbff36c0beb25fdceb7009e20c2a9b18183e096c299e70983ac71ba42"
+  ]
+}

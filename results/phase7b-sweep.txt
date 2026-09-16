@@ -1,0 +1,10 @@
+=== RUN   TestPhase7BSweep
+    phase7b_sweep_test.go:103: bits=8 nonempty=256 slots=1317260 bytes/party=28299950
+    phase7b_sweep_test.go:103: bits=10 nonempty=1024 slots=1317260 bytes/party=28310702
+    phase7b_sweep_test.go:103: bits=12 nonempty=4096 slots=1317260 bytes/party=28353710
+    phase7b_sweep_test.go:103: bits=14 nonempty=16384 slots=1317260 bytes/party=28525742
+    phase7b_sweep_test.go:103: bits=15 nonempty=32765 slots=1317260 bytes/party=28755076
+    phase7b_sweep_test.go:103: bits=16 nonempty=64902 slots=1317260 bytes/party=29204994
+--- PASS: TestPhase7BSweep (13.48s)
+PASS
+ok  	pmeq/internal/indexbuild	13.488s

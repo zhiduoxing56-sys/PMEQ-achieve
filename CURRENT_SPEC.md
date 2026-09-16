@@ -208,8 +208,8 @@ which holds because Ristretto255 canonical encoding is injective on the group.
   The canonical generator is deliberately not used.
 - Bucket component: `HMAC-SHA256(k_T, Frame(domain, ...))`, first `k` bits
   MSB-first, combined by XOR in `F_2^k`. `B = 2^k`; no modulo reduction.
-  The current production width is not fixed by PHASE 3B (`B RE-EVALUATION
-  OPEN`); the primitive only requires a power of two.
+  PHASE 3B left the width open; PHASE 7B freezes TargetBucketBits=16
+  independently of AnchorBucketBits=16. The primitive remains parameterized.
 
 ### Base outsourced index schema (PHASE 3C1; padding frozen in PHASE 3C3)
 
@@ -535,9 +535,9 @@ PHASE 7 below implements private routing. Target filtering remains not started. 
 
 PHASE5=SEALED; Candidate Compaction=COMPLETE. TargetBucketBits is an explicit,
 independent parameter bound by targetrouting.Manifest/IndexID and builder
-PublicMetadata. Target B final choice=OPEN. The last full materialization was
-Target bits=8 (B=256); this integration uses it with Anchor bits=16. Later
-Target bits=16 statistics were layout analysis, not a production-width freeze.
+PublicMetadata. PHASE7 used the then-last validated Target bits=8 (B=256),
+with Anchor bits=16. PHASE7B subsequently materializes and freezes Target bits=16;
+see the final artifact binding below. Historical PHASE7 evidence remains unchanged.
 
 The PHASE6 handoff now carries TargetBucketBits. Its explicit-width offline
 compaction constructor masks within the selected XOR domain; its legacy
@@ -565,3 +565,34 @@ dimensions. Full Y remains secret-shared. No H_route, Target DPF/CW token,
 Target Private Equality, Target Position or Target Aggregation starts here.
 See results/phase7-audit.md and results/phase7-results.md for proofs, exact
 codecs, real-data checks, worker/grid measurements and memory. Paper modified=NO.
+
+
+## PHASE 7B — final Target artifact
+
+**TargetBucketBits=16; B=65536; Target B final choice=FROZEN; PSMJ=SEALED.**
+AnchorBucketBits remains independently fixed at16. The six-width comparison
+uses the actual joint 1003-query/466105-route workload, restored by a fresh
+native replay because PHASE7 saved only aggregates. See results/phase7b-results.md
+for full provenance, quantiles, storage, leakage, and projection limitations.
+
+`indexbuild.BuildFinalTarget` exposes no bucket-width argument. Its output is
+serialized as one v1 PSMJ file per cloud, bound to a trusted TargetManifest:
+IndexID, version1, Q4, AnchorBucketBits16, TargetBucketBits16, tier ladder
+4/16/64/256/1024/4096/8192/16384, dimensions, byte lengths and SHA256 digests.
+The final local artifact is artifacts/phase7b; large share files are git-ignored,
+while the public manifests/hashes and correctness evidence are committed.
+Only the matching party file is distributed to each cloud.
+
+`targetrouting.LoadIndex` validates this manifest and returns BoundIndex. Its
+Prepare method uses that bound width and rejects mismatched token/candidate
+shares. The generic lower-level constructors remain experimental primitives;
+production callers use the final artifact entry points. No implicit tie between
+Anchor and Target widths is introduced merely because both are now16.
+
+Global payload material has the same width, with IndexID/LayoutID/party binding.
+The newly provisioned offline LayoutID requires its corresponding existing
+PHASE5 DealerLayout/alignment; it cannot be relabelled as an old Keep layout.
+No old persistent alignment existed or was replaced in this phase. KJoin,
+point shares, logical grouping, tiers, all online algebra and Position semantics
+are unchanged. PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
+Target PE, Target Position and Target Aggregation are not started. Paper modified=NO.

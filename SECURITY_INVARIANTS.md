@@ -280,8 +280,8 @@ Query-time DO/raw DB=no; KHPRF/Target filtering started=no; paper modified=no.
 
 PHASE5=SEALED and Candidate Compaction=COMPLETE. Width is explicit metadata:
 Target Manifest/IndexID, PHASE6 handoff and QueryToken must agree, independently
-of AnchorBucketBits. Default Target B is not frozen; the full-data integration
-uses last validated Target bits=8. BucketDomain is a checked scalar width type,
+of AnchorBucketBits. PHASE7 originally used then-last-validated bits=8; PHASE7B
+freezes Target bits=16 with a full materialized artifact. BucketDomain is a checked scalar width type,
 not a composite share; existing no-struct/single-share gates remain intact.
 Compaction masks must respect the chosen width; no post-hoc truncation of an
 existing differently derived bucket component is allowed.
@@ -309,3 +309,32 @@ is bounded to 1/4/8/16 local arithmetic workers with disjoint output ranges;
 Y never becomes a server-server message. Query User is offline after initial
 token, DO remains offline, and no raw DB access exists in cloud methods.
 Target Private Equality/Position/Aggregation remain unstarted. Paper modified=NO.
+
+
+## PHASE7B final artifact invariants
+
+- TargetBucketBits=16 is independent of AnchorBucketBits=16. Final manifest
+  loading checks width, Q4, IndexID/version, tier ladder and dimensions; final
+  production constructors expose no alternative width parameter.
+- Manifest provenance is trusted-owner provisioning. SHA256 file binding is
+  integrity checking, not a signature or malicious-party proof.
+- A cloud receives only its own artifact. PSMJ v1 serializes local point/ID/
+  position/validity shares and public bucket/PadWidth metadata. No plaintext
+  joinID/qgram/full T/peer share is present. Codec and schema allow-list pass.
+- Payload files carry IndexID, LayoutID, width and party. A fresh offline
+  LayoutID is not compatible with old Keep/alignment state: provision the
+  matching existing DealerLayout/alignment. No post-hoc truncation/relabeling.
+- k-bit bucket access reveals k bits of keyed bucket identity; the sweep's
+  k8/10/12/14/15/16 values give progressively finer public access patterns.
+  Final routing still leaks K, target occurrence count, accessed beta and
+  public dimensions; no secrecy of these access relations is claimed.
+- Repeated bucket reads may be cached. Distinct candidate/occurrence inputs
+  still require distinct equality comparisons, even when beta is identical.
+- Saved real-workload traces contain plaintext oracle identities and queries;
+  they are test-only evidence, NEVER party artifacts. The restored trace is a
+  fresh native PHASE7 replay, not the unavailable original randomized transcript.
+- All-point/all-slot reconstruction and 466105 final route checks run only in
+  the trusted test coordinator. Neither production party combines T or Y.
+- PHASE5=SEALED; Compaction=COMPLETE; Private Routing=COMPLETE. PSMJ=SEALED and
+  Target B final choice=FROZEN after full materialization/route/schema gates.
+  PE, Target Position, Target Aggregation remain unimplemented. Paper unchanged.

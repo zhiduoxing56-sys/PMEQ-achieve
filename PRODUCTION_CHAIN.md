@@ -151,7 +151,27 @@ Query User initial target token (fresh point/XOR shares, h and position)
 once at top level and c scoped to CompactionID.
 
 The Target manifest binds its own bit width, independent of Anchor width.
-Real PSMJ uses the last full validated setting, bits=8; Target B remains OPEN.
+PHASE7 used then-last-validated bits=8. PHASE7B now freezes and fully materializes
+Target bits=16, independently of Anchor bits=16.
 No full Y combine, H_route, Target DPF/CW token, equality or target filtering.
 Query User is offline after initial token; query-time DO/raw DB=no. See
 results/phase7-audit.md and results/phase7-results.md. Paper modified=NO.
+
+
+PHASE7B final Target outsourcing boundary:
+BuildFinalTarget (trusted DO, fixed final width)
+-> cs0.psmj.bin / cs1.psmj.bin + public TargetManifest v1
+-> targetrouting.LoadIndex -> BoundIndex.Prepare -> unchanged private routing.
+
+TargetBucketBits=16; Target B final choice=FROZEN; PSMJ=SEALED.
+Artifacts: artifacts/phase7b (one share file per party, never both to a cloud).
+The Target manifest records Q4, all8 frozen tiers, IndexID/version, dimensions
+and file SHA256/lengths. Width validation rejects mismatched tokens/payloads.
+Corresponding 120071-record global payload files are width/index/layout-bound;
+new offline LayoutID material must use its matching PHASE5 alignment, not old
+Keep coordinates. No persistent Anchor alignment or Candidate Discovery runner
+is added. All plaintext replay traces and reconstruction remain test-only.
+See results/phase7b-results.md. PE/Position costs there are projections only;
+none of Target PE, Target Position or Target Aggregation is implemented.
+PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
+Paper modified=NO.

@@ -1,0 +1,10 @@
+=== RUN   TestPhase7BWorkloadSweep
+    sweep_test.go:94: bits=8 queries=1003 routes=466105 comparisons=565058267 touched=2398498400
+    sweep_test.go:94: bits=10 queries=1003 routes=466105 comparisons=141268286 touched=599611016
+    sweep_test.go:94: bits=12 queries=1003 routes=466105 comparisons=35310832 touched=149892892
+    sweep_test.go:94: bits=14 queries=1003 routes=466105 comparisons=8831239 touched=37503460
+    sweep_test.go:94: bits=15 queries=1003 routes=466105 comparisons=4418057 touched=18752708
+    sweep_test.go:94: bits=16 queries=1003 routes=466105 comparisons=2209949 touched=9380900
+--- PASS: TestPhase7BWorkloadSweep (3.20s)
+PASS
+ok  	pmeq/internal/targetartifact	3.207s
