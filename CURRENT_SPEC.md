@@ -333,9 +333,40 @@ C = sum_h y_h
 Keep_j = 1[C_j >= lambda]
 ```
 
-**SPEC FROZEN. IMPLEMENTATION NOT PRODUCTION-SECURE.**
+**PARTIAL REUSE approved; PHASE 5B1 implements the hidden posting-to-F boundary.**
 
-Old Z128 aggregation rows/wrapper must not be migrated into production because party-local rows expose `phi_h(s)` and `t_h`. PHASE 5 must solve the posting-to-record correspondence hiding problem again.
+Old Z128 aggregation rows/wrapper must not be migrated because party-local rows expose `phi_h(s)` and `t_h`. The new boundary reuses the existing B2A and scalar-vector Beaver mathematics with independent coefficient shares.
+
+### PHASE 5B0/5B1 incidence interface
+
+For an accessed bucket, T is the sum of group PadWidths; M is its number of
+distinct real records (DO-only); D is zero for M=0, otherwise the smallest
+power of two >= M. D is a public record-capacity class, not a group PadWidth.
+The DO randomly injects records into [0,D). A has D rows and T columns.
+Real columns are unit incidence vectors; dummy columns and unused rows are
+zero. Each coefficient, including zero, is freshly shared in Z/128Z.
+Each cloud holds only its own column-major coefficient shares and public D/T.
+
+`internal/incidence` accepts PHASE4 `share.BitShare` inputs. One batched B2A
+layer computes x=x0+x1-2*x0*x1 using Z128 Beaver. A scalar-vector Beaver triple
+per posting then computes F[j]=sum_s A[j,s]*x_s modulo 128. Accumulation is
+chunked, with no intermediate product matrix. The public chunk limit is
+configurable; default 64 is an experimental local-compute choice.
+Exact integer-count semantics require F<128; current full-data k=14 buckets
+have at most 3 occurrences of one record. Future SCMP also needs its signed
+range checks. This stage returns F, not [F>0].
+
+Static incidence shares are reusable. B2A/vector triples are one-time offline
+material. Online messages are only masked d/e differences. BigState posting
+conversion/evaluation is unnecessary for this direct A*x boundary and is not
+migrated. No F->z, permutation, C, Keep, compaction or routing is implemented.
+
+Next-stage interface remains F -> z -> global alignment -> Keep[gamma]. The
+DO independently creates fresh per-record ID/KJoin/JoinBucket shares at the
+same hidden gamma/Global LayoutID. Payload must not be folded from posting
+shares. Existing posting KappaJoinShare/BucketJoinShare are POTENTIALLY
+REDUNDANT AFTER PHASE5 and remain unchanged. Payload implementation, final B,
+and short-string completeness remain OPEN; the paper is unchanged.
 
 ## 7. Phase gates
 
@@ -349,7 +380,8 @@ Old Z128 aggregation rows/wrapper must not be migrated into production because p
   no IndexOutsource, no private equality, no Beaver, no B2A, no runner.
 - **PHASE 4:** Anchor filtering foundation implemented through F2 posting-hit
   shares; native LLAMA remains an external validated component.
-- **PHASE 5:** solve hiding of `phi_h` in Anchor Aggregation again.
+- **PHASE 5:** hidden incidence core implemented through Z128 local-record F;
+  subsequent deduplication, global alignment and Keep remain unimplemented.
 - **PHASE 6:** Candidate Compaction.
 - **PHASE 7:** KHPRF Routing.
 - **PHASE 8:** Target Private Equality.

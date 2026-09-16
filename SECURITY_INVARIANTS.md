@@ -169,3 +169,23 @@ selection must each state explicitly that they rerandomize.
 structs, so that no share type can grow a second party's state. The package
 `internal/targetcrypto` declares no production struct type and holds no
 third-party dependency beyond the Ristretto255 implementation.
+
+**PHASE 5B1 hidden incidence.** `PartyMatrix` contains D, T and one cloud's
+coefficient shares only. Posting IDs and random local coordinates exist only
+in DO `Posting`/`DealerLayout`; online Aggregator/PartyTriples/B2A cannot reach
+them. Every real, dummy, and unused coefficient receives independent uniform
+mod-128 masking, so either party's matrix distribution is independent of the
+mapping, conditioned on public D/T. D reveals the approved record-capacity
+size class, separately from the posting PadWidth leakage.
+
+Scalar-vector Beaver shares one fresh scalar mask across the coordinates of
+ONE posting, with independent vector masks; it does not reuse masks across
+postings or queries. Only d=x-a and e=A-b are opened. Party 0 adds d*e.
+Preprocessing objects are consumed once. The static A shares may be reused
+with fresh triples. Structural/distribution regressions exercise the old
+row-equality/nonzero-column attack but are not a cryptographic proof.
+
+No sparse plaintext index, record ordinal, phi/rho, peer coefficient shares,
+or full dealer state may enter a cloud object. F reconstruction is test-only.
+Future global payload is shared independently per record and bound to the
+same Global LayoutID as Keep; posting payload must not be folded.

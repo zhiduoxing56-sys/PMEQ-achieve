@@ -72,9 +72,19 @@ None of the paths above may re-enter the production graph through a compatibilit
 ## PHASE 4A boundary and open dependencies
 
 IndexOutsource is sealed. Anchor filtering now ends at `x_{h,s}` F2 hit shares.
-B2A, Aggregation, Compaction, online KHPRF routing, Private Equality, Target
-filtering, Candidate ID Generation, and a full Candidate Discovery runner
-remain unimplemented.
+B2A and hidden incidence aggregation through local-record F are now implemented
+by PHASE 5B1. F->z, global alignment, C, Keep, Compaction, online KHPRF routing,
+Private Equality, Target filtering, Candidate ID Generation, and a full
+Candidate Discovery runner remain unimplemented.
+
+PHASE 5B1: F2 posting shares -> batched Z128 B2A -> chunked scalar-vector Beaver
+with secret-shared incidence -> F shares. T is physical bucket slots; D is an
+independent power-of-two record-coordinate capacity. DO-only mapping never
+enters party state. Static A, one-time triples, and masked-opening traffic are
+accounted separately. Benchmarks execute real Beaver algebra in a single
+trusted coordinator with in-memory openings; no network latency is claimed.
+Per-record payload is a later DO-generated Global LayoutID array aligned with
+Keep, never an aggregation of the posting routing fields.
 
 Future Position Filtering is variable-width compatible: it must iterate each
 group and then that group's slots; no `groupIndex * bucket.LPad` interface or

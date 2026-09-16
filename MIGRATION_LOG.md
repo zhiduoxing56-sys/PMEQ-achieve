@@ -359,3 +359,122 @@ lines or old drivers/controllers were copied into this repository. The LLAMA
 algorithm remains external; the old BFV position path is retired. Paper
 modified = no. B final choice, short strings, and PHASE 5 payload alignment
 remain OPEN.
+
+## PHASE 5B1 — hidden incidence aggregation core
+
+Begin HEAD: bd2c89a11bb2369455e3ab96d6e12c65c435333c; status clean.
+Implements only F2 posting hit -> Z/128Z B2A -> local-record F. PARTIAL REUSE
+remains the migration decision. New protocol designed: no. Paper modified: no.
+
+The DO uses independent record capacity D=nextPow2(M), zero for empty M,
+and a crypto/rand random injection. T=sum(group.PadWidth). PartyMatrix holds
+only D/T and column-major coefficient shares. Every zero/nonzero coefficient
+gets fresh sharing. The old public u[phi(s)] adapter is absent. A single
+scalar-vector triple per posting replaces DT scalar-triple objects; chunked
+execution accumulates directly into F. Static A is reusable; triples are not.
+The default public chunk limit is 64, configurable by NewAggregator.
+
+Old algorithms referenced: ring_beaver::b2a_z128_party,
+bucket::aggregate_shared, beaver::mul_shared_scalar_vectors, and
+update::shared_update. Source lines copied from old implementation: 0.
+No old Rust dependency graph, plaintext_u/support_index, leaking u rows,
+party_states_for_postings_with_identity, or full StaticPerm was copied.
+
+Verification: exhaustive Z128 local operations; four Boolean-share cases plus
+100,000 random B2A cases; single-party distribution regression (4096 setups
+per party, all 128 marginal values seen, no readable row-equality/unit-column
+signal); recursive online object-graph check; one-time/chunk/order guards.
+These distribution tests supplement the independent uniform-mask argument;
+they are not claimed as a standalone cryptographic proof.
+
+Full MusicBrainz source is the raw 20260905-002519 area COPY file. q=4,
+code-point offsets, posting tiers unchanged. Uses the existing full-test kB
+bytes 01..20 (hex). No full persistent party index was generated.
+120071 records, 644 short records excluded from normal q-chunk queries,
+119427 normal queries. Real bucket trials use fresh triples and check ALL D
+coordinates, including all-zero, all-real-one, dummy-only, all-one,
+duplicate-only, and random hits:
+
+| bucket selection by T | ID | T | M | D | trials | errors |
+|---|---:|---:|---:|---:|---:|---:|
+| p50 | 3682 | 68 | 32 | 32 | 1000 | 0 |
+| p95 | 260 | 352 | 162 | 256 | 1000 | 0 |
+| p99 | 10425 | 1072 | 672 | 1024 | 1000 | 0 |
+| duplicate | 4844 | 8 | 4 | 4 | 1000 | 0 |
+
+Query scan preserves repeated non-overlapping chunk occurrences. Counts are
+per raw area row, not deduplicated name. Wire below is incidence-only,
+2*sum_h(T_h+D_h*T_h); B2A adds 4*sum_h(T_h).
+
+| metric | p50 | p95 | p99 | max |
+|---|---:|---:|---:|---:|
+| r | 2 | 5 | 6 | 14 |
+| sum D*T | 89088 | 30194432 | 136296960 | 290775040 |
+| incidence wire bytes | 178872 | 60409848 | 272631704 | 581629696 |
+
+Bucket 9963 occurs in 130 queries (0.108853%). Top-ten union is 10009 queries
+(8.380852%). Top-ten IDs/query counts: 9963/130, 7640/878, 3648/167,
+11448/4740, 15173/736, 13007/861, 7596/860, 4578/874, 8820/484, 11503/541.
+Thus expensive buckets are a material workload cost, not merely unreachable
+worst cases. B final choice remains OPEN.
+
+Benchmark: 10 warmup + 50 measured per row, real Go B2A/vector-Beaver algebra
+for BOTH clouds, in-memory batched masked openings. Timings are measured
+online stage sums, excluding triple generation, heap sampling and plaintext
+verification. They are NOT network/two-process E2E latency. Communication is
+exact one-byte-per-Z128 payload accounting, not triple size or measured TCP.
+
+| T percentile | chunk | B2A us p50/p95 | A*x us p50/p95 | x->F us p50/p95 |
+|---|---:|---:|---:|---:|
+| p50 | 32 | 1.389 / 2.799 | 22.688 / 32.964 | 24.001 / 35.763 |
+| p50 | 64 | 1.308 / 2.994 | 23.299 / 48.132 | 24.731 / 50.033 |
+| p50 | 128 | 1.138 / 1.759 | 21.737 / 33.004 | 22.840 / 34.115 |
+| p50 | 256 | 1.118 / 1.684 | 22.115 / 25.820 | 23.215 / 26.913 |
+| p95 | 32 | 3.029 / 8.090 | 595.124 / 740.892 | 598.073 / 743.502 |
+| p95 | 64 | 3.004 / 4.116 | 550.183 / 678.173 | 553.727 / 681.365 |
+| p95 | 128 | 2.974 / 6.047 | 561.376 / 681.379 | 564.644 / 684.564 |
+| p95 | 256 | 2.929 / 5.353 | 546.136 / 650.116 | 548.798 / 652.945 |
+| p99 | 32 | 9.437 / 14.006 | 7204.583 / 9653.708 | 7213.107 / 9664.911 |
+| p99 | 64 | 10.434 / 18.687 | 7258.555 / 7872.485 | 7269.345 / 7881.392 |
+| p99 | 128 | 9.485 / 18.140 | 7216.562 / 8862.300 | 7226.363 / 8872.841 |
+| p99 | 256 | 10.316 / 19.357 | 7539.754 / 9059.496 | 7558.863 / 9068.562 |
+
+Default 64 favors the heavy p99 sample's tail (lowest p95 in both sweeps)
+with bounded working memory; no universal/network optimum is claimed.
+At chunk=64, x->F latency p50/p95/p99 in ms is:
+3682: 0.024731/0.050033/0.096441;
+260: 0.553727/0.681365/0.925913;
+10425: 7.269345/7.881392/7.965211.
+
+Separate accounting, both parties, bytes per invocation:
+
+| bucket | static A | offline B2A+vector triples | online x->F |
+|---|---:|---:|---:|
+| 3682 | 4352 | 9248 | 4760 |
+| 260 | 180224 | 363264 | 182336 |
+| 10425 | 2195456 | 4399488 | 2201888 |
+| 9963 | 270336000 | 540804000 | 270435000 |
+
+Formulas: static=2DT, offline=4DT+8T, online=2DT+6T. Offline bytes describe
+consumed randomness, not simultaneously resident chunk storage. Heap samples
+include trusted raw/logical data and GC retention. At chunk=64 sampled peak
+heaps were 47446480 / 85383952 / 96121864 bytes for p50/p95/p99; increases
+over pre-benchmark heaps were 1104112 / 38863088 / 47577032 bytes.
+
+Hot bucket 9963: T=16500, M=4661, D=8192, P=135168000. Live-storage estimate
+279514752 bytes was below 12 GiB, and ordinary-bucket throughput made one
+invocation reasonable. Actually measured once with chunk=64: B2A 0.158671 ms,
+A*x 919.513481 ms, online sum 919.672152 ms; wall including preprocessing
+1.850909670 s. All-one input checked all coordinates: 0 errors. Sampled heap
+peak 541530664 bytes; whole experiment max RSS 542860 KiB; no swap.
+
+Reproduce: PMEQ_INCIDENCE_EXPERIMENT=1 go test ./internal/indexbuild
+-run '^TestFullIncidenceExperiment$' -count=1 -timeout=20m -v.
+gofmt, go test ./..., go vet ./... and git diff --check pass. No concurrency
+was introduced; race is not a gate and was not rerun.
+
+Deferred, unchanged interface: F -> z -> global alignment -> Keep[gamma] ->
+independently DO-generated per-record Payload[gamma], same Global LayoutID.
+Posting KappaJoinShare/BucketJoinShare remain potentially redundant and are
+not removed. F->z, permutation, C, Keep, compaction, routing and payload
+implementation: no. New cryptographic protocol: no. Paper changed: no.
