@@ -152,6 +152,13 @@ type provenance struct {
 	q    string
 	real bool
 }
+
+var harnessTargetBits = 16
+var realHarnessSetup func(*testing.T, *harness)
+var beforeRoutingQuery func(*testing.T, *harness, string, int) any
+var afterRoutingQuery func(*testing.T, *harness, CompactedCandidates, CompactedCandidates, any)
+var finishRoutingQueries func(*testing.T)
+
 type harness struct {
 	kb                 anchorindex.Key
 	kt                 targetcrypto.MasterKey
@@ -175,7 +182,7 @@ func newHarness(t *testing.T, areas []indexbuild.AreaRecord) *harness {
 	must(t, e)
 	h.kt, e = targetcrypto.NewMasterKey(kt)
 	must(t, e)
-	_, a, b, _, e := indexbuild.Build(areas, nil, h.kb, h.kt, 16, 16)
+	_, a, b, _, e := indexbuild.Build(areas, nil, h.kb, h.kt, 16, harnessTargetBits)
 	must(t, e)
 	for _, v := range a.AnchorBuckets {
 		h.b0[v.BucketID] = v
@@ -203,7 +210,7 @@ func newHarness(t *testing.T, areas []indexbuild.AreaRecord) *harness {
 			}
 		}
 	}
-	h.global, h.payload0, h.payload1, e = GeneratePayload(ids, h.kt, 16)
+	h.global, h.payload0, h.payload1, e = GeneratePayload(ids, h.kt, harnessTargetBits)
 	must(t, e)
 	for id, j := range h.global.gamma {
 		a, b := h.payload0.Slots[j], h.payload1.Slots[j]
@@ -217,7 +224,7 @@ func newHarness(t *testing.T, areas []indexbuild.AreaRecord) *harness {
 		if !bytes.Equal(s[:], k.Bytes()) {
 			t.Fatal("payload kappa")
 		}
-		v, e := targetcrypto.JoinBucketComponent(h.kt, id, 16)
+		v, e := targetcrypto.JoinBucketComponent(h.kt, id, harnessTargetBits)
 		must(t, e)
 		if a.BucketJoinShare.Value()^b.BucketJoinShare.Value() != v {
 			t.Fatal("payload bucket")
@@ -234,6 +241,10 @@ type measurement struct {
 }
 
 func (h *harness) query(t *testing.T, Q string, tau int) measurement {
+	var routingContext any
+	if beforeRoutingQuery != nil {
+		routingContext = beforeRoutingQuery(t, h, Q, tau)
+	}
 	chunks := anchorfilter.QueryChunks(Q)
 	lambda, e := Threshold(len(chunks), tau)
 	must(t, e)
@@ -392,9 +403,14 @@ func (h *harness) query(t *testing.T, Q string, tau int) measurement {
 			t.Fatal("alignment")
 		}
 	}
-	x, y, _, _ := compactRun(t, out0, out1)
+	cp, cq, e := PreprocessCompactionWithBucketBits(h.global.LayoutID, h.global.N, harnessTargetBits)
+	must(t, e)
+	x, y, _, _ := compactPrepared(t, cp, cq, out0, out1)
 	verifyCompaction(t, out0, out1, x, y)
 	m.K = x.K
+	if afterRoutingQuery != nil {
+		afterRoutingQuery(t, h, x, y, routingContext)
+	}
 	var ms runtime.MemStats
 	runtime.ReadMemStats(&ms)
 	m.Peak = ms.HeapAlloc
@@ -418,6 +434,9 @@ func TestReal1000Queries(t *testing.T) {
 	f.Close()
 	must(t, e)
 	h := newHarness(t, areas)
+	if realHarnessSetup != nil {
+		realHarnessSetup(t, h)
+	}
 	type query struct {
 		q string
 		p int
@@ -502,6 +521,9 @@ func TestReal1000Queries(t *testing.T) {
 	}
 	if os.Getenv("PMEQ_AGG_ONLY_BENCH") != "1" {
 		t.Log("1000 random + 3 workload-quantile real queries: zero errors")
+		if finishRoutingQueries != nil {
+			finishRoutingQueries(t)
+		}
 	} else {
 		t.Log("3 workload-quantile real queries: zero errors")
 	}

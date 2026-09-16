@@ -1,0 +1,55 @@
+=== RUN   TestReal1000Queries
+    phase7_integration_test.go:94: TARGET_WORKLOAD raw=67896 short=4047 normal=63849 repeated=34 r min=1 p50=2 p90=4 p95=5 p99=7 max=16
+    phase7_integration_test.go:140: PSMJ materialized target_bits=8 anchor_bits=16 groups=310331 padded=1317260 all_group_checks=0 errors
+    aggregation_test.go:505: real queries 0/1000
+    aggregation_test.go:505: real queries 50/1000
+    aggregation_test.go:505: real queries 100/1000
+    aggregation_test.go:505: real queries 150/1000
+    aggregation_test.go:505: real queries 200/1000
+    aggregation_test.go:505: real queries 250/1000
+    aggregation_test.go:505: real queries 300/1000
+    aggregation_test.go:505: real queries 350/1000
+    aggregation_test.go:505: real queries 400/1000
+    aggregation_test.go:505: real queries 450/1000
+    aggregation_test.go:505: real queries 500/1000
+    aggregation_test.go:505: real queries 550/1000
+    aggregation_test.go:505: real queries 600/1000
+    aggregation_test.go:505: real queries 650/1000
+    aggregation_test.go:505: real queries 700/1000
+    aggregation_test.go:505: real queries 750/1000
+    aggregation_test.go:505: real queries 800/1000
+    aggregation_test.go:505: real queries 850/1000
+    aggregation_test.go:505: real queries 900/1000
+    aggregation_test.go:505: real queries 950/1000
+    aggregation_test.go:511: PHASE6 K n=1000 min=1 p50=5 p90=151 p95=431 p99=2843 max=4780
+    aggregation_test.go:517: COMPONENT pct=0.50 query="Kōzushima" intrinsic=32772 stats={XF:240.658µs Perm:1.694352ms Sum:237.217µs B2AZ:6.597µs FComparisons:160 R:2 T:332 P:35968 K:1 Peak:557123568}
+    aggregation_test.go:517: COMPONENT pct=0.95 query="Negrilla de Palencia" intrinsic=25174016 stats={XF:155.35231ms Perm:4.023177ms Sum:518.642µs B2AZ:68.466µs FComparisons:6560 R:5 T:8700 P:25342848 K:1 Peak:852011128}
+    aggregation_test.go:517: COMPONENT pct=0.99 query="Saint-Pierre-d'Oléron" intrinsic=68255872 stats={XF:436.110549ms Perm:4.796036ms Sum:753.595µs B2AZ:105.612µs FComparisons:9616 R:5 T:9780 P:68338560 K:1 Peak:869484800}
+    aggregation_test.go:523: 1000 random + 3 workload-quantile real queries: zero errors
+    phase7_integration_test.go:379: PRIVATE_ROUTING queries=1003 positive=248 negative=755 repeated=59 pairs=466105 present_groups=2554 errors=0
+--- PASS: TestReal1000Queries (1336.90s)
+PASS
+ok  	pmeq/internal/aggregation	1336.963s
+	Command being timed: "/tmp/go/bin/go test -tags phase6native phase7integration ./internal/aggregation -run ^TestReal1000Queries$ -count=1 -v -timeout=120m"
+	User time (seconds): 1511.61
+	System time (seconds): 384.06
+	Percent of CPU this job got: 145%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 21:45.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1729024
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 57
+	Minor (reclaiming a frame) page faults: 14830243
+	Voluntary context switches: 1558006
+	Involuntary context switches: 10326
+	Swaps: 0
+	File system inputs: 272
+	File system outputs: 22768
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

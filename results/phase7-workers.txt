@@ -1,0 +1,36 @@
+=== RUN   TestRoutingBenchmarks
+    benchmark_test.go:39: MEMORY route_struct=44 state_header=152 max_pairs=76480 state_both_bytes=6807280 below_12GiB=true
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=431 r=5 workers=1 warmup=2 measured=10 user=0.427442/0.725996 cs0=21.399671/30.448356 cs1=20.595006/26.740766 opening=0.032567/0.053174 p50/p95_ms user_each=252 server_total=8784 state_both=196920 heap_increment=392040
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=431 r=5 workers=4 warmup=2 measured=10 user=0.516656/0.559773 cs0=7.513979/9.636764 cs1=8.115238/15.828682 opening=0.036256/0.063580 p50/p95_ms user_each=252 server_total=8784 state_both=196920 heap_increment=398760
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=431 r=5 workers=8 warmup=2 measured=10 user=0.450841/0.507540 cs0=5.912605/7.946728 cs1=5.886484/6.942371 opening=0.031501/0.056944 p50/p95_ms user_each=252 server_total=8784 state_both=196920 heap_increment=409864
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=431 r=5 workers=16 warmup=2 measured=10 user=0.512734/0.749341 cs0=5.427911/5.924982 cs1=5.285463/6.076874 opening=0.035593/0.134033 p50/p95_ms user_each=252 server_total=8784 state_both=196920 heap_increment=417624
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=2843 r=5 workers=1 warmup=2 measured=10 user=0.442856/0.805526 cs0=126.623935/143.673503 cs1=125.447691/138.512503 opening=0.178392/0.209533 p50/p95_ms user_each=252 server_total=57024 state_both=1296792 heap_increment=2456184
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=2843 r=5 workers=4 warmup=2 measured=10 user=0.464597/0.533047 cs0=41.595878/43.438266 cs1=42.083773/57.264321 opening=0.204334/0.245629 p50/p95_ms user_each=252 server_total=57024 state_both=1296792 heap_increment=2460904
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=2843 r=5 workers=8 warmup=2 measured=10 user=0.495292/0.591140 cs0=31.610225/38.859947 cs1=32.009902/37.118924 opening=0.245305/0.518254 p50/p95_ms user_each=252 server_total=57024 state_both=1296792 heap_increment=2464376
+    benchmark_test.go:102: ROUTING_BENCH mode=sweep K=2843 r=5 workers=16 warmup=2 measured=10 user=0.536701/0.806243 cs0=28.831156/30.769603 cs1=28.748277/32.029945 opening=0.550740/1.292941 p50/p95_ms user_each=252 server_total=57024 state_both=1296792 heap_increment=2465304
+--- PASS: TestRoutingBenchmarks (6.82s)
+PASS
+ok  	pmeq/internal/targetrouting	6.822s
+	Command being timed: "/tmp/go/bin/go test ./internal/targetrouting -run ^TestRoutingBenchmarks$ -count=1 -v"
+	User time (seconds): 22.61
+	System time (seconds): 0.49
+	Percent of CPU this job got: 369%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.25
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 92160
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 38
+	Minor (reclaiming a frame) page faults: 32127
+	Voluntary context switches: 9508
+	Involuntary context switches: 66
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 6664
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

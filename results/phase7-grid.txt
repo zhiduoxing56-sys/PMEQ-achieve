@@ -1,0 +1,61 @@
+=== RUN   TestRoutingBenchmarks
+    benchmark_test.go:39: MEMORY route_struct=44 state_header=152 max_pairs=76480 state_both_bytes=6807280 below_12GiB=true
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=1 r=1 workers=16 warmup=2 measured=10 user=0.129478/0.170625 cs0=0.104473/0.130908 cs1=0.086775/0.092241 opening=0.001190/0.001439 p50/p95_ms user_each=84 server_total=168 state_both=424 heap_increment=6080
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=1 r=2 workers=16 warmup=2 measured=10 user=0.225999/0.249935 cs0=0.137272/0.184716 cs1=0.132229/0.191554 opening=0.001463/0.002044 p50/p95_ms user_each=126 server_total=172 state_both=528 heap_increment=9408
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=1 r=5 workers=16 warmup=2 measured=10 user=0.516942/0.626519 cs0=0.150197/0.214456 cs1=0.182464/0.251779 opening=0.001531/0.003605 p50/p95_ms user_each=252 server_total=184 state_both=840 heap_increment=19448
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=1 r=7 workers=16 warmup=2 measured=10 user=0.792961/0.869002 cs0=0.191168/0.259440 cs1=0.214029/0.319094 opening=0.001663/0.002695 p50/p95_ms user_each=336 server_total=192 state_both=1048 heap_increment=24352
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=1 r=16 workers=16 warmup=2 measured=10 user=1.621892/1.990326 cs0=0.317128/0.575103 cs1=0.320172/0.390067 opening=0.002030/0.002362 p50/p95_ms user_each=714 server_total=228 state_both=1984 heap_increment=58080
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=5 r=1 workers=16 warmup=2 measured=10 user=0.118549/0.161982 cs0=0.220518/0.276209 cs1=0.211804/0.437210 opening=0.001645/0.001959 p50/p95_ms user_each=84 server_total=184 state_both=840 heap_increment=9072
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=5 r=2 workers=16 warmup=2 measured=10 user=0.219931/0.242230 cs0=0.256902/0.394758 cs1=0.230666/0.473042 opening=0.001869/0.003134 p50/p95_ms user_each=126 server_total=204 state_both=1296 heap_increment=17984
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=5 r=5 workers=16 warmup=2 measured=10 user=0.531963/0.631793 cs0=0.310520/0.386379 cs1=0.330652/0.431724 opening=0.002130/0.002550 p50/p95_ms user_each=252 server_total=264 state_both=2664 heap_increment=32024
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=5 r=7 workers=16 warmup=2 measured=10 user=0.676583/0.860530 cs0=0.331415/0.461235 cs1=0.365372/0.489008 opening=0.002138/0.005749 p50/p95_ms user_each=336 server_total=304 state_both=3576 heap_increment=34800
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=5 r=16 workers=16 warmup=2 measured=10 user=1.478321/1.649031 cs0=0.510904/0.637665 cs1=0.535185/0.750976 opening=0.002989/0.003688 p50/p95_ms user_each=714 server_total=484 state_both=7680 heap_increment=67504
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=64 r=1 workers=16 warmup=2 measured=10 user=0.123268/0.131167 cs0=1.386312/1.592095 cs1=1.200439/1.754130 opening=0.002976/0.028317 p50/p95_ms user_each=84 server_total=420 state_both=6976 heap_increment=50880
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=64 r=2 workers=16 warmup=2 measured=10 user=0.219739/0.367953 cs0=1.381581/1.782741 cs1=1.217902/2.093251 opening=0.004048/0.007190 p50/p95_ms user_each=126 server_total=676 state_both=12624 heap_increment=61696
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=64 r=5 workers=16 warmup=2 measured=10 user=0.524096/0.694361 cs0=1.854476/4.613345 cs1=1.992911/7.148398 opening=0.007480/0.018433 p50/p95_ms user_each=252 server_total=1444 state_both=29568 heap_increment=85448
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=64 r=7 workers=16 warmup=2 measured=10 user=0.734301/0.896359 cs0=1.909810/2.406492 cs1=1.674147/2.861248 opening=0.009399/0.018576 p50/p95_ms user_each=336 server_total=1956 state_both=40864 heap_increment=96000
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=64 r=16 workers=16 warmup=2 measured=10 user=1.502402/1.780049 cs0=2.582492/3.390807 cs1=2.613124/3.468379 opening=0.022969/0.034969 p50/p95_ms user_each=714 server_total=4260 state_both=91696 heap_increment=189552
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=431 r=1 workers=16 warmup=2 measured=10 user=0.145902/0.226282 cs0=5.278147/7.441505 cs1=5.337638/20.641847 opening=0.016514/0.062905 p50/p95_ms user_each=84 server_total=1888 state_both=45144 heap_increment=215816
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=431 r=2 workers=16 warmup=2 measured=10 user=0.249331/0.282761 cs0=5.605405/6.386889 cs1=5.395623/6.142326 opening=0.021499/0.039938 p50/p95_ms user_each=126 server_total=3612 state_both=83088 heap_increment=272912
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=431 r=7 workers=16 warmup=2 measured=10 user=0.819181/1.432026 cs0=7.215727/9.102535 cs1=7.040778/9.099480 opening=0.058751/0.082053 p50/p95_ms user_each=336 server_total=12232 state_both=272808 heap_increment=500480
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=431 r=16 workers=16 warmup=2 measured=10 user=1.832410/2.029032 cs0=9.510909/11.898583 cs1=10.129248/13.147331 opening=0.115933/0.367335 p50/p95_ms user_each=714 server_total=27748 state_both=614304 heap_increment=915888
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=512 r=1 workers=16 warmup=2 measured=10 user=0.115205/0.145949 cs0=4.692489/5.586155 cs1=4.626051/5.843942 opening=0.010186/0.020604 p50/p95_ms user_each=84 server_total=2212 state_both=53568 heap_increment=248560
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=512 r=2 workers=16 warmup=2 measured=10 user=0.248328/0.280948 cs0=5.740933/6.293503 cs1=5.770605/6.528286 opening=0.033593/0.042055 p50/p95_ms user_each=126 server_total=4260 state_both=98640 heap_increment=313648
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=512 r=5 workers=16 warmup=2 measured=10 user=0.556144/0.622233 cs0=7.005610/8.174299 cs1=6.876050/7.384649 opening=0.042795/0.056808 p50/p95_ms user_each=252 server_total=10404 state_both=233856 heap_increment=468968
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=512 r=7 workers=16 warmup=2 measured=10 user=0.733597/0.940017 cs0=7.860064/8.189907 cs1=7.784627/8.526919 opening=0.062443/0.080806 p50/p95_ms user_each=336 server_total=14500 state_both=324000 heap_increment=590864
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=512 r=16 workers=16 warmup=2 measured=10 user=1.676867/1.984750 cs0=11.090253/13.688635 cs1=11.585199/13.083168 opening=0.149426/0.275262 p50/p95_ms user_each=714 server_total=32932 state_both=729648 heap_increment=1067936
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=2843 r=1 workers=16 warmup=2 measured=10 user=0.124693/0.207712 cs0=22.620763/25.415523 cs1=21.707151/24.188375 opening=0.050380/0.084539 p50/p95_ms user_each=84 server_total=11536 state_both=295992 heap_increment=1318176
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=2843 r=2 workers=16 warmup=2 measured=10 user=0.239265/0.455553 cs0=23.948985/32.952316 cs1=23.652811/25.779623 opening=0.107302/0.118776 p50/p95_ms user_each=126 server_total=22908 state_both=546192 heap_increment=1610872
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=2843 r=7 workers=16 warmup=2 measured=10 user=0.742163/1.081817 cs0=33.181891/36.566211 cs1=34.041063/37.208123 opening=0.338564/0.494835 p50/p95_ms user_each=336 server_total=79768 state_both=1797192 heap_increment=2545184
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=2843 r=16 workers=16 warmup=2 measured=10 user=1.658462/2.109296 cs0=51.427370/58.602925 cs1=50.434786/60.630492 opening=0.804147/1.360172 p50/p95_ms user_each=714 server_total=182116 state_both=4048992 heap_increment=5632744
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=4780 r=1 workers=16 warmup=2 measured=10 user=0.143660/0.187449 cs0=36.367297/47.134085 cs1=38.532396/43.814176 opening=0.089988/0.103739 p50/p95_ms user_each=84 server_total=19284 state_both=497440 heap_increment=1378104
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=4780 r=2 workers=16 warmup=2 measured=10 user=0.262165/0.393514 cs0=42.525046/56.518983 cs1=43.567510/61.694813 opening=0.189970/0.501366 p50/p95_ms user_each=126 server_total=38404 state_both=918096 heap_increment=1868720
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=4780 r=5 workers=16 warmup=2 measured=10 user=0.562844/0.848974 cs0=48.946628/51.940832 cs1=49.839160/54.248105 opening=0.440831/0.534066 p50/p95_ms user_each=252 server_total=95764 state_both=2180064 heap_increment=3302112
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=4780 r=7 workers=16 warmup=2 measured=10 user=0.736185/1.120630 cs0=54.978646/64.586864 cs1=53.242998/59.539987 opening=0.558333/0.763372 p50/p95_ms user_each=336 server_total=134004 state_both=3021376 heap_increment=5096384
+    benchmark_test.go:105: ROUTING_BENCH mode=grid K=4780 r=16 workers=16 warmup=2 measured=10 user=1.646532/2.571375 cs0=80.306217/96.819621 cs1=82.084330/85.272145 opening=1.419385/3.594950 p50/p95_ms user_each=714 server_total=306084 state_both=6807280 heap_increment=8571968
+--- PASS: TestRoutingBenchmarks (12.40s)
+PASS
+ok  	pmeq/internal/targetrouting	12.404s
+	Command being timed: "/tmp/go/bin/go test ./internal/targetrouting -run ^TestRoutingBenchmarks$ -count=1 -v"
+	User time (seconds): 122.78
+	System time (seconds): 2.03
+	Percent of CPU this job got: 972%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:12.83
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 91904
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 36
+	Minor (reclaiming a frame) page faults: 112856
+	Voluntary context switches: 43714
+	Involuntary context switches: 442
+	Swaps: 0
+	File system inputs: 16
+	File system outputs: 7976
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

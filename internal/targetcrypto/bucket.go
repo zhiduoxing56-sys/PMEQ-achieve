@@ -118,3 +118,37 @@ func splitBucketComponentWithReader(random io.Reader, beta BucketComponent, k in
 	value := uint16(beta) & mask
 	return BucketShare(left), BucketShare((value ^ left) & mask), nil
 }
+
+// BucketDomain binds local XOR operations to the manifest's explicit width.
+// It does not infer width from Anchor parameters or silently truncate a share.
+type BucketDomain uint8
+
+func NewBucketDomain(bits int) (BucketDomain, error) {
+	if e := checkBucketBits(bits); e != nil {
+		return BucketDomain(0), e
+	}
+	return BucketDomain(bits), nil
+}
+func (d BucketDomain) Bits() int { return int(d) }
+func (d BucketDomain) Validate(s BucketShare) error {
+	if e := checkBucketBits(int(d)); e != nil {
+		return e
+	}
+	if uint32(s) >= uint32(1)<<uint8(d) {
+		return ErrShareEncoding
+	}
+	return nil
+}
+func (d BucketDomain) XOR(a, b BucketShare) (BucketShare, error) {
+	if e := d.Validate(a); e != nil {
+		return 0, e
+	}
+	if e := d.Validate(b); e != nil {
+		return 0, e
+	}
+	return a ^ b, nil
+}
+func (d BucketDomain) Open(a, b BucketShare) (BucketComponent, error) {
+	v, e := d.XOR(a, b)
+	return v.Value(), e
+}

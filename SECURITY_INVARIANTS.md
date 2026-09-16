@@ -274,3 +274,38 @@ shares. Cryptographic randomness and offline material must never be reused.
 See results/phase6-audit.md for equations and the simulation argument. No new
 malicious-security guarantee, persistent transport or storage format is claimed.
 Query-time DO/raw DB=no; KHPRF/Target filtering started=no; paper modified=no.
+
+
+## PHASE 7 private Target routing
+
+PHASE5=SEALED and Candidate Compaction=COMPLETE. Width is explicit metadata:
+Target Manifest/IndexID, PHASE6 handoff and QueryToken must agree, independently
+of AnchorBucketBits. Default Target B is not frozen; the full-data integration
+uses last validated Target bits=8. BucketDomain is a checked scalar width type,
+not a composite share; existing no-struct/single-share gates remain intact.
+Compaction masks must respect the chosen width; no post-hoc truncation of an
+existing differently derived bucket component is allowed.
+
+Only Query User code takes k_T/Q_target and calls KWord/FullEval/SplitPoint.
+Cloud entry points take one candidate share set and one word-token share set.
+They cannot receive a peer point: the sole server message has only combined
+bucket shares. Y_u=(kappa_J)_u*P+W_u stays local. Full Y, IDs, gamma, component
+scalars and individual bucket components are never opened in production.
+Only trusted test oracles reconstruct Y/T for correctness; no Target Equality
+code or point-difference equality input is produced.
+
+Leakage is K, r_target, beta[c,h], and public dimensions. Simulation is relative
+to these public values and the existing semi-honest non-collusion assumptions;
+it does not deny XOR relations or linkage implied by disclosed bucket patterns.
+Fresh word point/XOR shares hide repeated text at the share level. Candidate
+index c has meaning only within fresh CompactionID. Top-level ID shares retain
+association without per-occurrence duplication or plaintext recovery.
+
+Message codecs validate manifest/index, layout, CompactionID, QueryID, party,
+K/r, occurrence positions, lengths, point encodings and bucket-width bounds.
+Pending.Finish is one-use and rejects malformed peer openings before committing
+public buckets. K*r=0 sends no opening and creates no dummy route. Parallelism
+is bounded to 1/4/8/16 local arithmetic workers with disjoint output ranges;
+Y never becomes a server-server message. Query User is offline after initial
+token, DO remains offline, and no raw DB access exists in cloud methods.
+Target Private Equality/Position/Aggregation remain unstarted. Paper modified=NO.

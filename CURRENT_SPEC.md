@@ -489,7 +489,7 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
   shares; native LLAMA remains an external validated component.
 - **PHASE 5:** SEALED; hidden incidence, deduplication, global alignment and Keep implemented.
 - **PHASE 6:** exact-K Candidate Compaction implemented; output remains secret payload shares.
-- **PHASE 7:** KHPRF Routing.
+- **PHASE 7:** private K*r Target routing implemented; public buckets, local Y shares.
 - **PHASE 8:** Target Private Equality.
 - **PHASE 9:** Target Position + Target Aggregation.
 - **PHASE 10:** Candidate ID Generation.
@@ -528,4 +528,40 @@ byte/memory accounting and reproduction; results/phase6-results.md for measured
 validation. Native experiments use an opt-in external LLAMA test adapter; the
 sealed production PHASE5 implementation is unchanged. No transport/persistent
 pool/complete Candidate Discovery runner is claimed by this component migration.
-KHPRF and Target filtering remain not started. Paper modified=NO.
+PHASE 7 below implements private routing. Target filtering remains not started. Paper modified=NO.
+
+
+## PHASE 7 — private candidate routing to PSMJ
+
+PHASE5=SEALED; Candidate Compaction=COMPLETE. TargetBucketBits is an explicit,
+independent parameter bound by targetrouting.Manifest/IndexID and builder
+PublicMetadata. Target B final choice=OPEN. The last full materialization was
+Target bits=8 (B=256); this integration uses it with Anchor bits=16. Later
+Target bits=16 statistics were layout analysis, not a production-width freeze.
+
+The PHASE6 handoff now carries TargetBucketBits. Its explicit-width offline
+compaction constructor masks within the selected XOR domain; its legacy
+constructor still defaults to 16. This preserves the existing shuffle protocol
+and avoids invalid upper mask bits for an 8-bit index. No existing 16-bit
+payload is silently truncated or relabeled. PHASE5 production logic is unchanged.
+
+Query User targetquery.GenerateTokens splits Q_target into complete q=4 rune
+chunks at position 4*h, retaining repeated occurrences. For each, it freshly
+shares KWord(k_T,w)*P as a point and WordBucketComponent(k_T,w,k) as XOR shares.
+Only h, position and the two local share fields, plus manifest/query metadata,
+are sent to each cloud. No qgram, Q_target, master key, plaintext scalar/bucket
+or peer share is sent. User is offline after this initial token generation.
+
+Cloud u locally computes J_u[c]=KappaJoinShare_u[c]*P once per candidate,
+Y_u[c,h]=J_u[c]+WordPointShare_u[h], and a width-checked XOR bucket share.
+The only peer opening is beta[c,h]=b0[c,h] XOR b1[c,h]. Output carries
+Manifest/LayoutID/CompactionID/QueryID, AnchorRecordIDShare[K], Occurrences[r]
+and Routes[K*r]{CandidateIndex,OccurrenceID,BucketID,Y_u}. c is scoped to the
+fresh CompactionID; no global coordinate or plaintext ID is restored.
+K=0 produces zero routes, no dummy computation and no bucket message.
+
+Public leakage: K, r_target, accessed Target beta[c,h], and public layout/index
+dimensions. Full Y remains secret-shared. No H_route, Target DPF/CW token,
+Target Private Equality, Target Position or Target Aggregation starts here.
+See results/phase7-audit.md and results/phase7-results.md for proofs, exact
+codecs, real-data checks, worker/grid measurements and memory. Paper modified=NO.

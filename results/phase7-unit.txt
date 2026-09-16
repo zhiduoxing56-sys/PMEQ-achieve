@@ -1,0 +1,9 @@
+=== RUN   TestRoutingBenchmarks
+    benchmark_test.go:23: set PMEQ_ROUTING_BENCH=sweep or grid
+--- SKIP: TestRoutingBenchmarks (0.00s)
+=== RUN   TestRoutingDomainsFreshOrderAndEmpty
+--- PASS: TestRoutingDomainsFreshOrderAndEmpty (0.10s)
+=== RUN   TestBindingsAndShortTarget
+--- PASS: TestBindingsAndShortTarget (0.00s)
+PASS
+ok  	pmeq/internal/targetrouting	0.099s

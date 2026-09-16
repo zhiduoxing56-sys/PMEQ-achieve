@@ -41,7 +41,7 @@ func tupleSub(a, b compactTuple) compactTuple {
 	c.bucket = a.bucket ^ b.bucket
 	return c
 }
-func randomTuples(n int) ([]compactTuple, error) {
+func randomTuples(n int, bits uint8) ([]compactTuple, error) {
 	out := make([]compactTuple, n)
 	var raw [75]byte
 	for i := range out {
@@ -53,16 +53,20 @@ func randomTuples(n int) ([]compactTuple, error) {
 		if _, e := out[i].scalar.SetUniformBytes(raw[9:73]); e != nil {
 			return nil, e
 		}
-		out[i].bucket = binary.LittleEndian.Uint16(raw[73:75])
+		out[i].bucket = binary.LittleEndian.Uint16(raw[73:75]) & uint16((uint32(1)<<bits)-1)
 	}
 	return out, nil
 }
-func inputTuples(x CandidateInput, id [16]byte, n int) ([]compactTuple, error) {
+func inputTuples(x CandidateInput, id [16]byte, n int, bits uint8) ([]compactTuple, error) {
 	if x.LayoutID != id || len(x.KeepShare) != n || len(x.Payload) != n {
 		return nil, ErrCompaction
 	}
 	out := make([]compactTuple, n)
+	d, _ := targetcrypto.NewBucketDomain(int(bits))
 	for i, p := range x.Payload {
+		if e := d.Validate(p.BucketJoinShare); e != nil {
+			return nil, e
+		}
 		out[i].keep = x.KeepShare[i].Value()
 		out[i].id = uint64(p.RecordIDShare.Value())
 		out[i].bucket = uint16(p.BucketJoinShare)
@@ -79,6 +83,7 @@ type compactState struct {
 	mu            sync.Mutex
 	layout, query [16]byte
 	n, phase      int
+	bucketBits    uint8
 	perm          []uint32
 	c, t, r       []compactTuple
 	shuffled      []compactTuple
@@ -101,18 +106,28 @@ type KeepOpening struct {
 }
 
 type CompactedCandidates struct {
-	LayoutID        [16]byte
-	CompactionID    [16]byte
-	K               int
-	RecordIDShare   []share.Ring64Share
-	KappaJoinShare  []targetcrypto.ScalarShare
-	BucketJoinShare []targetcrypto.BucketShare
+	TargetBucketBits uint8
+	LayoutID         [16]byte
+	CompactionID     [16]byte
+	K                int
+	RecordIDShare    []share.Ring64Share
+	KappaJoinShare   []targetcrypto.ScalarShare
+	BucketJoinShare  []targetcrypto.BucketShare
 }
 
 // PreprocessCompaction is OFFLINE DEALER ONLY. Each call samples independent
 // fresh permutations and masks. Deliver each returned object only to its party.
 // Existing PartyPool tickets can bind the fresh CompactionID to an offline epoch.
 func PreprocessCompaction(layout [16]byte, n int) (*Compaction0, *Compaction1, error) {
+	return PreprocessCompactionWithBucketBits(layout, n, 16)
+}
+
+// PreprocessCompactionWithBucketBits preserves the same protocol in the
+// manifest-selected XOR domain. The existing default remains 16 bits.
+func PreprocessCompactionWithBucketBits(layout [16]byte, n, bits int) (*Compaction0, *Compaction1, error) {
+	if _, e := targetcrypto.NewBucketDomain(bits); e != nil {
+		return nil, nil, e
+	}
 	if n < 0 || uint64(n) > uint64(^uint32(0)) {
 		return nil, nil, ErrCompaction
 	}
@@ -128,19 +143,19 @@ func PreprocessCompaction(layout [16]byte, n int) (*Compaction0, *Compaction1, e
 	if e != nil {
 		return nil, nil, e
 	}
-	t0, e := randomTuples(n)
+	t0, e := randomTuples(n, uint8(bits))
 	if e != nil {
 		return nil, nil, e
 	}
-	r0, e := randomTuples(n)
+	r0, e := randomTuples(n, uint8(bits))
 	if e != nil {
 		return nil, nil, e
 	}
-	t1, e := randomTuples(n)
+	t1, e := randomTuples(n, uint8(bits))
 	if e != nil {
 		return nil, nil, e
 	}
-	r1, e := randomTuples(n)
+	r1, e := randomTuples(n, uint8(bits))
 	if e != nil {
 		return nil, nil, e
 	}
@@ -151,7 +166,7 @@ func PreprocessCompaction(layout [16]byte, n int) (*Compaction0, *Compaction1, e
 	for i, j := range q {
 		c1[j] = tupleSub(t1[i], r1[j])
 	}
-	return &Compaction0{&compactState{layout: layout, query: query, n: n, perm: p, c: c0, t: t1, r: r1}}, &Compaction1{&compactState{layout: layout, query: query, n: n, perm: q, c: c1, t: t0, r: r0}}, nil
+	return &Compaction0{&compactState{layout: layout, query: query, n: n, bucketBits: uint8(bits), perm: p, c: c0, t: t1, r: r1}}, &Compaction1{&compactState{layout: layout, query: query, n: n, bucketBits: uint8(bits), perm: q, c: c1, t: t0, r: r0}}, nil
 }
 func (p *Compaction0) ID() [16]byte { return p.state.query }
 func (p *Compaction1) ID() [16]byte { return p.state.query }
@@ -164,7 +179,7 @@ func (p *Compaction1) Begin(x CandidateInput) (ShuffleMessage, error) {
 	if s.phase != 0 {
 		return ShuffleMessage{}, ErrCompaction
 	}
-	v, e := inputTuples(x, s.layout, s.n)
+	v, e := inputTuples(x, s.layout, s.n, s.bucketBits)
 	if e != nil {
 		return ShuffleMessage{}, e
 	}
@@ -185,7 +200,7 @@ func (p *Compaction0) Stage1(x CandidateInput, m ShuffleMessage) error {
 	if s.phase != 0 || m.layout != s.layout || m.query != s.query || m.stage != 1 || len(m.values) != s.n {
 		return ErrCompaction
 	}
-	v, e := inputTuples(x, s.layout, s.n)
+	v, e := inputTuples(x, s.layout, s.n, s.bucketBits)
 	if e != nil {
 		return e
 	}
@@ -272,7 +287,7 @@ func extract(s *compactState, peer KeepOpening, party uint8) (CompactedCandidate
 			k++
 		}
 	}
-	out := CompactedCandidates{LayoutID: s.layout, CompactionID: s.query, K: k, RecordIDShare: make([]share.Ring64Share, k), KappaJoinShare: make([]targetcrypto.ScalarShare, k), BucketJoinShare: make([]targetcrypto.BucketShare, k)}
+	out := CompactedCandidates{TargetBucketBits: s.bucketBits, LayoutID: s.layout, CompactionID: s.query, K: k, RecordIDShare: make([]share.Ring64Share, k), KappaJoinShare: make([]targetcrypto.ScalarShare, k), BucketJoinShare: make([]targetcrypto.BucketShare, k)}
 	j := 0
 	for i, v := range s.shuffled {
 		if v.keep.Add(peer.bits[i]) {

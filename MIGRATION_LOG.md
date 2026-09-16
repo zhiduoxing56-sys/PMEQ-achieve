@@ -707,3 +707,56 @@ PHASE5 workload quantiles passed with zero errors. K min/p50/p90/p95/p99/max =
 Full-N zero/singleton/all/sparse/dense repeated correctness and fresh-shuffle
 regressions pass. gofmt, go test ./..., go vet ./..., native-tag vet,
 git diff --check and focused race checks pass. Candidate Compaction complete=YES.
+
+
+## PHASE 7 — private Target routing (2026-09-17)
+
+Begin HEAD 24f863d8ef057fb37f8f0fa427f85f36e2a59420, status clean.
+Target width audit found a parameterized builder, last full validated PSMJ
+materialization at bits=8 and later bits=16 layout-only statistics. Integration
+uses explicit Target bits=8, Anchor bits=16; Target B final choice=OPEN.
+PHASE6 gains width metadata and an explicit-width offline mask constructor;
+its legacy 16-bit default and shuffle equations remain unchanged. PHASE5
+production logic remains SEALED. BucketDomain preserves the targetcrypto scalar
+value/no-struct security gate and performs all routing XOR/width checks.
+
+Added Query User-only fresh point/bucket token generation and codecs, one-party
+routing Prepare/Finish and exact bucket-message encoding. J_u is evaluated once
+per candidate; Y_u stays local. Output keeps Anchor RecordID shares once and
+binds candidate indices to CompactionID. Repeated occurrences, short queries,
+K=0, wrong bindings/widths, fresh compaction ordering and worker counts are tested.
+Old full-Y combine/RoutingTag/retired DPF/CW paths were audited, not migrated.
+
+The complete 310331-group/1317260-padded-slot PSMJ was materialized at bits=8.
+A separate 100000 equal + 100000 unequal suite passed (same join/different word,
+different join/same word, both different). The final native real-query run uses
+Anchor seed 502 and a seed-707 shuffled normal alias catalog for unrelated
+negative cases, plus positive and repeated real aliases. Tokens are produced
+before Anchor execution; Query User makes no later call. Results/commands and
+sampling details are recorded in results/phase7-audit.md and phase7-results.md.
+No expensive queries are rerun for distributions. The initial partial query run
+was replaced to make the negative sampler explicitly seeded; its completed
+100k group checks are retained separately and its partial queries are not counted.
+
+Worker sweep covers 1/4/8/16 at (431,5) and (2843,5); host recommendation=16.
+The 35 distinct grid points use K={1,5,64,431,512,2843,4780}, r={1,2,5,7,16},
+with the two selected sweep rows reused. Every point has 2 warmups+10 samples.
+This grid combines independent marginals, not real joint-query percentiles.
+Full grid max-by-max state is 6807280 bytes, so the case was actually run.
+Only bucket messages count as server-server traffic; Y and local index reads do
+not. Query User bytes, serialized opening bytes and internal state are separate.
+
+PHASE5=SEALED; Candidate Compaction=COMPLETE; full Y never reconstructed in
+production; Target Private Equality/Position/Aggregation started=no;
+query-time DO/raw DB=no; paper modified=NO. Work stops at private routing.
+
+Final PHASE7 results: final seed-502/707 native execution completed 1003 queries
+(1000 normal + three PHASE5 workload quantiles), positive=248, negative=755,
+repeated=59, candidate-occurrence pairs=466105, pairs with existing PSMJ groups=2554,
+errors=0. K min/p50/p90/p95/p99/max remains 1/5/151/431/2843/4780.
+Target r min/p50/p90/p95/p99/max=1/2/4/5/7/16; 4047 short names excluded and counted.
+100k equal/100k unequal checks passed. All 35 grid points and the worker sweep
+passed. Ordinary tests, full race (including existing 100k suites, no short
+mode), vet, native-tag vet, gofmt and diff checks passed. Private Routing
+complete=YES. Final code/metadata were migrated byte-identically from the
+isolated validation copy to the specified repository before commit.

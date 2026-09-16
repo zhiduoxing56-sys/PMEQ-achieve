@@ -36,7 +36,7 @@ IndexOutsource
 - **Anchor Keep:** masked external SCMP produces F2 Keep aligned with a
   DO-generated per-record global payload under the same LayoutID.
 - **Candidate Compaction:** PHASE 6 migrates the audited two-stage hidden shuffle, opens shuffled Keep and retains exactly K local secret payloads.
-- **KHPRF Routing:** design frozen; awaits a later independent migration audit.
+- **KHPRF Routing:** PHASE 7 implements K*r routing with public Target buckets and party-local Y shares.
 - **Target Private Equality:** OPTION 4 approved. The Target stored group key is
   the additive Ristretto255 point share pair `T = T0 + T1`; the future equality
   compares `Enc(Y0 - T0)` against `Enc(T1 - Y1)` under full-256-bit Private
@@ -79,7 +79,7 @@ None of the paths above may re-enter the production graph through a compatibilit
 IndexOutsource is sealed. Anchor filtering now ends at `x_{h,s}` F2 hit shares.
 B2A and hidden incidence aggregation through local-record F are now implemented
 by PHASE 5B1. PHASE 5B2 adds F->z, global alignment, C, Keep and payload.
-Online KHPRF routing, Private Equality, Target filtering, Candidate
+Private Equality, Target filtering, Candidate
 ID Generation, and a full Candidate Discovery runner remain unimplemented.
 
 PHASE 5B1: F2 posting shares -> batched Z128 B2A -> chunked scalar-vector Beaver
@@ -116,7 +116,7 @@ The factor footprint is 25640709028 bytes for all 53383 nonempty buckets,
 not including metadata/allocator overhead. This is quantified static storage,
 not a full-table resident-memory claim. Only accessed sigma and transient rho
 are loaded for experiments. No persistent format, query-time DO service, or
-raw DB lookup was added. PHASE 6 subsequently implements Candidate Compaction; Target routing remains not started.
+raw DB lookup was added. PHASE 6 subsequently implements Candidate Compaction; PHASE 7 subsequently implements private Target routing.
 
 **PHASE5 = SEALED.** Correctness, hidden posting correspondence, aligned payload,
 static storage accounting and finite offline-preprocessing lifecycle gates pass.
@@ -140,3 +140,18 @@ remain hidden. K=0 retains no dummies. Tests reconstruct only in the coordinator
 The native real-query experiment runs Anchor DPF, LLAMA Position, Boolean hits,
 incidence, deduplication, global alignment, LLAMA Keep and this compaction.
 See results/phase6-audit.md and results/phase6-results.md. No later phase begins.
+
+
+PHASE 7 current chain:
+Query User initial target token (fresh point/XOR shares, h and position)
++ PHASE6 compacted candidate shares
+-> local J_u and Y_u for K*r pairs
+-> exchange ONLY combined bucket-share messages
+-> public Target BucketID plus local Y_u, with Anchor RecordID shares retained
+once at top level and c scoped to CompactionID.
+
+The Target manifest binds its own bit width, independent of Anchor width.
+Real PSMJ uses the last full validated setting, bits=8; Target B remains OPEN.
+No full Y combine, H_route, Target DPF/CW token, equality or target filtering.
+Query User is offline after initial token; query-time DO/raw DB=no. See
+results/phase7-audit.md and results/phase7-results.md. Paper modified=NO.
