@@ -67,7 +67,7 @@ func TestRealMusicBrainz1000(t *testing.T) {
 }
 
 func formatSide(s SideStats) string {
-	return fmt.Sprintf("raw=%d short=%d occurrences=%d groups=%d nonempty_buckets=%d group_count=%+v lpad=%+v slots_per_bucket=%+v real_slots=%d padded_slots=%d padding_ratio=%.6f", s.RawRecords, s.ShortStrings, s.QGramOccurrences, s.LogicalGroups, s.NonemptyBuckets, s.GroupCount, s.LPad, s.SlotsPerBucket, s.RealSlots, s.PaddedSlots, s.PaddingRatio)
+	return fmt.Sprintf("raw=%d short=%d occurrences=%d groups=%d nonempty_buckets=%d group_count=%+v uniform_lpad=%+v pad_width=%+v slots_per_bucket=%+v real_slots=%d padded_slots=%d padding_ratio=%.6f", s.RawRecords, s.ShortStrings, s.QGramOccurrences, s.LogicalGroups, s.NonemptyBuckets, s.GroupCount, s.LPad, s.PadWidth, s.SlotsPerBucket, s.RealSlots, s.PaddedSlots, s.PaddingRatio)
 }
 
 func auditPartyAlignment(t *testing.T, meta PublicMetadata, a, b PartyIndex) {
@@ -76,18 +76,23 @@ func auditPartyAlignment(t *testing.T, meta PublicMetadata, a, b PartyIndex) {
 		t.Fatal("party/public shapes differ")
 	}
 	for i := range a.AnchorBuckets {
-		if a.AnchorBuckets[i].BucketID != b.AnchorBuckets[i].BucketID || a.AnchorBuckets[i].LPad != b.AnchorBuckets[i].LPad || len(a.AnchorBuckets[i].Groups) != len(b.AnchorBuckets[i].Groups) {
+		if a.AnchorBuckets[i].BucketID != b.AnchorBuckets[i].BucketID || len(a.AnchorBuckets[i].Groups) != len(b.AnchorBuckets[i].Groups) {
 			t.Fatal("anchor buckets differ")
 		}
 		for j := range a.AnchorBuckets[i].Groups {
-			if a.AnchorBuckets[i].Groups[j].Z != b.AnchorBuckets[i].Groups[j].Z || len(a.AnchorBuckets[i].Groups[j].Slots) != len(b.AnchorBuckets[i].Groups[j].Slots) {
+			if a.AnchorBuckets[i].Groups[j].Z != b.AnchorBuckets[i].Groups[j].Z || a.AnchorBuckets[i].Groups[j].PadWidth != b.AnchorBuckets[i].Groups[j].PadWidth || len(a.AnchorBuckets[i].Groups[j].Slots) != len(b.AnchorBuckets[i].Groups[j].Slots) || len(a.AnchorBuckets[i].Groups[j].Slots) != int(a.AnchorBuckets[i].Groups[j].PadWidth) {
 				t.Fatal("anchor group order differs")
 			}
 		}
 	}
 	for i := range a.TargetBuckets {
-		if a.TargetBuckets[i].BucketID != b.TargetBuckets[i].BucketID || a.TargetBuckets[i].LPad != b.TargetBuckets[i].LPad || len(a.TargetBuckets[i].Groups) != len(b.TargetBuckets[i].Groups) {
+		if a.TargetBuckets[i].BucketID != b.TargetBuckets[i].BucketID || len(a.TargetBuckets[i].Groups) != len(b.TargetBuckets[i].Groups) {
 			t.Fatal("target buckets differ")
+		}
+		for j := range a.TargetBuckets[i].Groups {
+			if a.TargetBuckets[i].Groups[j].PadWidth != b.TargetBuckets[i].Groups[j].PadWidth || len(a.TargetBuckets[i].Groups[j].Slots) != len(b.TargetBuckets[i].Groups[j].Slots) || len(a.TargetBuckets[i].Groups[j].Slots) != int(a.TargetBuckets[i].Groups[j].PadWidth) {
+				t.Fatal("target group padding differs")
+			}
 		}
 	}
 }

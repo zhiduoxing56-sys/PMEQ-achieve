@@ -1,6 +1,7 @@
 package indexbuild
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -10,22 +11,66 @@ import (
 	"pmeq/internal/targetcrypto"
 )
 
-func TestAnalyzeLayoutMatchesBuildWithoutSharing(t *testing.T) {
+func TestTierWidth(t *testing.T) {
+	tests := []struct{ n, w int }{{1, 4}, {4, 4}, {5, 16}, {16, 16}, {17, 64}, {64, 64}, {65, 256}, {256, 256}, {257, 1024}, {1024, 1024}, {1025, 4096}, {4096, 4096}, {4097, 16384}, {16384, 16384}}
+	for _, test := range tests {
+		got, err := TierWidth(test.n)
+		if err != nil || got != test.w {
+			t.Fatalf("TierWidth(%d)=%d,%v want %d", test.n, got, err, test.w)
+		}
+	}
+	if _, err := TierWidth(0); err == nil {
+		t.Fatal("accepted empty group")
+	}
+	if _, err := TierWidth(16385); !errors.Is(err, ErrTierOverflow) {
+		t.Fatalf("overflow error=%v", err)
+	}
+}
+
+func TestTierLayoutMatchesBuildAndUniformRemainsBaseline(t *testing.T) {
 	kB, kT := testKeys(t)
 	areas := []AreaRecord{{1, "aaaaa"}, {2, "abcdefgh"}}
 	aliases := []AreaAliasRecord{{10, "aaaaa", 1}, {11, "abcdefgh", 2}, {12, "abcde", 2}}
-	analysis, err := AnalyzeLayout(areas, aliases, kB, kT, 8, 8)
+	tier, err := AnalyzeTierLayout(areas, aliases, kB, kT, 8, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
-	metadata, _, _, stats, err := Build(areas, aliases, kB, kT, 8, 8)
+	uniform, err := AnalyzeUniformLayout(areas, aliases, kB, kT, 8, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(analysis.Metadata, metadata) || !reflect.DeepEqual(analysis.Anchor, stats.Anchor) || !reflect.DeepEqual(analysis.Target, stats.Target) {
-		t.Fatalf("analysis differs from materialized build\nanalysis=%+v\nbuild metadata=%+v stats=%+v", analysis, metadata, stats)
+	metadata, cs0, cs1, stats, err := Build(areas, aliases, kB, kT, 8, 8)
+	if err != nil {
+		t.Fatal(err)
 	}
+	if !reflect.DeepEqual(tier.Metadata, metadata) || !reflect.DeepEqual(tier.Anchor, stats.Anchor) || !reflect.DeepEqual(tier.Target, stats.Target) {
+		t.Fatalf("tier analysis differs from Build")
+	}
+	if uniform.Anchor.LPad.Max == 0 || uniform.Target.LPad.Max == 0 || tier.Anchor.PadWidth.Max == 0 || tier.Target.PadWidth.Max == 0 {
+		t.Fatal("uniform/tier analyzers did not expose their distinct padding statistics")
+	}
+	for bi := range cs0.AnchorBuckets {
+		for gi := range cs0.AnchorBuckets[bi].Groups {
+			a, b := cs0.AnchorBuckets[bi].Groups[gi], cs1.AnchorBuckets[bi].Groups[gi]
+			if a.PadWidth != b.PadWidth || len(a.Slots) != int(a.PadWidth) || len(b.Slots) != int(b.PadWidth) {
+				t.Fatal("Anchor PadWidth mismatch")
+			}
+		}
+	}
+	for bi := range cs0.TargetBuckets {
+		for gi := range cs0.TargetBuckets[bi].Groups {
+			a, b := cs0.TargetBuckets[bi].Groups[gi], cs1.TargetBuckets[bi].Groups[gi]
+			if a.PadWidth != b.PadWidth || len(a.Slots) != int(a.PadWidth) || len(b.Slots) != int(b.PadWidth) {
+				t.Fatal("Target PadWidth mismatch")
+			}
+		}
+	}
+}
 
+func TestLayoutAnalyzersNeverShare(t *testing.T) {
+	kB, kT := testKeys(t)
+	areas := []AreaRecord{{1, "aaaaa"}}
+	aliases := []AreaAliasRecord{{10, "aaaaa", 1}}
 	old64, old32, oldBit, oldScalar, oldBucket, oldPoint := splitRing64, splitRing32, splitBit, splitScalar, splitBucket, splitPoint
 	defer func() {
 		splitRing64, splitRing32, splitBit, splitScalar, splitBucket, splitPoint = old64, old32, oldBit, oldScalar, oldBucket, oldPoint
@@ -55,10 +100,13 @@ func TestAnalyzeLayoutMatchesBuildWithoutSharing(t *testing.T) {
 		called = true
 		return targetcrypto.PointShare{}, targetcrypto.PointShare{}, nil
 	}
-	if _, err := AnalyzeLayout(areas, aliases, kB, kT, 8, 8); err != nil {
+	if _, err := AnalyzeUniformLayout(areas, aliases, kB, kT, 8, 8); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := AnalyzeTierLayout(areas, aliases, kB, kT, 8, 8); err != nil {
 		t.Fatal(err)
 	}
 	if called {
-		t.Fatal("AnalyzeLayout invoked a share splitter")
+		t.Fatal("layout analyzer invoked share splitter")
 	}
 }

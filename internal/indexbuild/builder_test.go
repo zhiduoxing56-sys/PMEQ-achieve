@@ -1,6 +1,7 @@
 package indexbuild
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,6 +14,14 @@ import (
 	"pmeq/internal/share"
 	"pmeq/internal/targetcrypto"
 )
+
+func TestBuildRejectsTierOverflow(t *testing.T) {
+	kB, kT := testKeys(t)
+	_, _, _, _, err := Build([]AreaRecord{{ID: 1, Name: strings.Repeat("a", 16388)}}, nil, kB, kT, 8, 8)
+	if !errors.Is(err, ErrTierOverflow) {
+		t.Fatalf("Build overflow error=%v, want ErrTierOverflow", err)
+	}
+}
 
 func testKeys(t *testing.T) (anchorindex.Key, targetcrypto.MasterKey) {
 	t.Helper()
@@ -134,11 +143,17 @@ func TestRepeatedOccurrenceReconstruction(t *testing.T) {
 			}
 			found = true
 			g0, g1 := cs0.AnchorBuckets[bi].Groups[gi], cs1.AnchorBuckets[bi].Groups[gi]
-			if len(g0.Slots) != 2 {
-				t.Fatalf("repeated qgram slots=%d want 2", len(g0.Slots))
+			if g0.PadWidth != 4 || g1.PadWidth != 4 || len(g0.Slots) != 4 || len(g1.Slots) != 4 {
+				t.Fatalf("repeated qgram PadWidth/slots=%d/%d/%d/%d want 4", g0.PadWidth, g1.PadWidth, len(g0.Slots), len(g1.Slots))
 			}
 			for i := range g0.Slots {
 				a, b := g0.Slots[i], g1.Slots[i]
+				if i >= 2 {
+					if reconstruct.RecoverRing64(a.RecordIDShare, b.RecordIDShare) != 0 || reconstruct.RecoverRing32(a.PositionShare, b.PositionShare) != 0 || reconstruct.RecoverBit(a.ValidityShare, b.ValidityShare) != domain.BitZero || combineScalar(t, a.KappaJoinShare, b.KappaJoinShare) != ([32]byte{}) || a.BucketJoinShare.Value()^b.BucketJoinShare.Value() != 0 {
+						t.Fatalf("dummy %d reconstructed incorrectly", i)
+					}
+					continue
+				}
 				if reconstruct.RecoverRing64(a.RecordIDShare, b.RecordIDShare) != 77 || reconstruct.RecoverRing32(a.PositionShare, b.PositionShare) != domain.Ring32(i) || reconstruct.RecoverBit(a.ValidityShare, b.ValidityShare) != domain.BitOne || combineScalar(t, a.KappaJoinShare, b.KappaJoinShare) != wantKappaBytes || a.BucketJoinShare.Value()^b.BucketJoinShare.Value() != wantBucket {
 					t.Fatalf("occurrence %d reconstructed incorrectly", i)
 				}
@@ -225,7 +240,8 @@ func TestPartySchemaHasNoPlaintextFields(t *testing.T) {
 	}
 	assertFields(reflect.TypeOf(AnchorPartySlot{}), []string{"RecordIDShare", "PositionShare", "ValidityShare", "KappaJoinShare", "BucketJoinShare"})
 	assertFields(reflect.TypeOf(TargetPartySlot{}), []string{"RecordIDShare", "PositionShare", "ValidityShare"})
-	assertFields(reflect.TypeOf(TargetPartyGroup{}), []string{"TargetKeyShare", "Slots"})
+	assertFields(reflect.TypeOf(AnchorPartyGroup{}), []string{"Z", "PadWidth", "Slots"})
+	assertFields(reflect.TypeOf(TargetPartyGroup{}), []string{"TargetKeyShare", "PadWidth", "Slots"})
 }
 
 func TestPaddingReconstructsSemanticZero(t *testing.T) {

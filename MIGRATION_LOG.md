@@ -286,3 +286,48 @@ the smallest padded indexes and lowest median/tail per-query bucket workload.
 This is a recommendation only. **B final choice remains OPEN.** Short-string
 completeness and PHASE 5 payload alignment also remain OPEN. No persistent
 index format or index file was created, and PHASE 4 was not started.
+
+## PHASE 3C3 tiered padding freeze
+
+Production IndexOutsource padding is now per-group tiered padding with the
+frozen ladder `{4,16,64,256,1024,4096,16384}`. `TierWidth(n)` returns the first
+tier greater than or equal to nonzero real size `n` and errors above 16,384.
+Both Anchor and Target use this ladder. The PHASE 3C2 per-bucket maximum remains
+implemented only as a share-free experiment baseline.
+
+Each party group now carries the same public `PadWidth` and exactly that many
+local slots. Production buckets no longer carry `LPad`; public bucket metadata
+contains bucket ID, group count, and `sum PadWidth`. Public `PadWidth` reveals a
+coarse group-size class. This is frozen, allowed structural leakage accepted
+for the padding reduction.
+
+| side | width | groups | percentage | real | padded | overhead |
+|---|---:|---:|---:|---:|---:|---:|
+| Anchor | 4 | 80,632 | 73.225264% | 133,239 | 322,528 | 189,289 |
+| Anchor | 16 | 19,584 | 17.785043% | 166,062 | 313,344 | 147,282 |
+| Anchor | 64 | 7,766 | 7.052627% | 237,365 | 497,024 | 259,659 |
+| Anchor | 256 | 1,858 | 1.687327% | 207,162 | 475,648 | 268,486 |
+| Anchor | 1,024 | 257 | 0.233392% | 111,343 | 263,168 | 151,825 |
+| Anchor | 4,096 | 14 | 0.012714% | 32,056 | 57,344 | 25,288 |
+| Anchor | 16,384 | 4 | 0.003633% | 19,357 | 65,536 | 46,179 |
+| Target | 4 | 304,003 | 97.960887% | 435,684 | 1,216,012 | 780,328 |
+| Target | 16 | 6,328 | 2.039113% | 45,261 | 101,248 | 55,987 |
+
+Higher Target tiers have zero groups. Total Anchor padding is 1,994,592 slots
+for 906,584 real slots (`2.200118x`); Target is 1,317,260 for 480,945
+(`2.738899x`). At k=8 this reduces the PHASE 3C2 uniform baselines by
+`30.520131x` and `2.264342x`. Tier storage is independent of bucket width.
+
+The mandatory full k=8 materialization passed. Its calculated two-party lower
+bound was 283,959,328 bytes (0.264458 GiB). Build wall time was 46.354432638
+seconds, sampled Go heap peak was 633,192,656 bytes, maximum RSS was 963,088
+KiB, and swap was zero. Deterministic audits reconstructed 10,000 each of
+Anchor real/dummy slots and Target real/dummy slots plus 10,000 Target groups.
+An additional 10,000 Anchor and 10,000 Target groups passed exact `PadWidth ==
+TierWidth(realSize)` and party-length agreement checks.
+
+No Position Filtering or Aggregation implementation assumes a bucket-wide
+width. Future Position Filtering can iterate group-local slot slices; future
+hidden Aggregation is independent of group padding width. PHASE 4 was not
+started. B final choice, short-string completeness, and PHASE 5 payload
+alignment remain OPEN. Paper modified = no.

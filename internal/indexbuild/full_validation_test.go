@@ -70,23 +70,24 @@ func TestFullMusicBrainzValidation(t *testing.T) {
 	}
 
 	kB, kT := testKeys(t)
-	layouts := make(map[int]LayoutAnalysis)
+	uniforms, tiers := make(map[int]LayoutAnalysis), make(map[int]LayoutAnalysis)
 	for _, bits := range []int{8, 10, 12, 13, 14} {
 		started := time.Now()
-		layout, err := AnalyzeLayout(areas, aliases, kB, kT, bits, bits)
+		uniform, tier, err := AnalyzeLayouts(areas, aliases, kB, kT, bits, bits)
 		if err != nil {
 			t.Fatal(err)
 		}
-		layouts[bits] = layout
-		t.Logf("LAYOUT k=%d B=%d elapsed=%s anchor={%s max=%+v} target={%s max=%+v}", bits, 1<<bits, time.Since(started), formatSide(layout.Anchor), layout.AnchorMaxGroup, formatSide(layout.Target), layout.TargetMaxGroup)
+		uniforms[bits], tiers[bits] = uniform, tier
+		t.Logf("LAYOUT k=%d B=%d elapsed=%s anchor_tier={%s max=%+v} anchor_uniform={%s} anchor_reduction=%.6f target_tier={%s max=%+v} target_uniform={%s} target_reduction=%.6f", bits, 1<<bits, time.Since(started), formatSide(tier.Anchor), tier.AnchorMaxGroup, formatSide(uniform.Anchor), float64(uniform.Anchor.PaddedSlots)/float64(tier.Anchor.PaddedSlots), formatSide(tier.Target), tier.TargetMaxGroup, formatSide(uniform.Target), float64(uniform.Target.PaddedSlots)/float64(tier.Target.PaddedSlots))
 	}
-	base := layouts[14]
+	base := tiers[8]
 	if base.Anchor.LogicalGroups != 110115 || base.Target.LogicalGroups != 310331 {
 		t.Fatalf("logical group regression anchor=%d target=%d", base.Anchor.LogicalGroups, base.Target.LogicalGroups)
 	}
 	if base.TargetMaxGroup.Occurrences > 64 {
 		t.Fatalf("Target grouping regression: max group=%d", base.TargetMaxGroup.Occurrences)
 	}
+	t.Logf("TIER_POPULATION anchor=%+v target=%+v", base.AnchorTiers, base.TargetTiers)
 	if os.Getenv("PMEQ_FULL_LAYOUT_ONLY") == "1" {
 		t.Log("layout-only run requested; materialization intentionally skipped")
 		return
@@ -133,7 +134,7 @@ func TestFullMusicBrainzValidation(t *testing.T) {
 		}
 	}()
 	buildWallStarted := time.Now()
-	metadata, cs0, cs1, buildStats, err := Build(areas, aliases, kB, kT, 14, 14)
+	metadata, cs0, cs1, buildStats, err := Build(areas, aliases, kB, kT, 8, 8)
 	buildWall := time.Since(buildWallStarted)
 	close(stop)
 	<-done
@@ -145,32 +146,33 @@ func TestFullMusicBrainzValidation(t *testing.T) {
 	if after.Alloc > peak.Load() {
 		peak.Store(after.Alloc)
 	}
-	t.Logf("MATERIALIZED k=14 wall=%s logical_crypto=%s sharing_padding=%s builder_total=%s heap_before=%d heap_peak=%d heap_peak_delta=%d heap_after=%d", buildWall, buildStats.LogicalBuildTime, buildStats.SharingPadTime, buildStats.TotalBuildTime, before.Alloc, peak.Load(), peak.Load()-before.Alloc, after.Alloc)
+	t.Logf("MATERIALIZED k=8 wall=%s logical_crypto=%s sharing_padding=%s builder_total=%s heap_before=%d heap_peak=%d heap_peak_delta=%d heap_after=%d", buildWall, buildStats.LogicalBuildTime, buildStats.SharingPadTime, buildStats.TotalBuildTime, before.Alloc, peak.Load(), peak.Load()-before.Alloc, after.Alloc)
 	if !equalLayoutStats(base, metadata, buildStats) {
 		t.Fatal("materialized Build layout differs from AnalyzeLayout")
 	}
 
 	auditStarted := time.Now()
-	anchors, targets, logicalStats, err := buildLogical(areas, aliases, kB, kT, 14, 14)
+	anchors, targets, logicalStats, err := buildLogical(areas, aliases, kB, kT, 8, 8)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if logicalStats.Anchor.QGramOccurrences != base.Anchor.RealSlots || logicalStats.Target.QGramOccurrences != base.Target.RealSlots {
 		t.Fatal("audit logical occurrence mismatch")
 	}
-	reconstruction := auditFullSamples(t, anchors, targets, kT, cs0, cs1)
+	reconstruction := auditFullSamples(t, anchors, targets, kT, 8, cs0, cs1)
+	padChecks := auditPadWidths(t, anchors, targets, cs0, cs1)
 	pairs := auditGroupIdentities(t, anchors, targets, kB, kT)
 	aRepeat := repeatArea(areas)
 	tRepeat := repeatAliases(aliases)
-	auditFreshRepeatedPayload(t, anchors, kT, cs0, cs1)
-	t.Logf("AUDIT reconstruction=%s identity_pairs=%d repeated_anchor=%+v repeated_target=%+v elapsed=%s", reconstruction, pairs, aRepeat, tRepeat, time.Since(auditStarted))
+	auditFreshRepeatedPayload(t, anchors, kT, 8, cs0, cs1)
+	t.Logf("AUDIT reconstruction=%s pad_width_checks=%d identity_pairs=%d repeated_anchor=%+v repeated_target=%+v elapsed=%s", reconstruction, padChecks, pairs, aRepeat, tRepeat, time.Since(auditStarted))
 }
 
 func equalLayoutStats(layout LayoutAnalysis, metadata PublicMetadata, stats BuildStats) bool {
 	return fmt.Sprint(layout.Metadata) == fmt.Sprint(metadata) && reflect.DeepEqual(layout.Anchor, stats.Anchor) && reflect.DeepEqual(layout.Target, stats.Target)
 }
 
-func auditFullSamples(t *testing.T, anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT targetcrypto.MasterKey, cs0, cs1 PartyIndex) string {
+func auditFullSamples(t *testing.T, anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT targetcrypto.MasterKey, bits int, cs0, cs1 PartyIndex) string {
 	t.Helper()
 	am := make(map[[16]byte]anchorLogicalGroup, len(anchors))
 	for _, g := range anchors {
@@ -193,7 +195,7 @@ func auditFullSamples(t *testing.T, anchors []anchorLogicalGroup, targets []targ
 			for si := range g0.Slots {
 				valid := reconstruct.RecoverBit(g0.Slots[si].ValidityShare, g1.Slots[si].ValidityShare)
 				if valid == domain.BitOne && ar < 10000 {
-					auditAnchorReal(t, g0.Slots[si], g1.Slots[si], expected.postings[si], kT, 14)
+					auditAnchorReal(t, g0.Slots[si], g1.Slots[si], expected.postings[si], kT, bits)
 					ar++
 				} else if valid == domain.BitZero && ad < 10000 {
 					auditAnchorDummy(t, g0.Slots[si], g1.Slots[si])
@@ -301,6 +303,59 @@ func targetSlotCount(b []TargetPartyBucket) int {
 	return n
 }
 
+func auditPadWidths(t *testing.T, anchors []anchorLogicalGroup, targets []targetLogicalGroup, cs0, cs1 PartyIndex) int {
+	t.Helper()
+	am := make(map[[16]byte]int, len(anchors))
+	for _, g := range anchors {
+		am[g.z] = len(g.postings)
+	}
+	tm := make(map[[32]byte]int, len(targets))
+	for _, g := range targets {
+		var key [32]byte
+		copy(key[:], g.target.Bytes())
+		tm[key] = len(g.postings)
+	}
+	checks := 0
+	for bi := range cs0.AnchorBuckets {
+		for gi := range cs0.AnchorBuckets[bi].Groups {
+			if checks >= 10000 {
+				break
+			}
+			a, b := cs0.AnchorBuckets[bi].Groups[gi], cs1.AnchorBuckets[bi].Groups[gi]
+			want, err := TierWidth(am[a.Z])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if a.PadWidth != uint32(want) || b.PadWidth != uint32(want) || len(a.Slots) != want || len(b.Slots) != want {
+				t.Fatal("Anchor PadWidth audit failed")
+			}
+			checks++
+		}
+	}
+	targetChecks := 0
+	for bi := range cs0.TargetBuckets {
+		for gi := range cs0.TargetBuckets[bi].Groups {
+			if targetChecks >= 10000 {
+				break
+			}
+			a, b := cs0.TargetBuckets[bi].Groups[gi], cs1.TargetBuckets[bi].Groups[gi]
+			key := combinePoint(t, a.TargetKeyShare, b.TargetKeyShare)
+			want, err := TierWidth(tm[key])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if a.PadWidth != uint32(want) || b.PadWidth != uint32(want) || len(a.Slots) != want || len(b.Slots) != want {
+				t.Fatal("Target PadWidth audit failed")
+			}
+			targetChecks++
+		}
+	}
+	if checks != 10000 || targetChecks != 10000 {
+		t.Fatalf("PadWidth checks Anchor/Target=%d/%d", checks, targetChecks)
+	}
+	return checks + targetChecks
+}
+
 func auditGroupIdentities(t *testing.T, anchors []anchorLogicalGroup, targets []targetLogicalGroup, kB anchorindex.Key, kT targetcrypto.MasterKey) int {
 	t.Helper()
 	checks := 0
@@ -373,7 +428,7 @@ func summarizeRepeats(counts map[repeatedKey]int) repeatedSummary {
 	return out
 }
 
-func auditFreshRepeatedPayload(t *testing.T, groups []anchorLogicalGroup, kT targetcrypto.MasterKey, cs0, cs1 PartyIndex) {
+func auditFreshRepeatedPayload(t *testing.T, groups []anchorLogicalGroup, kT targetcrypto.MasterKey, bits int, cs0, cs1 PartyIndex) {
 	t.Helper()
 	var selected anchorLogicalGroup
 	var record uint64
@@ -424,7 +479,7 @@ func auditFreshRepeatedPayload(t *testing.T, groups []anchorLogicalGroup, kT tar
 	}
 	var wb [32]byte
 	copy(wb[:], wantK.Bytes())
-	wantB, err := targetcrypto.JoinBucketComponent(kT, record, 14)
+	wantB, err := targetcrypto.JoinBucketComponent(kT, record, bits)
 	if err != nil {
 		t.Fatal(err)
 	}

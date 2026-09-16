@@ -2,6 +2,7 @@ package indexbuild
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -16,6 +17,24 @@ import (
 
 const Q = 4
 
+var ErrTierOverflow = errors.New("indexbuild: real group size exceeds maximum padding tier")
+
+var tierLadder = [...]int{4, 16, 64, 256, 1024, 4096, 16384}
+
+// TierWidth returns the smallest frozen padding tier that covers realSize.
+// Groups are never empty; callers passing a non-positive size receive an error.
+func TierWidth(realSize int) (int, error) {
+	if realSize < 1 {
+		return 0, errors.New("indexbuild: real group size must be positive")
+	}
+	for _, width := range tierLadder {
+		if realSize <= width {
+			return width, nil
+		}
+	}
+	return 0, ErrTierOverflow
+}
+
 type AnchorPartySlot struct {
 	RecordIDShare   share.Ring64Share
 	PositionShare   share.Ring32Share
@@ -29,21 +48,21 @@ type TargetPartySlot struct {
 	ValidityShare share.BitShare
 }
 type AnchorPartyGroup struct {
-	Z     anchorindex.Value
-	Slots []AnchorPartySlot
+	Z        anchorindex.Value
+	PadWidth uint32
+	Slots    []AnchorPartySlot
 }
 type TargetPartyGroup struct {
 	TargetKeyShare targetcrypto.PointShare
+	PadWidth       uint32
 	Slots          []TargetPartySlot
 }
 type AnchorPartyBucket struct {
 	BucketID uint16
-	LPad     uint32
 	Groups   []AnchorPartyGroup
 }
 type TargetPartyBucket struct {
 	BucketID uint16
-	LPad     uint32
 	Groups   []TargetPartyGroup
 }
 type PartyIndex struct {
@@ -52,8 +71,8 @@ type PartyIndex struct {
 }
 type BucketMetadata struct {
 	BucketID   uint16
-	LPad       uint32
 	GroupCount uint32
+	TotalSlots uint64
 }
 type PublicMetadata struct {
 	Q                uint32
@@ -77,6 +96,7 @@ type SideStats struct {
 	NonemptyBuckets  int
 	GroupCount       Distribution
 	LPad             Distribution
+	PadWidth         Distribution
 	SlotsPerBucket   Distribution
 	RealSlots        int
 	PaddedSlots      int
@@ -267,20 +287,26 @@ func shareAndPad(anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT 
 	})
 	meta := PublicMetadata{Q: Q, AnchorBucketBits: uint8(anchorBits), TargetBucketBits: uint8(targetBits)}
 	var cs0, cs1 PartyIndex
+	anchorPadWidths := make([]int, 0, len(anchors))
+	targetPadWidths := make([]int, 0, len(targets))
 	for start := 0; start < len(anchors); {
-		end, lpad := start, 0
+		end := start
 		for end < len(anchors) && anchors[end].bucket == anchors[start].bucket {
-			if len(anchors[end].postings) > lpad {
-				lpad = len(anchors[end].postings)
-			}
 			end++
 		}
-		b0 := AnchorPartyBucket{BucketID: anchors[start].bucket, LPad: uint32(lpad)}
-		b1 := AnchorPartyBucket{BucketID: b0.BucketID, LPad: b0.LPad}
+		b0 := AnchorPartyBucket{BucketID: anchors[start].bucket}
+		b1 := AnchorPartyBucket{BucketID: b0.BucketID}
+		bucketMeta := BucketMetadata{BucketID: b0.BucketID, GroupCount: uint32(end - start)}
 		for i := start; i < end; i++ {
-			g0 := AnchorPartyGroup{Z: anchors[i].z}
-			g1 := AnchorPartyGroup{Z: anchors[i].z}
-			for slot := 0; slot < lpad; slot++ {
+			padWidth, err := TierWidth(len(anchors[i].postings))
+			if err != nil {
+				return PublicMetadata{}, PartyIndex{}, PartyIndex{}, err
+			}
+			anchorPadWidths = append(anchorPadWidths, padWidth)
+			bucketMeta.TotalSlots += uint64(padWidth)
+			g0 := AnchorPartyGroup{Z: anchors[i].z, PadWidth: uint32(padWidth)}
+			g1 := AnchorPartyGroup{Z: anchors[i].z, PadWidth: uint32(padWidth)}
+			for slot := 0; slot < padWidth; slot++ {
 				var id uint64
 				var pos uint32
 				valid := domain.BitZero
@@ -300,29 +326,33 @@ func shareAndPad(anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT 
 			b0.Groups = append(b0.Groups, g0)
 			b1.Groups = append(b1.Groups, g1)
 		}
-		meta.AnchorBuckets = append(meta.AnchorBuckets, BucketMetadata{b0.BucketID, b0.LPad, uint32(len(b0.Groups))})
+		meta.AnchorBuckets = append(meta.AnchorBuckets, bucketMeta)
 		cs0.AnchorBuckets = append(cs0.AnchorBuckets, b0)
 		cs1.AnchorBuckets = append(cs1.AnchorBuckets, b1)
 		start = end
 	}
 	for start := 0; start < len(targets); {
-		end, lpad := start, 0
+		end := start
 		for end < len(targets) && targets[end].bucket == targets[start].bucket {
-			if len(targets[end].postings) > lpad {
-				lpad = len(targets[end].postings)
-			}
 			end++
 		}
-		b0 := TargetPartyBucket{BucketID: targets[start].bucket, LPad: uint32(lpad)}
-		b1 := TargetPartyBucket{BucketID: b0.BucketID, LPad: b0.LPad}
+		b0 := TargetPartyBucket{BucketID: targets[start].bucket}
+		b1 := TargetPartyBucket{BucketID: b0.BucketID}
+		bucketMeta := BucketMetadata{BucketID: b0.BucketID, GroupCount: uint32(end - start)}
 		for i := start; i < end; i++ {
+			padWidth, err := TierWidth(len(targets[i].postings))
+			if err != nil {
+				return PublicMetadata{}, PartyIndex{}, PartyIndex{}, err
+			}
+			targetPadWidths = append(targetPadWidths, padWidth)
+			bucketMeta.TotalSlots += uint64(padWidth)
 			p0, p1, err := splitPoint(targets[i].target)
 			if err != nil {
 				return PublicMetadata{}, PartyIndex{}, PartyIndex{}, err
 			}
-			g0 := TargetPartyGroup{TargetKeyShare: p0}
-			g1 := TargetPartyGroup{TargetKeyShare: p1}
-			for slot := 0; slot < lpad; slot++ {
+			g0 := TargetPartyGroup{TargetKeyShare: p0, PadWidth: uint32(padWidth)}
+			g1 := TargetPartyGroup{TargetKeyShare: p1, PadWidth: uint32(padWidth)}
+			for slot := 0; slot < padWidth; slot++ {
 				var id uint64
 				var pos uint32
 				valid := domain.BitZero
@@ -342,13 +372,13 @@ func shareAndPad(anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT 
 			b0.Groups = append(b0.Groups, g0)
 			b1.Groups = append(b1.Groups, g1)
 		}
-		meta.TargetBuckets = append(meta.TargetBuckets, BucketMetadata{b0.BucketID, b0.LPad, uint32(len(b0.Groups))})
+		meta.TargetBuckets = append(meta.TargetBuckets, bucketMeta)
 		cs0.TargetBuckets = append(cs0.TargetBuckets, b0)
 		cs1.TargetBuckets = append(cs1.TargetBuckets, b1)
 		start = end
 	}
-	finishStats(&stats.Anchor, meta.AnchorBuckets)
-	finishStats(&stats.Target, meta.TargetBuckets)
+	finishTierStats(&stats.Anchor, meta.AnchorBuckets, anchorPadWidths)
+	finishTierStats(&stats.Target, meta.TargetBuckets, targetPadWidths)
 	return meta, cs0, cs1, nil
 }
 
@@ -402,19 +432,17 @@ func makeTargetSlot(id uint64, pos uint32, valid domain.Bit) (TargetPartySlot, T
 	}
 	return TargetPartySlot{r0, p0, v0}, TargetPartySlot{r1, p1, v1}, nil
 }
-func finishStats(stats *SideStats, buckets []BucketMetadata) {
+func finishTierStats(stats *SideStats, buckets []BucketMetadata, padWidths []int) {
 	stats.NonemptyBuckets = len(buckets)
 	groups := make([]int, len(buckets))
-	lpads := make([]int, len(buckets))
 	slots := make([]int, len(buckets))
 	for i, b := range buckets {
 		groups[i] = int(b.GroupCount)
-		lpads[i] = int(b.LPad)
-		slots[i] = int(b.GroupCount) * int(b.LPad)
+		slots[i] = int(b.TotalSlots)
 		stats.PaddedSlots += slots[i]
 	}
 	stats.GroupCount = distribution(groups)
-	stats.LPad = distribution(lpads)
+	stats.PadWidth = distribution(padWidths)
 	stats.SlotsPerBucket = distribution(slots)
 	if stats.RealSlots > 0 {
 		stats.PaddingRatio = float64(stats.PaddedSlots) / float64(stats.RealSlots)

@@ -142,7 +142,11 @@ path.
 
 ### Padding and validity
 
-Padding exists. `L_pad` may be public. Validity is secret-shared between the two parties per slot: `real = 1`, `dummy = 0`. No single cloud may determine real/dummy directly from its local state.
+Production padding is the frozen per-group tier ladder
+`{4,16,64,256,1024,4096,16384}`. Each group's public `PadWidth` is the
+smallest tier greater than or equal to its real posting count. `PadWidth`
+reveals the corresponding coarse real-size class and is allowed structural
+leakage. Validity remains secret-shared per slot: `real = 1`, `dummy = 0`.
 
 ### KHPRF routing
 
@@ -212,7 +216,7 @@ which holds because Ristretto255 canonical encoding is injective on the group.
   The current production width is not fixed by PHASE 3B (`B RE-EVALUATION
   OPEN`); the primitive only requires a power of two.
 
-### Base outsourced index schema (PHASE 3C1)
+### Base outsourced index schema (PHASE 3C1; padding frozen in PHASE 3C3)
 
 PHASE 3C1 implements the trusted-DO, in-memory base index builder for the raw
 MusicBrainz `area` and `area_alias` COPY text tables. It does not define a
@@ -242,16 +246,27 @@ XOR WordBucketComponent(k_T, qgram, k).
 Each Target party slot contains exactly one local share of alias ID, position,
 and validity. It contains no join value or routing payload.
 
-Padding is uniform per nonempty physical bucket: `L_pad` is the maximum real
-posting count among groups in that bucket, and every group is padded to that
-length. Real validity is shared from one. Dummy record ID, position, validity,
+Padding is per group. For a nonempty group with `n` real postings:
+
+```text
+PadWidth(n) = min { L in {4,16,64,256,1024,4096,16384} : L >= n }.
+```
+
+An input group larger than 16,384 is an error; there is no dynamic tier, exact
+width, or bucket-maximum fallback. Anchor and Target use the same ladder. A
+bucket's total slots are `sum_g PadWidth(g)`, never
+`GroupCount * bucket.LPad`. Real validity is shared from one. Dummy record ID, position, validity,
 Anchor scalar, and Anchor bucket component are all shared afresh from semantic
 zero; no local all-zero convention or plaintext dummy flag exists. Group count
-and `L_pad` are public experimental metadata. No tier, cap/overflow, dummy
-group, or ORAM policy is implemented.
+and every group's `PadWidth` are public structural metadata. This coarse
+size-class leakage is accepted in exchange for substantially lower padding.
+The PHASE 3C2 per-bucket-maximum layout remains available only as an experiment
+baseline. No cap/overflow, dummy-group, or ORAM policy is implemented.
 
 The public metadata contains only `q`, both bucket widths, and for each
-nonempty Anchor/Target bucket its bucket ID, `L_pad`, and group count. Party
+nonempty Anchor/Target bucket its bucket ID, total slots, and group count. Each
+party group contains the same public `PadWidth`, and its local slots slice has
+exactly that length. Buckets do not carry a production `LPad`. Party
 state contains no plaintext name, q-gram, join ID, raw record, peer share, both
 shares, full Target point, or derivation key.
 
@@ -265,7 +280,7 @@ shares, full Target point, or derivation key.
 - **PHASE 5 PAYLOAD ALIGNMENT = OPEN.** The base posting payload is frozen for
   PHASE 3C1, but its eventual secure aggregation/compaction alignment remains a
   PHASE 5 dependency.
-- The paper is **not modified** by PHASE 3B; it will be synchronised once the
+- The paper is **not modified** by PHASE 3C3; it will be synchronised once the
   protocol is stable.
 
 ### Secure permutation

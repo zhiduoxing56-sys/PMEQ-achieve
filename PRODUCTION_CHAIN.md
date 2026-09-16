@@ -16,11 +16,11 @@ IndexOutsource
 
 ## Current stage status
 
-- **IndexOutsource:** PHASE 3C1 base builder implemented in memory for raw
+- **IndexOutsource:** PHASE 3C3 base builder implemented in memory for raw
   MusicBrainz `area`/`area_alias`: q=4 code-point postings, Anchor q-gram
-  groups, Target `(joinID,qgram)` groups, party-local fresh shares, and uniform
-  per-bucket maximum padding. Persistent format and full-dataset build are not
-  implemented.
+  groups, Target `(joinID,qgram)` groups, party-local fresh shares, and frozen
+  per-group tiers `{4,16,64,256,1024,4096,16384}`. The uniform per-bucket
+  maximum is experiment baseline only. Persistent format is not implemented.
 - **Anchor Match:** design frozen; primitive awaiting migration verification.
 - **Anchor Position Filtering:** comparison primitive awaiting migration/re-verification.
 - **Anchor Record Aggregation:** mathematical specification frozen; no current production implementation; PHASE 5 blocker.
@@ -64,13 +64,20 @@ IndexOutsource
 
 None of the paths above may re-enter the production graph through a compatibility interface.
 
-## PHASE 3C1 boundary and open dependencies
+## PHASE 3C3 boundary and open dependencies
 
 The base slot payload ends at secret-shared record ID, code-point position, and
 validity, plus the Anchor-only future routing shares. Position Filtering,
 Boolean multiplication, B2A, Aggregation, Compaction, online KHPRF routing,
 Private Equality, Target filtering, Candidate ID Generation, and a full
 Candidate Discovery runner remain unimplemented.
+
+Future Position Filtering is variable-width compatible: it must iterate each
+group and then that group's slots; no `groupIndex * bucket.LPad` interface or
+implementation exists. Future hidden Aggregation consumes posting slots and
+their hidden record relation independently of group width, so variable
+`PadWidth` is not an interface blocker. PHASE 3C3 does not implement either
+stage.
 
 SHORT-STRING COMPLETENESS, the final bucket-width choice (`B RE-EVALUATION`),
 and PHASE 5 payload/aggregation alignment remain OPEN. PHASE 4 has not started.

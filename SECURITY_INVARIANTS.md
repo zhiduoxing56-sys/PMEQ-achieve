@@ -28,7 +28,9 @@ The following are prohibited:
 Only the following leakage is currently permitted:
 
 - public system parameters;
-- `L_pad`;
+- each group's public padding tier / `PadWidth`, revealing its coarse real-size
+  class;
+- public bucket group count and total padded slot count;
 - K from exact-K compaction.
 
 No other leakage may be treated as permitted unless it is explicitly frozen by a reviewed specification decision.
