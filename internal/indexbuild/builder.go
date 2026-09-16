@@ -66,6 +66,7 @@ type Distribution struct {
 	Min int
 	P50 int
 	P95 int
+	P99 int
 	Max int
 }
 type SideStats struct {
@@ -76,6 +77,7 @@ type SideStats struct {
 	NonemptyBuckets  int
 	GroupCount       Distribution
 	LPad             Distribution
+	SlotsPerBucket   Distribution
 	RealSlots        int
 	PaddedSlots      int
 	PaddingRatio     float64
@@ -404,13 +406,16 @@ func finishStats(stats *SideStats, buckets []BucketMetadata) {
 	stats.NonemptyBuckets = len(buckets)
 	groups := make([]int, len(buckets))
 	lpads := make([]int, len(buckets))
+	slots := make([]int, len(buckets))
 	for i, b := range buckets {
 		groups[i] = int(b.GroupCount)
 		lpads[i] = int(b.LPad)
-		stats.PaddedSlots += int(b.GroupCount) * int(b.LPad)
+		slots[i] = int(b.GroupCount) * int(b.LPad)
+		stats.PaddedSlots += slots[i]
 	}
 	stats.GroupCount = distribution(groups)
 	stats.LPad = distribution(lpads)
+	stats.SlotsPerBucket = distribution(slots)
 	if stats.RealSlots > 0 {
 		stats.PaddingRatio = float64(stats.PaddedSlots) / float64(stats.RealSlots)
 	}
@@ -427,5 +432,5 @@ func distribution(values []int) Distribution {
 		}
 		return values[idx]
 	}
-	return Distribution{values[0], at(.50), at(.95), values[len(values)-1]}
+	return Distribution{values[0], at(.50), at(.95), at(.99), values[len(values)-1]}
 }

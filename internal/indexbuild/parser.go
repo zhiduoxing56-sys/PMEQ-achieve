@@ -31,6 +31,20 @@ type AreaAliasRecord struct {
 	Area uint64
 }
 
+// InputStats classifies raw COPY rows at the trusted parser boundary. A usable
+// row has all fields required by its logical projection. Empty names are
+// usable but short; short names do not enter the main q=4 index.
+type InputStats struct {
+	RawRows          int
+	UsableRows       int
+	NullNames        int
+	NullJoinValues   int
+	EmptyNames       int
+	ShortNames       int
+	IndexedRecords   int
+	QGramOccurrences int
+}
+
 // ParseCOPYTextLine parses one PostgreSQL COPY text row. A nil field denotes
 // the raw, unescaped null marker \N. Tabs delimit fields before unescaping.
 func ParseCOPYTextLine(line []byte) ([]*string, error) {
@@ -130,12 +144,21 @@ func hexNibble(c byte) (int, bool) {
 // LoadArea reads up to limit valid projected rows; limit <= 0 means no limit.
 // Rows whose projected name is NULL are not logical records.
 func LoadArea(r io.Reader, limit int) ([]AreaRecord, error) {
+	records, _, err := LoadAreaWithStats(r, limit)
+	return records, err
+}
+
+// LoadAreaWithStats is LoadArea plus complete raw/input classification.
+func LoadAreaWithStats(r io.Reader, limit int) ([]AreaRecord, InputStats, error) {
 	var records []AreaRecord
+	var stats InputStats
 	err := scanCOPY(r, areaColumns, func(line int, fields []*string) error {
+		stats.RawRows++
 		if fields[0] == nil {
 			return fmt.Errorf("line %d: area.id is NULL", line)
 		}
 		if fields[2] == nil {
+			stats.NullNames++
 			return nil
 		}
 		if !utf8.ValidString(*fields[2]) {
@@ -145,21 +168,36 @@ func LoadArea(r io.Reader, limit int) ([]AreaRecord, error) {
 		if err != nil {
 			return fmt.Errorf("line %d: area.id: %w", line, err)
 		}
-		records = append(records, AreaRecord{ID: id, Name: *fields[2]})
+		name := *fields[2]
+		records = append(records, AreaRecord{ID: id, Name: name})
+		classifyName(name, &stats)
 		return nil
 	}, func() bool { return limit > 0 && len(records) >= limit })
-	return records, err
+	return records, stats, err
 }
 
 // LoadAreaAlias reads up to limit valid projected rows; limit <= 0 means no
 // limit. Rows with a NULL name or join value are not logical records.
 func LoadAreaAlias(r io.Reader, limit int) ([]AreaAliasRecord, error) {
+	records, _, err := LoadAreaAliasWithStats(r, limit)
+	return records, err
+}
+
+// LoadAreaAliasWithStats is LoadAreaAlias plus complete raw/input classification.
+func LoadAreaAliasWithStats(r io.Reader, limit int) ([]AreaAliasRecord, InputStats, error) {
 	var records []AreaAliasRecord
+	var stats InputStats
 	err := scanCOPY(r, areaAliasColumns, func(line int, fields []*string) error {
+		stats.RawRows++
 		if fields[0] == nil {
 			return fmt.Errorf("line %d: area_alias.id is NULL", line)
 		}
-		if fields[1] == nil || fields[2] == nil {
+		if fields[2] == nil {
+			stats.NullNames++
+			return nil
+		}
+		if fields[1] == nil {
+			stats.NullJoinValues++
 			return nil
 		}
 		if !utf8.ValidString(*fields[2]) {
@@ -173,10 +211,26 @@ func LoadAreaAlias(r io.Reader, limit int) ([]AreaAliasRecord, error) {
 		if err != nil {
 			return fmt.Errorf("line %d: area_alias.area: %w", line, err)
 		}
-		records = append(records, AreaAliasRecord{ID: id, Name: *fields[2], Area: area})
+		name := *fields[2]
+		records = append(records, AreaAliasRecord{ID: id, Name: name, Area: area})
+		classifyName(name, &stats)
 		return nil
 	}, func() bool { return limit > 0 && len(records) >= limit })
-	return records, err
+	return records, stats, err
+}
+
+func classifyName(name string, stats *InputStats) {
+	stats.UsableRows++
+	if name == "" {
+		stats.EmptyNames++
+	}
+	runes := len([]rune(name))
+	if runes < Q {
+		stats.ShortNames++
+		return
+	}
+	stats.IndexedRecords++
+	stats.QGramOccurrences += runes - Q + 1
 }
 
 func scanCOPY(r io.Reader, columns int, visit func(int, []*string) error, done func() bool) error {

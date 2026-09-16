@@ -69,3 +69,23 @@ func TestProjectedTextMustBeUTF8(t *testing.T) {
 		t.Fatal("accepted invalid UTF-8 name")
 	}
 }
+
+func TestInputStatsClassifyNullEmptyShortAndIndexed(t *testing.T) {
+	row := func(id, name string) string {
+		fields := make([]string, areaColumns)
+		fields[0], fields[2] = id, name
+		return strings.Join(fields, "\t") + "\n"
+	}
+	input := row("1", "\\N") + row("2", "") + row("3", "abc") + row("4", "abcd") + row("5", "abcde")
+	records, stats, err := LoadAreaWithStats(strings.NewReader(input), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := InputStats{RawRows: 5, UsableRows: 4, NullNames: 1, EmptyNames: 1, ShortNames: 2, IndexedRecords: 2, QGramOccurrences: 3}
+	if stats != want {
+		t.Fatalf("stats=%+v want=%+v", stats, want)
+	}
+	if len(records) != 4 {
+		t.Fatalf("usable records=%d want 4", len(records))
+	}
+}

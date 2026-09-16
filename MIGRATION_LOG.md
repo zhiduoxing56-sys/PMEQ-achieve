@@ -235,3 +235,54 @@ PHASE 3C1 freezes q=4 code-point positions, Anchor identity `qgram`, Target
 identity `(joinID,qgram)`, MSB-first Anchor prefix buckets, XOR Target buckets,
 the minimal party-local slot schemas, and uniform per-bucket maximum `L_pad`.
 Short-string policy, final B choice, and PHASE 5 payload alignment remain OPEN.
+
+## PHASE 3C2 full MusicBrainz validation record
+
+The PHASE 3C1 parser and builder were rerun from the raw MusicBrainz fullexport
+`20260905-002519` with no record limit. The current Go parser independently
+reproduced the historical audit:
+
+- `area`: 120,071 raw/usable rows, zero NULL names, zero empty names, 644 short
+  names, 119,427 indexed records, 906,584 q-gram occurrences, 110,115 groups;
+- `area_alias`: 67,896 raw/usable rows, zero NULL names, zero empty names, 4,047
+  short names, 63,849 indexed records, 480,945 q-gram occurrences, 310,331
+  `(area,qgram)` groups.
+
+The share-free `AnalyzeLayout` path reuses the production logical grouping and
+bucket functions. It allocates no party shares, dummy slots, or point-share
+arrays. Full layout results were:
+
+| k | B | Anchor padded/real | Anchor ratio | Target padded/real | Target ratio |
+|---:|---:|---:|---:|---:|---:|
+| 8 | 256 | 60,875,210 / 906,584 | 67.147898 | 2,982,727 / 480,945 | 6.201805 |
+| 10 | 1,024 | 26,409,235 / 906,584 | 29.130489 | 2,757,076 / 480,945 | 5.732622 |
+| 12 | 4,096 | 11,064,894 / 906,584 | 12.205040 | 2,132,676 / 480,945 | 4.434345 |
+| 13 | 8,192 | 7,070,653 / 906,584 | 7.799225 | 1,692,115 / 480,945 | 3.518313 |
+| 14 | 16,384 | 4,417,569 / 906,584 | 4.872763 | 1,304,291 / 480,945 | 2.711934 |
+
+The largest Anchor group was trusted-analysis q-gram `aint`, with 5,211
+occurrences. The largest Target group was `(joinID=3416,qgram="Buth")`, with
+16 occurrences; this confirms that Target grouping did not regress to
+q-gram-only identity.
+
+Only k=14 was materially built. The calculated two-party lower bound was
+511,486,080 bytes (0.476359 GiB), below the 12 GiB guard. The in-memory Build
+took 40.569370667 seconds: 11.334530444 seconds for logical grouping/key and
+crypto derivation and 29.234839249 seconds for sharing/padding. Sampled Go heap
+peak was 1,285,709,336 bytes; the complete validation process maximum RSS was
+1,767,572 KiB with zero swap.
+
+Deterministic audits reconstructed 10,000 Anchor real slots, 10,000 Anchor
+dummy slots, 10,000 Target real slots, 10,000 Target dummy slots, and 10,000
+Target groups. Twenty thousand group-identity checks passed. There were 952
+Anchor and 418 Target `(record,qgram)` pairs with repeated occurrences; their
+maximum multiplicities were 2 and 3. The existing per-occurrence fresh-split
+wiring test remains the strict freshness evidence, and a full-index spot check
+confirmed equal, correct reconstructed routing semantics for repeated Anchor
+occurrences.
+
+The evidence recommends k=14 / B=16,384 among the tested choices because it has
+the smallest padded indexes and lowest median/tail per-query bucket workload.
+This is a recommendation only. **B final choice remains OPEN.** Short-string
+completeness and PHASE 5 payload alignment also remain OPEN. No persistent
+index format or index file was created, and PHASE 4 was not started.

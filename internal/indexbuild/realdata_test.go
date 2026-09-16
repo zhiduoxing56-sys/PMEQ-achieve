@@ -67,7 +67,7 @@ func TestRealMusicBrainz1000(t *testing.T) {
 }
 
 func formatSide(s SideStats) string {
-	return fmt.Sprintf("raw=%d short=%d occurrences=%d groups=%d nonempty_buckets=%d group_count=%+v lpad=%+v real_slots=%d padded_slots=%d padding_ratio=%.6f", s.RawRecords, s.ShortStrings, s.QGramOccurrences, s.LogicalGroups, s.NonemptyBuckets, s.GroupCount, s.LPad, s.RealSlots, s.PaddedSlots, s.PaddingRatio)
+	return fmt.Sprintf("raw=%d short=%d occurrences=%d groups=%d nonempty_buckets=%d group_count=%+v lpad=%+v slots_per_bucket=%+v real_slots=%d padded_slots=%d padding_ratio=%.6f", s.RawRecords, s.ShortStrings, s.QGramOccurrences, s.LogicalGroups, s.NonemptyBuckets, s.GroupCount, s.LPad, s.SlotsPerBucket, s.RealSlots, s.PaddedSlots, s.PaddingRatio)
 }
 
 func auditPartyAlignment(t *testing.T, meta PublicMetadata, a, b PartyIndex) {
