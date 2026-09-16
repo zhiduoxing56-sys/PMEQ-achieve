@@ -35,7 +35,7 @@ IndexOutsource
   one-use query-material budget, separate from reusable static state.
 - **Anchor Keep:** masked external SCMP produces F2 Keep aligned with a
   DO-generated per-record global payload under the same LayoutID.
-- **Candidate Compaction:** candidate primitive exists; awaits a later independent migration audit.
+- **Candidate Compaction:** PHASE 6 migrates the audited two-stage hidden shuffle, opens shuffled Keep and retains exactly K local secret payloads.
 - **KHPRF Routing:** design frozen; awaits a later independent migration audit.
 - **Target Private Equality:** OPTION 4 approved. The Target stored group key is
   the additive Ristretto255 point share pair `T = T0 + T1`; the future equality
@@ -79,7 +79,7 @@ None of the paths above may re-enter the production graph through a compatibilit
 IndexOutsource is sealed. Anchor filtering now ends at `x_{h,s}` F2 hit shares.
 B2A and hidden incidence aggregation through local-record F are now implemented
 by PHASE 5B1. PHASE 5B2 adds F->z, global alignment, C, Keep and payload.
-Compaction, online KHPRF routing, Private Equality, Target filtering, Candidate
+Online KHPRF routing, Private Equality, Target filtering, Candidate
 ID Generation, and a full Candidate Discovery runner remain unimplemented.
 
 PHASE 5B1: F2 posting shares -> batched Z128 B2A -> chunked scalar-vector Beaver
@@ -116,9 +116,27 @@ The factor footprint is 25640709028 bytes for all 53383 nonempty buckets,
 not including metadata/allocator overhead. This is quantified static storage,
 not a full-table resident-memory claim. Only accessed sigma and transient rho
 are loaded for experiments. No persistent format, query-time DO service, or
-raw DB lookup was added. Candidate Compaction and Target routing remain not started.
+raw DB lookup was added. PHASE 6 subsequently implements Candidate Compaction; Target routing remains not started.
 
 **PHASE5 = SEALED.** Correctness, hidden posting correspondence, aligned payload,
 static storage accounting and finite offline-preprocessing lifecycle gates pass.
-Next phase is Candidate Compaction, which is not started by this change. Short-string
+PHASE 6 completes Candidate Compaction after this sealed PHASE5 boundary. Short-string
 completeness remains OPEN; SCMP remains an external validated component.
+
+
+PHASE 6 party-local chain:
+
+CandidateInput(LayoutID, Keep, RecordID, KappaJoin, BucketJoin shares)
+-> CS1.Begin -> masked message -> CS0.Stage1(tau0)
+-> CS0.BeginStage2 -> masked message -> CS1.Stage2(tau1)
+-> each party OpenKeep -> exchange only final Keep shares
+-> each party Extract -> CompactedCandidates(LayoutID, fresh CompactionID, K,
+three K-length payload-share arrays).
+
+Only the offline dealer has both factors/materials; online method signatures
+never take both inputs. Factors AND masks are fresh per query, unlike static
+PHASE5 alignment factors. K is public; gamma, payload and cross-query positions
+remain hidden. K=0 retains no dummies. Tests reconstruct only in the coordinator.
+The native real-query experiment runs Anchor DPF, LLAMA Position, Boolean hits,
+incidence, deduplication, global alignment, LLAMA Keep and this compaction.
+See results/phase6-audit.md and results/phase6-results.md. No later phase begins.

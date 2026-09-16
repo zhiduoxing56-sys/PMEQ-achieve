@@ -666,3 +666,44 @@ independently DO-generated per-record Payload[gamma], same Global LayoutID.
 Posting KappaJoinShare/BucketJoinShare remain potentially redundant and are
 not removed. F->z, permutation, C, Keep, compaction, routing and payload
 implementation: no. New cryptographic protocol: no. Paper changed: no.
+
+## PHASE 6 — Exact-K secure candidate compaction (2026-09-16)
+
+Begin HEAD 8b9f675e45e3c3c5317f42e9df9aaa3fee6c3f84, status clean.
+Read-only old source audit recovered candidate-compaction-input -> isolated
+secure-candidate-permute-bench -> two party layers -> shuffled Keep opening ->
+local extraction. Routing selection is N-slot dummy replacement, not compaction;
+its coordinators and compacted KHPRF experiments do not define a production
+exact-K chain. Full findings, including benchmark PRNG/Keep-byte/inherited-FD
+issues, are in results/phase6-audit.md. Mathematical scheme reusable=YES.
+No protocol requirement exposes original gamma, plaintext IDs or peer shares.
+
+Migrated the existing masked-scatter equations to the current product group,
+using one fresh permutation pair for all fields and independent masks by domain.
+Party-local one-use packet handles bind LayoutID/CompactionID/shape/stage and
+release N-sized state after extraction. Existing PartyPool integration is tested.
+`CompactedCandidates` retains exactly K Ring64 ID/scalar kappa/XOR bucket shares
+in fresh shuffled order. Additional compaction leakage=K with fixed public N.
+No new compaction protocol, plaintext serialization shuffle or online dealer.
+
+Kept PHASE5 production implementation sealed; extended its test harness through
+compaction and added an opt-in test adapter to the existing external LLAMA
+backend. Native KeyGen remains offline; Eval uses one party key only, with rb
+removed once by existing PHASE4/5 callers. All external builds write to /tmp;
+old source, data and paper remain untouched. Ordinary test builds still expose
+no unsafe reference SCMP as a production implementation.
+
+Validation and measurements: results/phase6-results.md; raw experiment logs are
+recorded alongside it. K distribution reuses the actual 1000 cryptographic-query
+outputs. Compaction benchmark runs 10 warmups plus 50 measured fresh packets per
+distinct K. Output shares are excluded from server-to-server communication.
+PHASE5=SEALED; query-time DO/raw DB=no; KHPRF/Target filtering started=no;
+paper modified=NO. Work stops at secret candidate payloads.
+
+Final PHASE6 evidence: 1000 seed-502 native-LLAMA real queries plus three
+PHASE5 workload quantiles passed with zero errors. K min/p50/p90/p95/p99/max =
+1/5/151/431/2843/4780. All eight distinct benchmark K values
+0,1,5,8,64,431,512,2843 completed 10 warmups + 50 measurements each.
+Full-N zero/singleton/all/sparse/dense repeated correctness and fresh-shuffle
+regressions pass. gofmt, go test ./..., go vet ./..., native-tag vet,
+git diff --check and focused race checks pass. Candidate Compaction complete=YES.

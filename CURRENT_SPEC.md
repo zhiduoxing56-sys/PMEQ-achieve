@@ -274,7 +274,7 @@ shares, full Target point, or derivation key.
 - **Anchor B = 65536 FROZEN in PHASE 5B2.** AnchorBucketBits=16. The Target
   bucket-width primitive remains independently parameterized.
 - **PHASE 5 PAYLOAD ALIGNMENT = CLOSED in PHASE 5B2.** Keep and fresh DO-generated
-  per-record payload use the same hidden global LayoutID. Compaction remains future work.
+  per-record payload use the same hidden global LayoutID. PHASE 6 adds fresh exact-K compaction.
 - The paper is **not modified** by PHASE 3C3; it will be synchronised once the
   protocol is stable.
 
@@ -466,7 +466,7 @@ also be one-time, never static. No unlimited-query/no-preprocessing claim is mad
 
 An online cloud consumes only previously provisioned local state. Exhaustion
 requires a new offline provisioning epoch, never query-time DO or raw DB access.
-Future Candidate Compaction remains a separate, not-started phase. Paper modified=NO.
+Candidate Compaction is implemented by PHASE 6 below. Paper modified=NO.
 
 PHASE5 = SEALED (PHASE 5B3): Anchor aggregation correctness passes, posting
 mapping remains hidden in party-local incidence shares, Keep/payload share one
@@ -487,9 +487,8 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
   no IndexOutsource, no private equality, no Beaver, no B2A, no runner.
 - **PHASE 4:** Anchor filtering foundation implemented through F2 posting-hit
   shares; native LLAMA remains an external validated component.
-- **PHASE 5:** hidden incidence core implemented through Z128 local-record F;
-  subsequent deduplication, global alignment and Keep remain unimplemented.
-- **PHASE 6:** Candidate Compaction.
+- **PHASE 5:** SEALED; hidden incidence, deduplication, global alignment and Keep implemented.
+- **PHASE 6:** exact-K Candidate Compaction implemented; output remains secret payload shares.
 - **PHASE 7:** KHPRF Routing.
 - **PHASE 8:** Target Private Equality.
 - **PHASE 9:** Target Position + Target Aggregation.
@@ -498,3 +497,35 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
 - **PHASE 12:** real workload and production E2E.
 
 No later Candidate Discovery phase may begin until PHASE 5 passes both correctness and single-party security audits.
+
+
+## PHASE 6 — Exact-K secure candidate compaction
+
+PHASE5 = SEALED. The migrated old two-stage masked shuffle applies fresh
+query-specific tau0/tau1 to the whole F2/Ring64/Ristretto-scalar/BucketShare
+product tuple. Static PHASE5 rho/sigma is never reused for compaction.
+`PreprocessCompaction` is offline-only. CS0 receives only tau0/c0/t1/r1;
+CS1 only tau1/t0/r0/c1. Each fresh CompactionID identifies one consumed packet.
+All randomness comes from crypto/rand, including unbiased permutations.
+
+Input: CandidateInput{LayoutID, KeepShare[N], Payload[N]}, N_global=120071.
+PayloadShare={RecordIDShare Ring64 additive, KappaJoinShare canonical scalar
+additive, BucketJoinShare uint16 XOR}. All fields follow the same gamma order.
+
+Output: CompactedCandidates{LayoutID, CompactionID, K, RecordIDShare[K],
+KappaJoinShare[K], BucketJoinShare[K]}. K is the number of opened shuffled ones;
+zero candidates means zero-length arrays. The fresh output order carries no
+original gamma semantics. No output coordinate mapping is provided.
+
+Additional compaction leakage L_cand=K, with N public. Open only final shuffled
+Keep after both permutation stages, never static Keep[gamma] or payload fields.
+No query-time DO, raw DB, ID reconstruction, KJoin or bucket reconstruction.
+Consumed packet state releases its temporary N-sized arrays after extraction.
+Offline packets may be provisioned in the existing finite sealed Q_pool.
+
+See results/phase6-audit.md for old call graph, algebra, simulation, holdings,
+byte/memory accounting and reproduction; results/phase6-results.md for measured
+validation. Native experiments use an opt-in external LLAMA test adapter; the
+sealed production PHASE5 implementation is unchanged. No transport/persistent
+pool/complete Candidate Discovery runner is claimed by this component migration.
+KHPRF and Target filtering remain not started. Paper modified=NO.

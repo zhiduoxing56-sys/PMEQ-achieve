@@ -241,3 +241,36 @@ materials stay in the existing typed party-local objects, never in the peer regi
 Any material-pool exhaustion is an offline reprovisioning condition, not permission
 for a query-time DO callback or raw database lookup. Current Keep has no separate
 Beaver triples; this does not make its SCMP threshold packet reusable.
+
+
+## PHASE 6 exact-K compaction
+
+PHASE5 remains SEALED. Its global gamma is static and must never be exposed by
+opening Keep[gamma]. Every compaction consumes independently sampled fresh
+permutations tau0/tau1 and independent domain-specific one-time masks. The same
+permutation pair acts on all four fields. CS0 knows only tau0 and CS1 only tau1.
+No party object or method holds both payload inputs, original IDs or dealer gamma.
+Input scalar encodings are checked before use. Keep is boolean F2, preventing
+the old fixture's full-byte stable-tag defect. Public seeded benchmark randomness
+is not used in production preprocessing.
+
+In the semi-honest, non-colluding model, CS0's final ordering is randomized by
+unknown tau1, and CS1's by unknown tau0. Independent pads hide online masked
+messages. Conditioned on K, final opened Keep is a fresh random K-subset in
+each party view. Additional leakage is exactly K with fixed public N; K is not
+hidden. Extreme K=0/N supports cannot change, but secret outputs are refreshed.
+A compacted slot has no cross-query stable candidate identity.
+
+Only shuffled Keep is exchanged in opening. Extraction reads local payloads;
+no payload is opened or transmitted as an output. RecordID uses Ring64 addition,
+kappa uses scalar-field addition, bucket uses XOR. Never treat their plaintext
+serialization as a common XOR group. Output includes no original-coordinate map.
+
+Fresh CompactionID, LayoutID, shape and stage binding reject wrong packets and
+replays. Packet handle copies share consumed state; the sealed offline pool
+supports one-use CompactionID tickets and no query-time refill. Successful local
+extraction releases all N-sized packet/shuffled state and returns exactly K
+shares. Cryptographic randomness and offline material must never be reused.
+See results/phase6-audit.md for equations and the simulation argument. No new
+malicious-security guarantee, persistent transport or storage format is claimed.
+Query-time DO/raw DB=no; KHPRF/Target filtering started=no; paper modified=no.

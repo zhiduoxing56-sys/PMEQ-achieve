@@ -1,0 +1,30 @@
+=== RUN   TestCompactionBenchmark
+    compaction_test.go:256: BENCH N=120071 K=5 warmup=10 measured=50 stage1=20.217322/24.570995 stage2=13.666238/16.371021 open=0.826944/1.138220 extract=2.151667/2.612999 p50/p95_ms sampled_heap_increment=27271616
+    compaction_test.go:256: BENCH N=120071 K=431 warmup=10 measured=50 stage1=20.702425/24.224475 stage2=13.600529/16.160856 open=0.841789/0.993065 extract=2.176991/2.770321 p50/p95_ms sampled_heap_increment=27308544
+    compaction_test.go:256: BENCH N=120071 K=2843 warmup=10 measured=50 stage1=20.668524/22.603032 stage2=13.646556/15.873360 open=0.831214/1.151867 extract=2.281856/2.979789 p50/p95_ms sampled_heap_increment=27529232
+--- PASS: TestCompactionBenchmark (75.95s)
+PASS
+ok  	pmeq/internal/aggregation	75.953s
+	Command being timed: "/tmp/go/bin/go test ./internal/aggregation -run ^TestCompactionBenchmark$ -count=1 -v"
+	User time (seconds): 33.87
+	System time (seconds): 41.00
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:13.72
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 112136
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 38
+	Minor (reclaiming a frame) page faults: 2009158
+	Voluntary context switches: 103372
+	Involuntary context switches: 216
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 7048
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

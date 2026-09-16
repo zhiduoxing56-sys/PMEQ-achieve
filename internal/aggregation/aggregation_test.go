@@ -24,6 +24,8 @@ import (
 // safe cloud key material. No timings of this backend are SCMP performance.
 type referenceSCMP struct{}
 
+var compositionSCMP anchorfilter.SCMPBackend = referenceSCMP{}
+
 func (referenceSCMP) KeyGen(bin uint8, x, y uint32, o domain.Bit) (anchorfilter.SCMPKeyShare, anchorfilter.SCMPKeyShare, error) {
 	a, b, e := preprocess.SplitBit(o)
 	raw := []byte{byte(x), byte(y)}
@@ -51,7 +53,7 @@ func must(t *testing.T, e error) {
 	}
 }
 func compare(t *testing.T, a, b []incidence.Share, threshold int) ([]share.BitShare, []share.BitShare) {
-	u, p, q, e := PreprocessComparison(len(a), referenceSCMP{})
+	u, p, q, e := PreprocessComparison(len(a), compositionSCMP)
 	must(t, e)
 	bound, e := u.Mask(threshold)
 	must(t, e)
@@ -61,9 +63,9 @@ func compare(t *testing.T, a, b []incidence.Share, threshold int) ([]share.BitSh
 	must(t, e)
 	o, e := OpenComparison(v, w)
 	must(t, e)
-	x, e := p.Finish(o, bound, referenceSCMP{})
+	x, e := p.Finish(o, bound, compositionSCMP)
 	must(t, e)
-	y, e := q.Finish(o, bound, referenceSCMP{})
+	y, e := q.Finish(o, bound, compositionSCMP)
 	must(t, e)
 	return x, y
 }
@@ -227,6 +229,7 @@ func newHarness(t *testing.T, areas []indexbuild.AreaRecord) *harness {
 type measurement struct {
 	XF, Perm, Sum, B2AZ   time.Duration
 	FComparisons, R, T, P int
+	K                     int
 	Peak                  uint64
 }
 
@@ -265,7 +268,7 @@ func (h *harness) query(t *testing.T, Q string, tau int) measurement {
 		must(t, e)
 		perm0, perm1, e := PreprocessPermutation(stage0, stage1)
 		must(t, e)
-		user, pp0, pp1, e := anchorfilter.Preprocess(n, 7, referenceSCMP{})
+		user, pp0, pp1, e := anchorfilter.Preprocess(n, 7, compositionSCMP)
 		must(t, e)
 		q0, q1, e := anchorquery.MakeOccurrence(h.kb, chunk, uint32(tau), 62, 16, &user)
 		must(t, e)
@@ -275,9 +278,9 @@ func (h *harness) query(t *testing.T, Q string, tau int) measurement {
 		must(t, e)
 		opened, e := anchorfilter.OpenMaskedPositions(pr0.PL, pr0.PR, pr1.PL, pr1.PR, 7)
 		must(t, e)
-		pos0, e := anchorfilter.EvalPosition(0, q0, pp0, opened, referenceSCMP{})
+		pos0, e := anchorfilter.EvalPosition(0, q0, pp0, opened, compositionSCMP)
 		must(t, e)
-		pos1, e := anchorfilter.EvalPosition(1, q1, pp1, opened, referenceSCMP{})
+		pos1, e := anchorfilter.EvalPosition(1, q1, pp1, opened, compositionSCMP)
 		must(t, e)
 		x0, x1, e := anchorfilter.ComposeHits(pr0, pr1, pos0, pos1)
 		must(t, e)
@@ -389,6 +392,9 @@ func (h *harness) query(t *testing.T, Q string, tau int) measurement {
 			t.Fatal("alignment")
 		}
 	}
+	x, y, _, _ := compactRun(t, out0, out1)
+	verifyCompaction(t, out0, out1, x, y)
+	m.K = x.K
 	var ms runtime.MemStats
 	runtime.ReadMemStats(&ms)
 	m.Peak = ms.HeapAlloc
@@ -469,15 +475,21 @@ func TestReal1000Queries(t *testing.T) {
 		must(t, pool1.Consume(packets[nextPacket]))
 		nextPacket++
 	}
+	ks := []int{}
 	if os.Getenv("PMEQ_AGG_ONLY_BENCH") != "1" {
 		for i, j := range order[:1000] {
 			q := qs[j].q
 			consume()
-			h.query(t, q, rng.Intn(len(anchorfilter.QueryChunks(q))))
+			m := h.query(t, q, rng.Intn(len(anchorfilter.QueryChunks(q))))
+			ks = append(ks, m.K)
 			if i%50 == 0 {
 				t.Logf("real queries %d/1000", i)
 			}
 		}
+	}
+	if len(ks) > 0 {
+		sort.Ints(ks)
+		t.Logf("PHASE6 K n=%d min=%d p50=%d p90=%d p95=%d p99=%d max=%d", len(ks), ks[0], ks[499], ks[899], ks[949], ks[989], ks[999])
 	}
 	for _, pct := range []float64{.5, .95, .99} {
 		q := qs[int(float64(len(qs)-1)*pct+.999999)]
