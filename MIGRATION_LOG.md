@@ -195,7 +195,7 @@ No concurrency was introduced; race was not rerun and is not a gate.
 - Snapshot: `/home/tenggn/projects/PMEQ_SNAPSHOT_PRE_ANCHOR_AGG_20260915T190526+0800/source.tar`
 - Actual verified SHA256: `a456dec8a84236b333c043b7ce68033b6418f6c6ac8e2ca494858b62f66792a0`
 - Expected SHA256: `a456dec8a84236b333c043b7ce68033b6418f6c6ac8e2ca494858b62f66792a0`
-- New repository: `/home/tenggn/projects/pmeq-clean`
+- New repository: `/home/tenggn/projects/clean_pmeq`
 - PHASE 0 date: `2026-09-15`
 - PHASE 0 status: bootstrap specifications prepared; no source migration
 - migrated source files = 0

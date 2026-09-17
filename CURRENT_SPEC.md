@@ -5,7 +5,7 @@ This document is the current production engineering specification for PMEQ.
 ## 1. Sources of truth
 
 - Old repository: `/home/tenggn/projects/new-pmeq` — read-only reference only.
-- New repository: `/home/tenggn/projects/pmeq-clean` — the only production source of truth.
+- New repository: `/home/tenggn/projects/clean_pmeq` — the only production source of truth.
 - Source snapshot: `/home/tenggn/projects/PMEQ_SNAPSHOT_PRE_ANCHOR_AGG_20260915T190526+0800/source.tar`
 - Snapshot SHA256: `a456dec8a84236b333c043b7ce68033b6418f6c6ac8e2ca494858b62f66792a0`
 

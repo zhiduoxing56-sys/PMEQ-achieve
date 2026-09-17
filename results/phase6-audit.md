@@ -1,7 +1,7 @@
 # PHASE 6 audit and reproducibility
 
 Begin HEAD: `8b9f675e45e3c3c5317f42e9df9aaa3fee6c3f84`, clean worktree.
-Target: `/home/tenggn/projects/pmeq-clean`. Old repository is read-only.
+Target: `/home/tenggn/projects/clean_pmeq`. Old repository is read-only.
 
 ## Recovered old call graph
 

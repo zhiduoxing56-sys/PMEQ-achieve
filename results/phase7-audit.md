@@ -1,7 +1,7 @@
 # PHASE 7 — private Target routing audit
 
 Begin HEAD: 24f863d8ef057fb37f8f0fa427f85f36e2a59420, clean.
-Target repo: /home/tenggn/projects/pmeq-clean. Old repo: read-only.
+Target repo: /home/tenggn/projects/clean_pmeq. Old repo: read-only.
 PHASE5 remains SEALED; Candidate Compaction remains COMPLETE.
 
 ## Target bucket configuration
