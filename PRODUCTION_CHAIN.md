@@ -13,6 +13,7 @@ IndexOutsource
 → Target Position Filtering
 → Target Record Aggregation
 → Candidate ID Generation
+→ Query User final candidate-pair recovery
 
 ## Current stage status
 
@@ -43,9 +44,9 @@ IndexOutsource
   It ends at secret group Match shares; no input adapter and no hit opening.
 - **Target Position Filtering:** PHASE9 implements PHASE4 SCMP plus two F2 AND layers; posting Hit stays secret.
 - **Target Record Aggregation:** PHASE10B fixed D26 hidden incidence, F/z/C/Keep; evidence in results/phase10b-results.md.
-- **Candidate ID Generation:** PHASE10B fixed26K secret pair shares; no final count opening or recovery.
-- **Canonical Candidate Discovery runner:** does not exist; may be created only in PHASE 11.
-- **Production E2E:** does not exist; production E2E may be claimed only in PHASE 12.
+- **Candidate ID Generation:** PHASE10B fixed26K secret pair shares; no final count opening to clouds.
+- **Canonical Candidate Discovery runner:** PHASE11 `discovery.RunLocal` connects the real components and authorized user recovery.
+- **Integrated local E2E:** PHASE11 uses an independent outer wall timer. Completion is gated by854 valid queries and149 early rejections; evidence is in results/phase11-results.md. No socket/distributed latency claim.
 
 ## RETIRED / FORBIDDEN
 
@@ -238,3 +239,34 @@ The trusted native validation keeps all1003 historical upstream queries, rejects
 query Tau is silently modified. The complete replay is a correctness harness,
 not the PHASE11 canonical production runner or PHASE12 production E2E.
 AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`; paper modified=NO.
+
+## PHASE11 integrated Candidate Discovery boundary
+
+The canonical Go entry point `discovery.RunLocal` now composes actual initial
+user tokens, Anchor filtering/aggregation, compaction, routing, PE, Target
+Position/aggregation and authorized final recovery. `discovery.Provision` is
+strictly before execution. Each cloud worker has own state and byte endpoints;
+the coordinator is the local transport/user role, not a shared cloud state.
+
+`candidatequery.Recover` checks fixed26K result envelopes, reconstructs Keep and
+Ring64 IDs only at the user, requires zero masked IDs for Keep0, and rejects
+duplicates. Candidate Discovery ends at plaintext ID pairs, without record
+fetching or full-string exact verification. Query User is offline between token
+emission and final recovery; no final pair-count feedback goes to clouds.
+
+Normal input: q4, Anchor r1..14/Target r1..16,0<=tau_i<r_i.149 historical invalid
+Target queries reject before cloud execution;854 run the actual full chain.
+No clamping, fallback or semantic replacement. Short-string completeness remains
+OPEN (644 Anchor/4047 Target). Mean INTEGRATED LOCAL E2E WALL TIME is the primary
+latency; it comes from one outer online timer, excludes all offline setup and
+is not a component sum or network measurement. Evidence: results/phase11-results.md.
+The current PHASE11 request supersedes the previous PHASE12-only E2E gate.
+AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`; paper modified=NO.
+
+Final PHASE11 status: CANDIDATE DISCOVERY E2E = COMPLETE for the supported
+normal q=4 domain, 0<=tau_i<r_i (Anchor r1..14, Target r1..16).
+Final real replay:149/149 invalid queries rejected,854/854 valid queries correct,
+1510 recovered pairs; FP/FN/duplicates/wrong AnchorID/wrong TargetID all0.
+See results/phase11-results.md for final timing, communication, offline material,
+static accounting, memory and security evidence. Short-string completeness OPEN;
+full-string exact verification NO; query-time DO NO; paper modified NO.

@@ -1,0 +1,3278 @@
+[
+ {
+  "Query": 292,
+  "K": 161,
+  "Slots": 9440,
+  "Warmup": 10,
+  "Measured": 30,
+  "Samples": [
+   {
+    "Token": 1119651,
+    "Anchor": 187723246,
+    "Compaction": 158027448,
+    "Routing": 5237219,
+    "TargetPE": 94894014,
+    "TargetPosition": 77475343,
+    "TargetAggregation": 55920552,
+    "OutputEncoding": 34112,
+    "Recovery": 99801,
+    "Cloud": 574069160,
+    "LocalE2E": 575295719,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1183283872
+   },
+   {
+    "Token": 687300,
+    "Anchor": 178673274,
+    "Compaction": 117589508,
+    "Routing": 4551709,
+    "TargetPE": 96214383,
+    "TargetPosition": 81229241,
+    "TargetAggregation": 60654775,
+    "OutputEncoding": 81975,
+    "Recovery": 231846,
+    "Cloud": 537165593,
+    "LocalE2E": 538089073,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1352091248
+   },
+   {
+    "Token": 631679,
+    "Anchor": 159075552,
+    "Compaction": 117333182,
+    "Routing": 3761220,
+    "TargetPE": 90785003,
+    "TargetPosition": 75060608,
+    "TargetAggregation": 55784378,
+    "OutputEncoding": 37698,
+    "Recovery": 98560,
+    "Cloud": 498361904,
+    "LocalE2E": 499098960,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1183386672
+   },
+   {
+    "Token": 501934,
+    "Anchor": 186521416,
+    "Compaction": 134054067,
+    "Routing": 5642411,
+    "TargetPE": 108589574,
+    "TargetPosition": 79157501,
+    "TargetAggregation": 55475649,
+    "OutputEncoding": 38380,
+    "Recovery": 129877,
+    "Cloud": 553893998,
+    "LocalE2E": 554529478,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1364386976
+   },
+   {
+    "Token": 593015,
+    "Anchor": 170782582,
+    "Compaction": 108813123,
+    "Routing": 6998266,
+    "TargetPE": 90615290,
+    "TargetPosition": 78511389,
+    "TargetAggregation": 52852602,
+    "OutputEncoding": 34662,
+    "Recovery": 114490,
+    "Cloud": 505151107,
+    "LocalE2E": 505864164,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1195766368
+   },
+   {
+    "Token": 1254433,
+    "Anchor": 176806113,
+    "Compaction": 143491596,
+    "Routing": 6952798,
+    "TargetPE": 113072011,
+    "TargetPosition": 81468067,
+    "TargetAggregation": 51383054,
+    "OutputEncoding": 63714,
+    "Recovery": 128672,
+    "Cloud": 568572088,
+    "LocalE2E": 569962660,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1373971696
+   },
+   {
+    "Token": 629598,
+    "Anchor": 171973860,
+    "Compaction": 111552074,
+    "Routing": 4489968,
+    "TargetPE": 94273007,
+    "TargetPosition": 91503556,
+    "TargetAggregation": 71623063,
+    "OutputEncoding": 72963,
+    "Recovery": 225384,
+    "Cloud": 537037430,
+    "LocalE2E": 537896679,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1199821312
+   },
+   {
+    "Token": 1062954,
+    "Anchor": 200529714,
+    "Compaction": 126081862,
+    "Routing": 4764470,
+    "TargetPE": 123221075,
+    "TargetPosition": 93692118,
+    "TargetAggregation": 67859000,
+    "OutputEncoding": 51522,
+    "Recovery": 157214,
+    "Cloud": 613243301,
+    "LocalE2E": 614468297,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1371044576
+   },
+   {
+    "Token": 855038,
+    "Anchor": 171513257,
+    "Compaction": 104239778,
+    "Routing": 4831858,
+    "TargetPE": 86955906,
+    "TargetPosition": 78329936,
+    "TargetAggregation": 52324774,
+    "OutputEncoding": 42744,
+    "Recovery": 133423,
+    "Cloud": 496357714,
+    "LocalE2E": 497353321,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1212831920
+   },
+   {
+    "Token": 703899,
+    "Anchor": 185106833,
+    "Compaction": 110717905,
+    "Routing": 5600108,
+    "TargetPE": 104772330,
+    "TargetPosition": 75595574,
+    "TargetAggregation": 53550119,
+    "OutputEncoding": 148031,
+    "Recovery": 238553,
+    "Cloud": 533269613,
+    "LocalE2E": 534216343,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1368812144
+   },
+   {
+    "Token": 1483830,
+    "Anchor": 181344655,
+    "Compaction": 99247972,
+    "Routing": 6664990,
+    "TargetPE": 93491532,
+    "TargetPosition": 76125646,
+    "TargetAggregation": 58638885,
+    "OutputEncoding": 40642,
+    "Recovery": 113020,
+    "Cloud": 510029100,
+    "LocalE2E": 511632365,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1242543104
+   },
+   {
+    "Token": 726467,
+    "Anchor": 198369826,
+    "Compaction": 124095704,
+    "Routing": 5818955,
+    "TargetPE": 107040274,
+    "TargetPosition": 83825772,
+    "TargetAggregation": 56845001,
+    "OutputEncoding": 36888,
+    "Recovery": 144147,
+    "Cloud": 575096913,
+    "LocalE2E": 575972604,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1364938640
+   },
+   {
+    "Token": 991467,
+    "Anchor": 181916334,
+    "Compaction": 134657491,
+    "Routing": 6222318,
+    "TargetPE": 115230262,
+    "TargetPosition": 85343562,
+    "TargetAggregation": 63493590,
+    "OutputEncoding": 51152,
+    "Recovery": 236666,
+    "Cloud": 578510080,
+    "LocalE2E": 579748981,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1260736560
+   },
+   {
+    "Token": 1309342,
+    "Anchor": 182897741,
+    "Compaction": 109751400,
+    "Routing": 5587020,
+    "TargetPE": 124475146,
+    "TargetPosition": 76659992,
+    "TargetAggregation": 58266838,
+    "OutputEncoding": 37786,
+    "Recovery": 114837,
+    "Cloud": 555622631,
+    "LocalE2E": 557055152,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 964296848
+   },
+   {
+    "Token": 1152321,
+    "Anchor": 201161215,
+    "Compaction": 113101591,
+    "Routing": 7295430,
+    "TargetPE": 106866216,
+    "TargetPosition": 90154117,
+    "TargetAggregation": 65926410,
+    "OutputEncoding": 34683,
+    "Recovery": 116336,
+    "Cloud": 582149387,
+    "LocalE2E": 583422715,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1263777280
+   },
+   {
+    "Token": 819649,
+    "Anchor": 203458155,
+    "Compaction": 143622166,
+    "Routing": 6260193,
+    "TargetPE": 89677290,
+    "TargetPosition": 87015591,
+    "TargetAggregation": 68280449,
+    "OutputEncoding": 181718,
+    "Recovery": 250341,
+    "Cloud": 591373754,
+    "LocalE2E": 592451903,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1014968112
+   },
+   {
+    "Token": 675147,
+    "Anchor": 178624382,
+    "Compaction": 110114920,
+    "Routing": 5393019,
+    "TargetPE": 120501490,
+    "TargetPosition": 79417304,
+    "TargetAggregation": 60746920,
+    "OutputEncoding": 34738,
+    "Recovery": 169249,
+    "Cloud": 548837650,
+    "LocalE2E": 549685269,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1305400424
+   },
+   {
+    "Token": 691688,
+    "Anchor": 192388669,
+    "Compaction": 140396465,
+    "Routing": 6566449,
+    "TargetPE": 105686324,
+    "TargetPosition": 87362793,
+    "TargetAggregation": 66045672,
+    "OutputEncoding": 50252,
+    "Recovery": 186683,
+    "Cloud": 595410301,
+    "LocalE2E": 596302252,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1090623872
+   },
+   {
+    "Token": 1567334,
+    "Anchor": 180130908,
+    "Compaction": 103549840,
+    "Routing": 6889075,
+    "TargetPE": 119271188,
+    "TargetPosition": 84536796,
+    "TargetAggregation": 56889375,
+    "OutputEncoding": 605266,
+    "Recovery": 275145,
+    "Cloud": 549405476,
+    "LocalE2E": 551257168,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1382620328
+   },
+   {
+    "Token": 1055178,
+    "Anchor": 187804087,
+    "Compaction": 130844467,
+    "Routing": 4858473,
+    "TargetPE": 96094947,
+    "TargetPosition": 87126403,
+    "TargetAggregation": 72374878,
+    "OutputEncoding": 43615,
+    "Recovery": 172312,
+    "Cloud": 571496772,
+    "LocalE2E": 572743781,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1190487184
+   },
+   {
+    "Token": 1015769,
+    "Anchor": 200833550,
+    "Compaction": 128710851,
+    "Routing": 5493931,
+    "TargetPE": 100923582,
+    "TargetPosition": 91929853,
+    "TargetAggregation": 71655068,
+    "OutputEncoding": 67251,
+    "Recovery": 262464,
+    "Cloud": 587197852,
+    "LocalE2E": 588482727,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1372731968
+   },
+   {
+    "Token": 1327098,
+    "Anchor": 182017109,
+    "Compaction": 123725308,
+    "Routing": 5901772,
+    "TargetPE": 122825379,
+    "TargetPosition": 93045791,
+    "TargetAggregation": 68268177,
+    "OutputEncoding": 67507,
+    "Recovery": 233121,
+    "Cloud": 592577450,
+    "LocalE2E": 594145188,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1210507280
+   },
+   {
+    "Token": 1042330,
+    "Anchor": 199077065,
+    "Compaction": 128884711,
+    "Routing": 4513481,
+    "TargetPE": 105297692,
+    "TargetPosition": 91704654,
+    "TargetAggregation": 58622771,
+    "OutputEncoding": 57062,
+    "Recovery": 207844,
+    "Cloud": 581171472,
+    "LocalE2E": 582431882,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1370982896
+   },
+   {
+    "Token": 693019,
+    "Anchor": 172286986,
+    "Compaction": 120054186,
+    "Routing": 5225708,
+    "TargetPE": 126621777,
+    "TargetPosition": 78581212,
+    "TargetAggregation": 59674663,
+    "OutputEncoding": 69213,
+    "Recovery": 226073,
+    "Cloud": 561103756,
+    "LocalE2E": 562026794,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1216341760
+   },
+   {
+    "Token": 768197,
+    "Anchor": 212082918,
+    "Compaction": 126716469,
+    "Routing": 5244364,
+    "TargetPE": 94621713,
+    "TargetPosition": 84096094,
+    "TargetAggregation": 60339821,
+    "OutputEncoding": 53873,
+    "Recovery": 177332,
+    "Cloud": 580787392,
+    "LocalE2E": 581738111,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1375644128
+   },
+   {
+    "Token": 850006,
+    "Anchor": 185987110,
+    "Compaction": 129722572,
+    "Routing": 6024482,
+    "TargetPE": 99062848,
+    "TargetPosition": 82275224,
+    "TargetAggregation": 59996338,
+    "OutputEncoding": 74365,
+    "Recovery": 281360,
+    "Cloud": 558150352,
+    "LocalE2E": 559287662,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1229331648
+   },
+   {
+    "Token": 713713,
+    "Anchor": 198106771,
+    "Compaction": 105541002,
+    "Routing": 4582603,
+    "TargetPE": 79356203,
+    "TargetPosition": 81176677,
+    "TargetAggregation": 59358949,
+    "OutputEncoding": 38304,
+    "Recovery": 141539,
+    "Cloud": 525993061,
+    "LocalE2E": 526856528,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1360266192
+   },
+   {
+    "Token": 873829,
+    "Anchor": 178755902,
+    "Compaction": 141675779,
+    "Routing": 5815779,
+    "TargetPE": 127471270,
+    "TargetPosition": 88089963,
+    "TargetAggregation": 61007733,
+    "OutputEncoding": 50900,
+    "Recovery": 160860,
+    "Cloud": 601269194,
+    "LocalE2E": 602308093,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1244423264
+   },
+   {
+    "Token": 924046,
+    "Anchor": 199150702,
+    "Compaction": 141730010,
+    "Routing": 5353858,
+    "TargetPE": 102316542,
+    "TargetPosition": 86906043,
+    "TargetAggregation": 56512636,
+    "OutputEncoding": 38640,
+    "Recovery": 124774,
+    "Cloud": 588424506,
+    "LocalE2E": 589479479,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1308791336
+   },
+   {
+    "Token": 641458,
+    "Anchor": 177203655,
+    "Compaction": 131701601,
+    "Routing": 5493174,
+    "TargetPE": 102410871,
+    "TargetPosition": 84296370,
+    "TargetAggregation": 67454089,
+    "OutputEncoding": 47797,
+    "Recovery": 213987,
+    "Cloud": 562708988,
+    "LocalE2E": 563568145,
+    "UserToCloud": [
+     2672,
+     2672
+    ],
+    "CloudToUser": [
+     71248,
+     71248
+    ],
+    "ServerBytes": 15939152,
+    "K": 161,
+    "Routes": 483,
+    "Groups": 2237,
+    "Slots": 9440,
+    "PeakHeap": 1263872192
+   }
+  ]
+ },
+ {
+  "Query": 82,
+  "K": 7,
+  "Slots": 176,
+  "Warmup": 10,
+  "Measured": 30,
+  "Samples": [
+   {
+    "Token": 372875,
+    "Anchor": 171745043,
+    "Compaction": 149045068,
+    "Routing": 2781277,
+    "TargetPE": 3769105,
+    "TargetPosition": 1796370,
+    "TargetAggregation": 2553665,
+    "OutputEncoding": 5130,
+    "Recovery": 55747,
+    "Cloud": 328894403,
+    "LocalE2E": 329325986,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1325006496
+   },
+   {
+    "Token": 437947,
+    "Anchor": 177015611,
+    "Compaction": 145515421,
+    "Routing": 1132502,
+    "TargetPE": 4034609,
+    "TargetPosition": 1952397,
+    "TargetAggregation": 3426790,
+    "OutputEncoding": 4983,
+    "Recovery": 59813,
+    "Cloud": 332384558,
+    "LocalE2E": 332888645,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1310090216
+   },
+   {
+    "Token": 386401,
+    "Anchor": 179824537,
+    "Compaction": 129457824,
+    "Routing": 2946361,
+    "TargetPE": 4299569,
+    "TargetPosition": 1394513,
+    "TargetAggregation": 1699145,
+    "OutputEncoding": 3032,
+    "Recovery": 29509,
+    "Cloud": 316558543,
+    "LocalE2E": 316985958,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1322662448
+   },
+   {
+    "Token": 455548,
+    "Anchor": 177894821,
+    "Compaction": 142827330,
+    "Routing": 2182141,
+    "TargetPE": 2671432,
+    "TargetPosition": 1580420,
+    "TargetAggregation": 2663191,
+    "OutputEncoding": 6451,
+    "Recovery": 66443,
+    "Cloud": 322325682,
+    "LocalE2E": 322851670,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1330749264
+   },
+   {
+    "Token": 455317,
+    "Anchor": 181443210,
+    "Compaction": 157402145,
+    "Routing": 2255519,
+    "TargetPE": 1451982,
+    "TargetPosition": 1488956,
+    "TargetAggregation": 2048465,
+    "OutputEncoding": 8247,
+    "Recovery": 83734,
+    "Cloud": 342725432,
+    "LocalE2E": 343268627,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1312300208
+   },
+   {
+    "Token": 455745,
+    "Anchor": 206491779,
+    "Compaction": 159180049,
+    "Routing": 2475806,
+    "TargetPE": 3692194,
+    "TargetPosition": 1544654,
+    "TargetAggregation": 1999671,
+    "OutputEncoding": 4716,
+    "Recovery": 86187,
+    "Cloud": 364763316,
+    "LocalE2E": 365309472,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1334802864
+   },
+   {
+    "Token": 528339,
+    "Anchor": 181370537,
+    "Compaction": 144047140,
+    "Routing": 1564008,
+    "TargetPE": 3645677,
+    "TargetPosition": 1548044,
+    "TargetAggregation": 2458217,
+    "OutputEncoding": 9226,
+    "Recovery": 120286,
+    "Cloud": 333652970,
+    "LocalE2E": 334308441,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1309797296
+   },
+   {
+    "Token": 383376,
+    "Anchor": 189219861,
+    "Compaction": 132645829,
+    "Routing": 1401773,
+    "TargetPE": 1732229,
+    "TargetPosition": 1204289,
+    "TargetAggregation": 2701485,
+    "OutputEncoding": 13345,
+    "Recovery": 62243,
+    "Cloud": 325970784,
+    "LocalE2E": 326419727,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1312630560
+   },
+   {
+    "Token": 904338,
+    "Anchor": 180912528,
+    "Compaction": 146631336,
+    "Routing": 1964091,
+    "TargetPE": 4400477,
+    "TargetPosition": 1685036,
+    "TargetAggregation": 2360220,
+    "OutputEncoding": 5480,
+    "Recovery": 61010,
+    "Cloud": 336103317,
+    "LocalE2E": 337082255,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1334060848
+   },
+   {
+    "Token": 576975,
+    "Anchor": 176647306,
+    "Compaction": 138333789,
+    "Routing": 2702097,
+    "TargetPE": 3929720,
+    "TargetPosition": 2275513,
+    "TargetAggregation": 2246815,
+    "OutputEncoding": 6372,
+    "Recovery": 73643,
+    "Cloud": 323900983,
+    "LocalE2E": 324556462,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1316720112
+   },
+   {
+    "Token": 611303,
+    "Anchor": 181852242,
+    "Compaction": 146197594,
+    "Routing": 1468233,
+    "TargetPE": 3772720,
+    "TargetPosition": 1709985,
+    "TargetAggregation": 1609356,
+    "OutputEncoding": 4500,
+    "Recovery": 57862,
+    "Cloud": 330242325,
+    "LocalE2E": 330919427,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1332222016
+   },
+   {
+    "Token": 678697,
+    "Anchor": 192162606,
+    "Compaction": 169177404,
+    "Routing": 2767793,
+    "TargetPE": 2343923,
+    "TargetPosition": 1740051,
+    "TargetAggregation": 1807593,
+    "OutputEncoding": 7537,
+    "Recovery": 76852,
+    "Cloud": 366601408,
+    "LocalE2E": 367381862,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1312676472
+   },
+   {
+    "Token": 572663,
+    "Anchor": 171685775,
+    "Compaction": 127204644,
+    "Routing": 3889151,
+    "TargetPE": 4515580,
+    "TargetPosition": 1953684,
+    "TargetAggregation": 2523226,
+    "OutputEncoding": 10860,
+    "Recovery": 115851,
+    "Cloud": 306665646,
+    "LocalE2E": 307360743,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1327795120
+   },
+   {
+    "Token": 424197,
+    "Anchor": 176689060,
+    "Compaction": 145898611,
+    "Routing": 2179178,
+    "TargetPE": 2584259,
+    "TargetPosition": 1163250,
+    "TargetAggregation": 1669611,
+    "OutputEncoding": 10079,
+    "Recovery": 41185,
+    "Cloud": 327971546,
+    "LocalE2E": 328448321,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1312636480
+   },
+   {
+    "Token": 856162,
+    "Anchor": 182782499,
+    "Compaction": 152705848,
+    "Routing": 3353798,
+    "TargetPE": 2819365,
+    "TargetPosition": 1789548,
+    "TargetAggregation": 3075729,
+    "OutputEncoding": 5420,
+    "Recovery": 84287,
+    "Cloud": 337280210,
+    "LocalE2E": 338228790,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1334007200
+   },
+   {
+    "Token": 516636,
+    "Anchor": 179439595,
+    "Compaction": 138741070,
+    "Routing": 1278663,
+    "TargetPE": 4693322,
+    "TargetPosition": 1665517,
+    "TargetAggregation": 2171929,
+    "OutputEncoding": 5449,
+    "Recovery": 55638,
+    "Cloud": 326343053,
+    "LocalE2E": 326921282,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1315509664
+   },
+   {
+    "Token": 470126,
+    "Anchor": 179644303,
+    "Compaction": 120195087,
+    "Routing": 3520170,
+    "TargetPE": 4824913,
+    "TargetPosition": 1577183,
+    "TargetAggregation": 2467075,
+    "OutputEncoding": 6149,
+    "Recovery": 68214,
+    "Cloud": 305773088,
+    "LocalE2E": 306317113,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1312839808
+   },
+   {
+    "Token": 558928,
+    "Anchor": 169167843,
+    "Compaction": 145166679,
+    "Routing": 1028190,
+    "TargetPE": 3335732,
+    "TargetPosition": 1359505,
+    "TargetAggregation": 2010760,
+    "OutputEncoding": 3413,
+    "Recovery": 31342,
+    "Cloud": 321640814,
+    "LocalE2E": 322238293,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1327659648
+   },
+   {
+    "Token": 289702,
+    "Anchor": 180808343,
+    "Compaction": 126243927,
+    "Routing": 1106004,
+    "TargetPE": 1786766,
+    "TargetPosition": 1082362,
+    "TargetAggregation": 1567286,
+    "OutputEncoding": 3848,
+    "Recovery": 42510,
+    "Cloud": 305560613,
+    "LocalE2E": 305896189,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1309997616
+   },
+   {
+    "Token": 536320,
+    "Anchor": 178267533,
+    "Compaction": 136040811,
+    "Routing": 3974233,
+    "TargetPE": 3835584,
+    "TargetPosition": 1906650,
+    "TargetAggregation": 2110740,
+    "OutputEncoding": 7330,
+    "Recovery": 89164,
+    "Cloud": 322970340,
+    "LocalE2E": 323611459,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1326828384
+   },
+   {
+    "Token": 1183762,
+    "Anchor": 175099361,
+    "Compaction": 158369560,
+    "Routing": 1905812,
+    "TargetPE": 3989596,
+    "TargetPosition": 1631308,
+    "TargetAggregation": 2559665,
+    "OutputEncoding": 3583,
+    "Recovery": 45283,
+    "Cloud": 341889662,
+    "LocalE2E": 343139539,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1315925744
+   },
+   {
+    "Token": 630061,
+    "Anchor": 189277585,
+    "Compaction": 161072590,
+    "Routing": 1778876,
+    "TargetPE": 2119793,
+    "TargetPosition": 1379329,
+    "TargetAggregation": 1410172,
+    "OutputEncoding": 2707,
+    "Recovery": 27974,
+    "Cloud": 354768062,
+    "LocalE2E": 355438235,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1309262312
+   },
+   {
+    "Token": 553692,
+    "Anchor": 169138921,
+    "Compaction": 134517663,
+    "Routing": 1462670,
+    "TargetPE": 3287954,
+    "TargetPosition": 1621672,
+    "TargetAggregation": 3303047,
+    "OutputEncoding": 6016,
+    "Recovery": 77426,
+    "Cloud": 312226058,
+    "LocalE2E": 312862731,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1326819360
+   },
+   {
+    "Token": 411047,
+    "Anchor": 198438691,
+    "Compaction": 142403362,
+    "Routing": 2488369,
+    "TargetPE": 2996628,
+    "TargetPosition": 1699849,
+    "TargetAggregation": 2571438,
+    "OutputEncoding": 4500,
+    "Recovery": 52244,
+    "Cloud": 348754693,
+    "LocalE2E": 349223072,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1308120016
+   },
+   {
+    "Token": 738828,
+    "Anchor": 186432337,
+    "Compaction": 161999465,
+    "Routing": 3048863,
+    "TargetPE": 4929803,
+    "TargetPosition": 1606392,
+    "TargetAggregation": 1759546,
+    "OutputEncoding": 8470,
+    "Recovery": 54002,
+    "Cloud": 355328242,
+    "LocalE2E": 356125938,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1338425808
+   },
+   {
+    "Token": 584334,
+    "Anchor": 182135836,
+    "Compaction": 130825116,
+    "Routing": 2369148,
+    "TargetPE": 3882683,
+    "TargetPosition": 1765292,
+    "TargetAggregation": 2412504,
+    "OutputEncoding": 4581,
+    "Recovery": 72089,
+    "Cloud": 321835014,
+    "LocalE2E": 322497654,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1308836320
+   },
+   {
+    "Token": 514812,
+    "Anchor": 192469107,
+    "Compaction": 163858465,
+    "Routing": 2012271,
+    "TargetPE": 3891798,
+    "TargetPosition": 2330306,
+    "TargetAggregation": 1848046,
+    "OutputEncoding": 3555,
+    "Recovery": 48395,
+    "Cloud": 363245538,
+    "LocalE2E": 363813472,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1340227568
+   },
+   {
+    "Token": 392167,
+    "Anchor": 182768493,
+    "Compaction": 155687966,
+    "Routing": 2080497,
+    "TargetPE": 3921402,
+    "TargetPosition": 1503569,
+    "TargetAggregation": 2285670,
+    "OutputEncoding": 4376,
+    "Recovery": 48044,
+    "Cloud": 340942298,
+    "LocalE2E": 341385948,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1317245344
+   },
+   {
+    "Token": 481988,
+    "Anchor": 192091455,
+    "Compaction": 143510084,
+    "Routing": 2508566,
+    "TargetPE": 2727561,
+    "TargetPosition": 1594378,
+    "TargetAggregation": 2219710,
+    "OutputEncoding": 6426,
+    "Recovery": 81149,
+    "Cloud": 342679151,
+    "LocalE2E": 343248450,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1309755712
+   },
+   {
+    "Token": 630768,
+    "Anchor": 178120060,
+    "Compaction": 157196774,
+    "Routing": 1045240,
+    "TargetPE": 3520937,
+    "TargetPosition": 1773615,
+    "TargetAggregation": 2424240,
+    "OutputEncoding": 4735,
+    "Recovery": 89129,
+    "Cloud": 341754978,
+    "LocalE2E": 342482506,
+    "UserToCloud": [
+     2540,
+     2540
+    ],
+    "CloudToUser": [
+     3180,
+     3180
+    ],
+    "ServerBytes": 11164678,
+    "K": 7,
+    "Routes": 7,
+    "Groups": 44,
+    "Slots": 176,
+    "PeakHeap": 1318977184
+   }
+  ]
+ },
+ {
+  "Query": 382,
+  "K": 259,
+  "Slots": 20944,
+  "Warmup": 10,
+  "Measured": 30,
+  "Samples": [
+   {
+    "Token": 1482433,
+    "Anchor": 198203145,
+    "Compaction": 118490365,
+    "Routing": 7527569,
+    "TargetPE": 191344553,
+    "TargetPosition": 181658863,
+    "TargetAggregation": 117729674,
+    "OutputEncoding": 65526,
+    "Recovery": 156644,
+    "Cloud": 809596199,
+    "LocalE2E": 811332770,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1069205776
+   },
+   {
+    "Token": 1671274,
+    "Anchor": 204639294,
+    "Compaction": 139153643,
+    "Routing": 7858138,
+    "TargetPE": 221585495,
+    "TargetPosition": 194615340,
+    "TargetAggregation": 116025905,
+    "OutputEncoding": 105826,
+    "Recovery": 350894,
+    "Cloud": 877257161,
+    "LocalE2E": 879296859,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1137555248
+   },
+   {
+    "Token": 956774,
+    "Anchor": 189573992,
+    "Compaction": 106731919,
+    "Routing": 7791068,
+    "TargetPE": 174221693,
+    "TargetPosition": 184090412,
+    "TargetAggregation": 114525117,
+    "OutputEncoding": 126647,
+    "Recovery": 295984,
+    "Cloud": 775699160,
+    "LocalE2E": 776956693,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1208928816
+   },
+   {
+    "Token": 1429744,
+    "Anchor": 193030461,
+    "Compaction": 123172991,
+    "Routing": 10394436,
+    "TargetPE": 223726234,
+    "TargetPosition": 188634915,
+    "TargetAggregation": 126195571,
+    "OutputEncoding": 156768,
+    "Recovery": 384800,
+    "Cloud": 861945020,
+    "LocalE2E": 863765852,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1280767472
+   },
+   {
+    "Token": 1071176,
+    "Anchor": 195965843,
+    "Compaction": 105478234,
+    "Routing": 7343531,
+    "TargetPE": 188541885,
+    "TargetPosition": 180188083,
+    "TargetAggregation": 120649522,
+    "OutputEncoding": 54409,
+    "Recovery": 177008,
+    "Cloud": 795831939,
+    "LocalE2E": 797086321,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1365562784
+   },
+   {
+    "Token": 757166,
+    "Anchor": 192175290,
+    "Compaction": 134524142,
+    "Routing": 7387030,
+    "TargetPE": 217824737,
+    "TargetPosition": 188570925,
+    "TargetAggregation": 125497580,
+    "OutputEncoding": 209877,
+    "Recovery": 629527,
+    "Cloud": 864896841,
+    "LocalE2E": 866286899,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1499370112
+   },
+   {
+    "Token": 1121370,
+    "Anchor": 256063877,
+    "Compaction": 164886206,
+    "Routing": 9363150,
+    "TargetPE": 229249707,
+    "TargetPosition": 223506827,
+    "TargetAggregation": 140485660,
+    "OutputEncoding": 101096,
+    "Recovery": 359777,
+    "Cloud": 1021526794,
+    "LocalE2E": 1023013969,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1480402256
+   },
+   {
+    "Token": 1425966,
+    "Anchor": 214073514,
+    "Compaction": 122177777,
+    "Routing": 8208758,
+    "TargetPE": 201337400,
+    "TargetPosition": 174430577,
+    "TargetAggregation": 112545624,
+    "OutputEncoding": 94636,
+    "Recovery": 260531,
+    "Cloud": 820297143,
+    "LocalE2E": 821991380,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1493526352
+   },
+   {
+    "Token": 1135029,
+    "Anchor": 245202844,
+    "Compaction": 129691424,
+    "Routing": 9399147,
+    "TargetPE": 239673700,
+    "TargetPosition": 188026106,
+    "TargetAggregation": 115032339,
+    "OutputEncoding": 63299,
+    "Recovery": 169220,
+    "Cloud": 917953157,
+    "LocalE2E": 919263532,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1482425664
+   },
+   {
+    "Token": 895980,
+    "Anchor": 210939943,
+    "Compaction": 129832276,
+    "Routing": 8699994,
+    "TargetPE": 220165624,
+    "TargetPosition": 183121801,
+    "TargetAggregation": 115874478,
+    "OutputEncoding": 53361,
+    "Recovery": 159579,
+    "Cloud": 862808586,
+    "LocalE2E": 863868252,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1114302512
+   },
+   {
+    "Token": 913025,
+    "Anchor": 199685326,
+    "Compaction": 124722877,
+    "Routing": 8079215,
+    "TargetPE": 185355228,
+    "TargetPosition": 189819945,
+    "TargetAggregation": 127999135,
+    "OutputEncoding": 65189,
+    "Recovery": 150434,
+    "Cloud": 834382813,
+    "LocalE2E": 835450954,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1175661728
+   },
+   {
+    "Token": 1212412,
+    "Anchor": 199064766,
+    "Compaction": 149931082,
+    "Routing": 8353878,
+    "TargetPE": 179455147,
+    "TargetPosition": 191243785,
+    "TargetAggregation": 127696986,
+    "OutputEncoding": 114257,
+    "Recovery": 331728,
+    "Cloud": 846880471,
+    "LocalE2E": 848432422,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1234059040
+   },
+   {
+    "Token": 1103470,
+    "Anchor": 187053690,
+    "Compaction": 100246101,
+    "Routing": 9779768,
+    "TargetPE": 195260718,
+    "TargetPosition": 169492312,
+    "TargetAggregation": 113583244,
+    "OutputEncoding": 184714,
+    "Recovery": 298999,
+    "Cloud": 772645466,
+    "LocalE2E": 774056020,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1306491168
+   },
+   {
+    "Token": 1271376,
+    "Anchor": 190340659,
+    "Compaction": 115878076,
+    "Routing": 8378815,
+    "TargetPE": 197229501,
+    "TargetPosition": 180844508,
+    "TargetAggregation": 126031760,
+    "OutputEncoding": 92054,
+    "Recovery": 361726,
+    "Cloud": 817388076,
+    "LocalE2E": 819029052,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1394711440
+   },
+   {
+    "Token": 1114825,
+    "Anchor": 192179819,
+    "Compaction": 120619842,
+    "Routing": 9593039,
+    "TargetPE": 219205032,
+    "TargetPosition": 179802458,
+    "TargetAggregation": 119035513,
+    "OutputEncoding": 243281,
+    "Recovery": 268879,
+    "Cloud": 834063076,
+    "LocalE2E": 835452434,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1495198416
+   },
+   {
+    "Token": 904511,
+    "Anchor": 231889871,
+    "Compaction": 138188522,
+    "Routing": 9979270,
+    "TargetPE": 188915297,
+    "TargetPosition": 186281634,
+    "TargetAggregation": 121204222,
+    "OutputEncoding": 91714,
+    "Recovery": 307848,
+    "Cloud": 872914508,
+    "LocalE2E": 874131167,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1485359264
+   },
+   {
+    "Token": 1156231,
+    "Anchor": 214856053,
+    "Compaction": 138442475,
+    "Routing": 10372362,
+    "TargetPE": 217737643,
+    "TargetPosition": 196859491,
+    "TargetAggregation": 116640730,
+    "OutputEncoding": 70225,
+    "Recovery": 156512,
+    "Cloud": 892110596,
+    "LocalE2E": 893429367,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1483008896
+   },
+   {
+    "Token": 1445659,
+    "Anchor": 228481452,
+    "Compaction": 119374644,
+    "Routing": 8730671,
+    "TargetPE": 215381661,
+    "TargetPosition": 199854650,
+    "TargetAggregation": 117018570,
+    "OutputEncoding": 87174,
+    "Recovery": 263139,
+    "Cloud": 885638255,
+    "LocalE2E": 887365209,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1491461328
+   },
+   {
+    "Token": 737108,
+    "Anchor": 204844561,
+    "Compaction": 135820693,
+    "Routing": 8155603,
+    "TargetPE": 219559718,
+    "TargetPosition": 198402059,
+    "TargetAggregation": 127660864,
+    "OutputEncoding": 97353,
+    "Recovery": 324595,
+    "Cloud": 888152454,
+    "LocalE2E": 889218495,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1064148992
+   },
+   {
+    "Token": 1338367,
+    "Anchor": 215062157,
+    "Compaction": 131398247,
+    "Routing": 8972728,
+    "TargetPE": 213854547,
+    "TargetPosition": 196963946,
+    "TargetAggregation": 128222344,
+    "OutputEncoding": 115730,
+    "Recovery": 197159,
+    "Cloud": 892430398,
+    "LocalE2E": 893971372,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1145043328
+   },
+   {
+    "Token": 1366523,
+    "Anchor": 190916402,
+    "Compaction": 134860260,
+    "Routing": 8761015,
+    "TargetPE": 177039198,
+    "TargetPosition": 178187766,
+    "TargetAggregation": 123928695,
+    "OutputEncoding": 436001,
+    "Recovery": 217036,
+    "Cloud": 809600674,
+    "LocalE2E": 811192289,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1202323536
+   },
+   {
+    "Token": 1193121,
+    "Anchor": 196961453,
+    "Compaction": 124257527,
+    "Routing": 8768062,
+    "TargetPE": 205418960,
+    "TargetPosition": 182583852,
+    "TargetAggregation": 114076966,
+    "OutputEncoding": 48331,
+    "Recovery": 172451,
+    "Cloud": 827830100,
+    "LocalE2E": 829202063,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1269114704
+   },
+   {
+    "Token": 1856981,
+    "Anchor": 189882296,
+    "Compaction": 126482972,
+    "Routing": 8462102,
+    "TargetPE": 211333761,
+    "TargetPosition": 170108390,
+    "TargetAggregation": 112987548,
+    "OutputEncoding": 63166,
+    "Recovery": 186810,
+    "Cloud": 814764557,
+    "LocalE2E": 816815817,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1345465200
+   },
+   {
+    "Token": 921517,
+    "Anchor": 203079733,
+    "Compaction": 131975462,
+    "Routing": 7386583,
+    "TargetPE": 190550056,
+    "TargetPosition": 184850334,
+    "TargetAggregation": 127064070,
+    "OutputEncoding": 81006,
+    "Recovery": 201606,
+    "Cloud": 843292317,
+    "LocalE2E": 844421308,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1431282608
+   },
+   {
+    "Token": 2213824,
+    "Anchor": 210502154,
+    "Compaction": 119671503,
+    "Routing": 7195929,
+    "TargetPE": 218425700,
+    "TargetPosition": 200807629,
+    "TargetAggregation": 144120256,
+    "OutputEncoding": 64867,
+    "Recovery": 174315,
+    "Cloud": 896487857,
+    "LocalE2E": 898888135,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1494909376
+   },
+   {
+    "Token": 1009945,
+    "Anchor": 225999994,
+    "Compaction": 133275247,
+    "Routing": 10071595,
+    "TargetPE": 210333949,
+    "TargetPosition": 180206226,
+    "TargetAggregation": 111800788,
+    "OutputEncoding": 53609,
+    "Recovery": 155265,
+    "Cloud": 870834051,
+    "LocalE2E": 872006587,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1478790528
+   },
+   {
+    "Token": 1026700,
+    "Anchor": 221333341,
+    "Compaction": 140692111,
+    "Routing": 7507932,
+    "TargetPE": 229298214,
+    "TargetPosition": 216097945,
+    "TargetAggregation": 131669640,
+    "OutputEncoding": 89887,
+    "Recovery": 205277,
+    "Cloud": 944091702,
+    "LocalE2E": 945329116,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1145851760
+   },
+   {
+    "Token": 1130959,
+    "Anchor": 200748565,
+    "Compaction": 134685542,
+    "Routing": 8701770,
+    "TargetPE": 244397518,
+    "TargetPosition": 189040945,
+    "TargetAggregation": 118804247,
+    "OutputEncoding": 186153,
+    "Recovery": 185295,
+    "Cloud": 894661409,
+    "LocalE2E": 895984075,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1220533200
+   },
+   {
+    "Token": 1210765,
+    "Anchor": 193189029,
+    "Compaction": 123286502,
+    "Routing": 7263624,
+    "TargetPE": 220413379,
+    "TargetPosition": 201532614,
+    "TargetAggregation": 130286147,
+    "OutputEncoding": 130689,
+    "Recovery": 165265,
+    "Cloud": 873226250,
+    "LocalE2E": 874608593,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1297433056
+   },
+   {
+    "Token": 1962043,
+    "Anchor": 198924071,
+    "Compaction": 124807011,
+    "Routing": 8168239,
+    "TargetPE": 214504166,
+    "TargetPosition": 183966674,
+    "TargetAggregation": 111327714,
+    "OutputEncoding": 63709,
+    "Recovery": 136318,
+    "Cloud": 835405600,
+    "LocalE2E": 837511754,
+    "UserToCloud": [
+     5090,
+     5090
+    ],
+    "CloudToUser": [
+     114564,
+     114564
+    ],
+    "ServerBytes": 22538716,
+    "K": 259,
+    "Routes": 1036,
+    "Groups": 4915,
+    "Slots": 20944,
+    "PeakHeap": 1397502784
+   }
+  ]
+ },
+ {
+  "Query": 538,
+  "K": 2774,
+  "Slots": 223604,
+  "Warmup": 10,
+  "Measured": 30,
+  "Samples": [
+   {
+    "Token": 1433589,
+    "Anchor": 548493668,
+    "Compaction": 148678892,
+    "Routing": 62704088,
+    "TargetPE": 2200597882,
+    "TargetPosition": 2085281729,
+    "TargetAggregation": 1215621006,
+    "OutputEncoding": 893433,
+    "Recovery": 1661563,
+    "Cloud": 6256526271,
+    "LocalE2E": 6259631668,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2718146288
+   },
+   {
+    "Token": 1330117,
+    "Anchor": 545132358,
+    "Compaction": 142431815,
+    "Routing": 61489796,
+    "TargetPE": 2211955820,
+    "TargetPosition": 1936363421,
+    "TargetAggregation": 1109099641,
+    "OutputEncoding": 1106451,
+    "Recovery": 2377780,
+    "Cloud": 6003235060,
+    "LocalE2E": 6006951380,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2703870672
+   },
+   {
+    "Token": 1210340,
+    "Anchor": 565701062,
+    "Compaction": 144030370,
+    "Routing": 64475831,
+    "TargetPE": 2202922079,
+    "TargetPosition": 1850198919,
+    "TargetAggregation": 1252005268,
+    "OutputEncoding": 4466834,
+    "Recovery": 7036746,
+    "Cloud": 6080457060,
+    "LocalE2E": 6088710479,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 3011683056
+   },
+   {
+    "Token": 1656256,
+    "Anchor": 554814235,
+    "Compaction": 134609873,
+    "Routing": 63429532,
+    "TargetPE": 2140542130,
+    "TargetPosition": 1861899252,
+    "TargetAggregation": 1192695170,
+    "OutputEncoding": 1995943,
+    "Recovery": 3630672,
+    "Cloud": 5943184912,
+    "LocalE2E": 5948484091,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2981761520
+   },
+   {
+    "Token": 2175331,
+    "Anchor": 576083306,
+    "Compaction": 165652013,
+    "Routing": 67184109,
+    "TargetPE": 2187957338,
+    "TargetPosition": 1842263834,
+    "TargetAggregation": 1204310639,
+    "OutputEncoding": 994275,
+    "Recovery": 1020146,
+    "Cloud": 6043048789,
+    "LocalE2E": 6046251145,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2980105744
+   },
+   {
+    "Token": 1320549,
+    "Anchor": 582615740,
+    "Compaction": 152396108,
+    "Routing": 60213842,
+    "TargetPE": 2184922261,
+    "TargetPosition": 1887955955,
+    "TargetAggregation": 1136975121,
+    "OutputEncoding": 858859,
+    "Recovery": 1360370,
+    "Cloud": 6004146099,
+    "LocalE2E": 6006831962,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2735687312
+   },
+   {
+    "Token": 1183327,
+    "Anchor": 543605955,
+    "Compaction": 101289420,
+    "Routing": 58983528,
+    "TargetPE": 2136192420,
+    "TargetPosition": 1911261264,
+    "TargetAggregation": 1302861846,
+    "OutputEncoding": 922295,
+    "Recovery": 1831404,
+    "Cloud": 6053387234,
+    "LocalE2E": 6056407721,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2933303408
+   },
+   {
+    "Token": 1616870,
+    "Anchor": 526199033,
+    "Compaction": 137703448,
+    "Routing": 52246039,
+    "TargetPE": 2301494782,
+    "TargetPosition": 1940359860,
+    "TargetAggregation": 1249218514,
+    "OutputEncoding": 1124557,
+    "Recovery": 2021768,
+    "Cloud": 6205329695,
+    "LocalE2E": 6208973709,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2993969760
+   },
+   {
+    "Token": 1566254,
+    "Anchor": 541130827,
+    "Compaction": 138724059,
+    "Routing": 74487183,
+    "TargetPE": 2194437212,
+    "TargetPosition": 1914953636,
+    "TargetAggregation": 1046517410,
+    "OutputEncoding": 831905,
+    "Recovery": 1584222,
+    "Cloud": 5907579355,
+    "LocalE2E": 5910741220,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2700455440
+   },
+   {
+    "Token": 1014594,
+    "Anchor": 529739035,
+    "Compaction": 136415343,
+    "Routing": 53638230,
+    "TargetPE": 2237098390,
+    "TargetPosition": 1842351361,
+    "TargetAggregation": 1222727124,
+    "OutputEncoding": 1137043,
+    "Recovery": 1888344,
+    "Cloud": 6011533313,
+    "LocalE2E": 6014440559,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 3015562368
+   },
+   {
+    "Token": 1338756,
+    "Anchor": 532557385,
+    "Compaction": 183807407,
+    "Routing": 59759904,
+    "TargetPE": 2136063646,
+    "TargetPosition": 1910833301,
+    "TargetAggregation": 1140128597,
+    "OutputEncoding": 651832,
+    "Recovery": 1124953,
+    "Cloud": 5958592094,
+    "LocalE2E": 5961062051,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2720202320
+   },
+   {
+    "Token": 1489170,
+    "Anchor": 560969799,
+    "Compaction": 156469013,
+    "Routing": 69378573,
+    "TargetPE": 2275605922,
+    "TargetPosition": 1950424389,
+    "TargetAggregation": 1233477241,
+    "OutputEncoding": 1019103,
+    "Recovery": 2104231,
+    "Cloud": 6243296842,
+    "LocalE2E": 6246895733,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2719251584
+   },
+   {
+    "Token": 1492252,
+    "Anchor": 573332903,
+    "Compaction": 146973055,
+    "Routing": 70612932,
+    "TargetPE": 2312923557,
+    "TargetPosition": 1986334852,
+    "TargetAggregation": 1256156955,
+    "OutputEncoding": 2536721,
+    "Recovery": 2672185,
+    "Cloud": 6341527433,
+    "LocalE2E": 6345699985,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 3033242752
+   },
+   {
+    "Token": 1222555,
+    "Anchor": 535327509,
+    "Compaction": 185755958,
+    "Routing": 70933539,
+    "TargetPE": 2112982593,
+    "TargetPosition": 1968844555,
+    "TargetAggregation": 1161114966,
+    "OutputEncoding": 1059796,
+    "Recovery": 2300701,
+    "Cloud": 6027226620,
+    "LocalE2E": 6030766017,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2731250312
+   },
+   {
+    "Token": 2345236,
+    "Anchor": 563474395,
+    "Compaction": 155069579,
+    "Routing": 64713584,
+    "TargetPE": 2219569787,
+    "TargetPosition": 1914508787,
+    "TargetAggregation": 1123096067,
+    "OutputEncoding": 799864,
+    "Recovery": 1426294,
+    "Cloud": 6037679331,
+    "LocalE2E": 6041460961,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2723151264
+   },
+   {
+    "Token": 1106288,
+    "Anchor": 529843240,
+    "Compaction": 155171485,
+    "Routing": 56033310,
+    "TargetPE": 2164721130,
+    "TargetPosition": 2011822255,
+    "TargetAggregation": 1156554402,
+    "OutputEncoding": 703338,
+    "Recovery": 1688736,
+    "Cloud": 6073871898,
+    "LocalE2E": 6076672506,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2718403712
+   },
+   {
+    "Token": 942907,
+    "Anchor": 586318068,
+    "Compaction": 159914509,
+    "Routing": 76857857,
+    "TargetPE": 2080769797,
+    "TargetPosition": 2019761349,
+    "TargetAggregation": 1221123892,
+    "OutputEncoding": 1357740,
+    "Recovery": 1999610,
+    "Cloud": 6140720929,
+    "LocalE2E": 6143675488,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2739156552
+   },
+   {
+    "Token": 1302387,
+    "Anchor": 582501436,
+    "Compaction": 168049917,
+    "Routing": 65580401,
+    "TargetPE": 2227102890,
+    "TargetPosition": 1928228471,
+    "TargetAggregation": 1209789809,
+    "OutputEncoding": 1041402,
+    "Recovery": 1611195,
+    "Cloud": 6177165309,
+    "LocalE2E": 6180089946,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2752186376
+   },
+   {
+    "Token": 1195580,
+    "Anchor": 529156843,
+    "Compaction": 134312706,
+    "Routing": 60566431,
+    "TargetPE": 1997650252,
+    "TargetPosition": 1908541881,
+    "TargetAggregation": 1234259700,
+    "OutputEncoding": 725055,
+    "Recovery": 1340731,
+    "Cloud": 5859056189,
+    "LocalE2E": 5861598177,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2746884008
+   },
+   {
+    "Token": 1643695,
+    "Anchor": 550935509,
+    "Compaction": 146018354,
+    "Routing": 64611717,
+    "TargetPE": 2176678660,
+    "TargetPosition": 1888156270,
+    "TargetAggregation": 1357880150,
+    "OutputEncoding": 872192,
+    "Recovery": 1097396,
+    "Cloud": 6177255293,
+    "LocalE2E": 6180010695,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2766427592
+   },
+   {
+    "Token": 1301067,
+    "Anchor": 508267729,
+    "Compaction": 153509271,
+    "Routing": 56275105,
+    "TargetPE": 2047441224,
+    "TargetPosition": 2043796986,
+    "TargetAggregation": 1132019655,
+    "OutputEncoding": 866276,
+    "Recovery": 956883,
+    "Cloud": 5939758586,
+    "LocalE2E": 5942021701,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2733759952
+   },
+   {
+    "Token": 2578944,
+    "Anchor": 525394401,
+    "Compaction": 160492602,
+    "Routing": 62725890,
+    "TargetPE": 2137712199,
+    "TargetPosition": 1987238811,
+    "TargetAggregation": 1108193376,
+    "OutputEncoding": 1423385,
+    "Recovery": 1987482,
+    "Cloud": 5979810504,
+    "LocalE2E": 5984383088,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2720467616
+   },
+   {
+    "Token": 1141091,
+    "Anchor": 581092961,
+    "Compaction": 139023556,
+    "Routing": 64971737,
+    "TargetPE": 2143492777,
+    "TargetPosition": 2080935433,
+    "TargetAggregation": 1144953616,
+    "OutputEncoding": 896481,
+    "Recovery": 1603708,
+    "Cloud": 6150768563,
+    "LocalE2E": 6153518614,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2729649480
+   },
+   {
+    "Token": 1079479,
+    "Anchor": 529875492,
+    "Compaction": 144664935,
+    "Routing": 68035085,
+    "TargetPE": 2034783134,
+    "TargetPosition": 1939474142,
+    "TargetAggregation": 1104856805,
+    "OutputEncoding": 738351,
+    "Recovery": 1220741,
+    "Cloud": 5817218906,
+    "LocalE2E": 5819523555,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2716976416
+   },
+   {
+    "Token": 1789235,
+    "Anchor": 600764080,
+    "Compaction": 131648181,
+    "Routing": 54140984,
+    "TargetPE": 2027923159,
+    "TargetPosition": 1821808060,
+    "TargetAggregation": 1141157565,
+    "OutputEncoding": 1490750,
+    "Recovery": 2525638,
+    "Cloud": 5778015373,
+    "LocalE2E": 5782338614,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2868718472
+   },
+   {
+    "Token": 1378624,
+    "Anchor": 547694579,
+    "Compaction": 151192880,
+    "Routing": 62324550,
+    "TargetPE": 2081328069,
+    "TargetPosition": 1904551406,
+    "TargetAggregation": 1215073640,
+    "OutputEncoding": 1051357,
+    "Recovery": 1298480,
+    "Cloud": 5958623866,
+    "LocalE2E": 5961306318,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 3003282632
+   },
+   {
+    "Token": 1366829,
+    "Anchor": 514814843,
+    "Compaction": 140459016,
+    "Routing": 49475130,
+    "TargetPE": 2022392161,
+    "TargetPosition": 1813027541,
+    "TargetAggregation": 1081160619,
+    "OutputEncoding": 937994,
+    "Recovery": 1517852,
+    "Cloud": 5620338709,
+    "LocalE2E": 5623236478,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2719188920
+   },
+   {
+    "Token": 955239,
+    "Anchor": 617617231,
+    "Compaction": 154232487,
+    "Routing": 63442616,
+    "TargetPE": 2301217430,
+    "TargetPosition": 2066493473,
+    "TargetAggregation": 1351621053,
+    "OutputEncoding": 1083646,
+    "Recovery": 2491088,
+    "Cloud": 6550352652,
+    "LocalE2E": 6553803324,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 3021609768
+   },
+   {
+    "Token": 1384278,
+    "Anchor": 574319568,
+    "Compaction": 171027463,
+    "Routing": 70754462,
+    "TargetPE": 2318057871,
+    "TargetPosition": 2123344348,
+    "TargetAggregation": 1268895141,
+    "OutputEncoding": 779663,
+    "Recovery": 1414266,
+    "Cloud": 6526358748,
+    "LocalE2E": 6529160979,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2735383192
+   },
+   {
+    "Token": 1355552,
+    "Anchor": 561141424,
+    "Compaction": 164483817,
+    "Routing": 70789983,
+    "TargetPE": 2353267765,
+    "TargetPosition": 2196384925,
+    "TargetAggregation": 1373738835,
+    "OutputEncoding": 717817,
+    "Recovery": 1821862,
+    "Cloud": 6708446637,
+    "LocalE2E": 6711629405,
+    "UserToCloud": [
+     7442,
+     7442
+    ],
+    "CloudToUser": [
+     1226194,
+     1226194
+    ],
+    "ServerBytes": 156678616,
+    "K": 2774,
+    "Routes": 11096,
+    "Groups": 52760,
+    "Slots": 223604,
+    "PeakHeap": 2720239296
+   }
+  ]
+ }
+]

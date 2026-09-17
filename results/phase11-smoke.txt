@@ -1,0 +1,6 @@
+=== RUN   TestIntegratedReal
+    real_native_test.go:338: integrated 0/1003 mean-primary samples recorded; last wall=154.117909ms
+    real_native_test.go:352: INTEGRATED total=5 rejected=1 valid=4 pairs=2 FP=0 FN=0 duplicate=0 wrongAnchor=0 wrongTarget=0
+--- PASS: TestIntegratedReal (14.56s)
+PASS
+ok  	pmeq/internal/discovery	14.612s

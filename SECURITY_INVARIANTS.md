@@ -460,3 +460,52 @@ Short-string completeness remains OPEN; paper modified=NO.
 Result-count privacy is relative to the already permitted public leakage:
 K0 or empty accessed buckets may themselves imply an empty answer. Fixed26K
 output adds no actual Target result-count disclosure beyond those implications.
+
+## PHASE11 user recovery and integrated execution
+
+The complete runner preserves trusted DO, honest authorized user and semi-honest
+noncolluding cloud assumptions. `runParty` accepts only own Static/PartyPacket,
+encoded own token, Eval backend and byte endpoint. User keys/raw queries/user
+bound masks and peer state cannot be reached through these arguments. The
+local coordinator's ownership of two isolated workers does not make it a cloud.
+All cloud exchanges serialize existing masked openings, permitted shuffled
+Anchor Keep or public routing metadata. Neither worker reconstructs full Y,
+Target GroupMatch/Hit/Keep, Target IDs or final cardinality.
+
+A complete packet is provisioned before `RunLocal`, including Anchor Position
+F2 layers, all incidence chunks/comparisons/permutations and downstream stages.
+No ComposeHits/BatchAND coordinator, KeyGen, Preprocess, Split, raw DB lookup or
+IndexOutsource Build runs inside a cloud. Shared claim guards prevent reuse via
+copied UserPacket/PartyPacket handles. Failed attempts burn claimed material.
+No online refill exists. User tokens finish before workers launch; the user's
+next protocol action is final recovery, with no mid-query interaction.
+
+Cloud wire messages bind QueryID, packet ID, sequence and party. New DPF and
+compaction codecs preserve existing math and validate fixed widths/canonical
+bits/scalars. Existing Target codecs retain their own lineage bindings. This is
+not malicious authentication: initial tokens and final results require the
+existing trusted/authenticated role delivery assumption.
+
+Only `candidatequery.Recover` combines the final two shares. It requires the
+expected manifest/layout/query/compaction binding, complementary sender roles,
+matching K, D26 and exact lengths. Keep0 with either nonzero reconstructed ID
+and duplicate Keep1 pairs fail closed. No cloud array is reordered or shortened;
+each output is86+17*26K bytes. The resulting plaintext list and real count stay
+at the Query User and trusted test oracle, with no cloud feedback.
+
+Domain rejection precedes token/material use:0<=tau_i<r_i with audited Anchor
+r<=14/Target r<=16.149 historical invalid Target cases reject unchanged; no
+threshold clamp, short-string fallback or full-string retrieval is introduced.
+Production replay does not enable phase10audit. Full Y/GroupMatch/Hit/Keep/IDs
+opened to clouds=NO; final pair count opened to clouds=NO; query-time DO=NO.
+
+PHASE11 local measurements model party isolation through argument ownership and
+encoded channels. Both workers and the user inhabit one prototype process; no
+OS-process isolation, malicious-process security or distributed deployment is
+claimed by this runner. A separate deployment must preserve these role boundaries.
+
+The cloud launcher itself takes only own Static/PartyPacket/token values. Its
+outgoing and final-result endpoints are send-only; its incoming endpoint carries
+peer masked messages only. It does not capture the coordinator’s arrays of both
+party states or the bidirectional user-result collector. This extends the
+argument-ownership boundary through the goroutine entry point.

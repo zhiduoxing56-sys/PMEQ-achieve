@@ -966,3 +966,73 @@ upstream/149 threshold rejections/854 pair validations,1510 oracle pairs;
 false positives/false negatives/duplicates/wrong AnchorID/wrong TargetID all0.
 Target Aggregation complete=YES; Candidate ID Generation complete=YES.
 Final pair count and Target IDs opened to clouds=NO. Final recovery=no.
+
+## PHASE11 — final recovery and integrated local E2E
+
+Begin HEAD c67336ed04c1ca26438ea2003333863c1b19e895, clean. Physical path,
+Git top-level and realpath verified as `/home/tenggn/projects/clean_pmeq`.
+The prior /tmp Go/native build environment had been cleaned. Official Go1.27.1
+was restored under /tmp and the unchanged external LLAMA implementation rebuilt
+there using the existing script. No alternate repository or backup was modified.
+
+The previous full-chain evidence lived in test orchestration and generated some
+Anchor material between stages. PHASE11 adds a production Go runner with a
+separate full-packet offline provisioner, party-local cloud workers, serialized
+messages, real initial tokens and final Query User recovery. Existing primitives
+are invoked unchanged; no runtime is copied from the old repository. New codecs
+cover opaque DPF keys, existing compaction messages and fixed-domain result
+shares. Trusted offline DealerLayout restoration preserves the original sealed
+global payload order; it is never a cloud operation.
+
+Historical semantics remain frozen:149 invalid Target thresholds reject at
+entry and854 valid queries execute the full actual chain. No tau clamping or
+oracle-created intermediate input. Independent raw-string oracle comparison is
+outside online timers. The runner's outer wall timer includes tokens, concurrent
+cloud execution and recovery; offline setup stays outside. Mean is primary.
+Earlier PHASE12-only E2E gating is superseded by this explicit PHASE11 request.
+
+The inherited BSMJ/alignment representation is in-memory, not a persisted file
+format. Static accounting distinguishes exact field counts from actual sealed
+PSMJ/payload/Target-sidecar file sizes; no nonexistent Anchor artifact is claimed.
+The native harness materializes existing BSMJ for execution outside all online
+timers, and never rebuilds Target indexes. Per-query static extensions and full
+one-time material are prepared before the initial user token. Representative
+repeats reuse static extensions and generate fresh one-time material every time.
+
+Evidence and final validation: results/phase11-results.md and companion logs.
+Candidate Discovery returns plaintext candidate ID pairs only at the Query User.
+Short completeness OPEN (644/4047); exact full-string verification/retrieval NO;
+query-time DO NO; paper modified NO.
+
+An initial full replay and four repeated-query benchmarks passed correctness.
+Precommit role review then identified that the launcher closure captured the
+coordinator's two-party containers. Although runParty accepted only own state,
+the launcher is now also restricted: own Static/PartyPacket/token parameters,
+send-only outgoing and result endpoints, and a receive-only masked-message
+endpoint. A source regression checks both capture names and channel directions.
+The complete replay and all four10/30 benchmarks are rerun after this change;
+preliminary measurements are archived only under /tmp and are not added to the
+1003-query evidence or presented as final timings.
+
+DPF serialization lives in a separate codec subpackage, preserving the frozen
+evaluation API inventory. Pre-timer configuration checks reject zero/mixed
+party state. The original six sealed party files and three manifests have been
+independently rehashed and remain unchanged. Offline cost reporting separates
+cloud correlated fields, user secret masks and public/object metadata. Separate
+setup/provisioning samples are outside every online timing window.
+
+Final PHASE11 status: CANDIDATE DISCOVERY E2E = COMPLETE for the supported
+normal q=4 domain, 0<=tau_i<r_i (Anchor r1..14, Target r1..16).
+Final real replay:149/149 invalid queries rejected,854/854 valid queries correct,
+1510 recovered pairs; FP/FN/duplicates/wrong AnchorID/wrong TargetID all0.
+See results/phase11-results.md for final timing, communication, offline material,
+static accounting, memory and security evidence. Short-string completeness OPEN;
+full-string exact verification NO; query-time DO NO; paper modified NO.
+
+Final-code replay and all four10-warmup/30-measured benchmarks passed.
+Mean INTEGRATED LOCAL E2E WALL TIME=583.629932 ms over854 accepted queries;
+no offline material or construction is included. Executed routes399511,
+groups1894607,physical slots8042444. The final replay process peak RSS is
+7150976 KiB with0 swaps; these process figures include trusted setup/oracle.
+All default tests, vet, full race suite, native edge race and native vet passed.
+Only this final-code replay supplies the reported one-pass measurements.

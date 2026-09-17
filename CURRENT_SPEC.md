@@ -41,8 +41,9 @@ IndexOutsource
 → Target Position Filtering
 → Target Record Aggregation
 → Candidate ID Generation
+→ Query User final candidate-pair recovery
 
-Candidate Discovery stops at Candidate ID Generation. Full-string Candidate Retrieval is a separate future problem. The current project must not claim that full-string Candidate Retrieval has been implemented.
+Candidate Discovery ends when the authorized Query User recovers the generated candidate ID pairs. Full-string Candidate Retrieval is a separate future problem. The current project must not claim that full-string Candidate Retrieval has been implemented.
 
 ## 5. Frozen primitives and designs
 
@@ -131,7 +132,9 @@ seed-as-key evaluated on fixed, distinct input blocks, providing the
 pseudorandom expansion required by the GGM/DPF construction. Tests provide
 correctness evidence only; they do not prove PRG security.
 
-DPF key serialization is deferred until a reviewed query-token schema exists.
+PHASE11 serializes each own DPF key in2322 bytes: root seed16, control1,
+128 correction words of18 bytes, and final bit1. The separate codec boundary
+checks canonical bits and lengths; the opaque evaluation API is unchanged.
 The old 64-bit DPF and Target DPF are permanently retired from the production
 path.
 
@@ -493,8 +496,8 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
 - **PHASE 8:** Target group-level Private Equality implemented; Match remains secret.
 - **PHASE 9:** Target posting Position + Validity only; Target Aggregation deferred.
 - **PHASE 10:** Target Record Aggregation and fixed-domain Candidate ID Generation (PHASE10B); no final recovery.
-- **PHASE 11:** the sole Candidate Discovery runner.
-- **PHASE 12:** real workload and production E2E.
+- **PHASE 11:** the sole Candidate Discovery runner, authorized final recovery and integrated local E2E measurement.
+- **PHASE 12:** reserved; the current supported-domain local E2E workload validation is part of PHASE11. No distributed deployment is claimed.
 
 No later Candidate Discovery phase may begin until PHASE 5 passes both correctness and single-party security audits.
 
@@ -773,3 +776,72 @@ only over the854 accepted queries, never impute zero results for rejected ones.
 PHASE11 canonical runner, PHASE12 production E2E and Query User final recovery
 remain outside this phase. Query-time DO=no; short-string completeness=OPEN;
 paper modified=NO.
+
+## PHASE11 — final user recovery and integrated local runner
+
+AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`.
+The user's PHASE11 instruction advances integrated E2E into this phase; earlier
+PHASE12-only runner gates and phase-local “unstarted” text are historical.
+The cryptographic stages, q4, both bucket widths16, tiers and sealed Target
+artifacts remain unchanged. No stage optimization or new protocol is introduced.
+
+`discovery.RunLocal(ctx, Query, UserKeys, UserPacket, [2]*Static,
+[2]*PartyPacket, SCMPBackend)` is the canonical integrated Go runner. Query has
+Anchor/Target strings and separate TauAnchor/TauTarget. Static objects and all
+one-time packets must already be provisioned. `discovery.Provision` is a separate
+trusted OFFLINE operation, never called from the runner. The runtime consumes
+existing party-local primitive APIs and encoded byte messages. It does not use
+the old test coordinators that generate triples between online stages.
+
+Before using any packet, validate complete q4 chunk counts: Anchor r1..14,
+Target r1..16, 0<=tau_i<r_i, lambda_i=r_i-tau_i. Historical Tau values are preserved:
+149 invalid Target queries are rejected at entry;854 valid queries execute the
+entire chain. Unlike PHASE10 diagnostic replay, rejected queries do not run
+Anchor. Short strings (Anchor644,Target4047) remain COMPLETENESS OPEN with no
+fallback. Existing full/nonoverlapping chunk and incomplete-tail rules remain.
+
+Each cloud worker receives ONLY its own static, own packet, own encoded token,
+SCMP Eval backend and byte endpoint. There is no online raw lookup, dealer or
+user callback. The user sends initial tokens, remains offline during cloud
+processing, and receives final fixed26K result shares. An outer local
+coordinator transports bytes; it is not a cloud principal. Existing Target
+bindings remain; a query/packet/sequence/role envelope also wraps every cloud
+message. Packet copies share a mutex-protected one-use claim guard.
+
+`candidatequery.Recover(expectedBinding,cs0Bytes,cs1Bytes)` is QUERY USER ONLY.
+It checks manifest/IndexID, LayoutID, CompactionID, QueryID, sender role, D26,
+matching K, canonical bits and exact lengths. Keep=Keep0 XOR Keep1. IDs add
+mod2^64. Keep1 appends (AnchorRecordID,TargetRecordID); Keep0 requires both
+reconstructed masked IDs0. Duplicate pairs fail closed rather than being silently
+removed. Result is CandidatePairs{QueryID,Pairs}. Clouds never see this list or
+its cardinality. The result codec has86 header bytes plus17*26K bytes/party;
+all slots are emitted regardless of Keep. No second cloud compaction/sort exists.
+
+The integrated online timer surrounds initial token generation, actual concurrent
+cloud execution and final user recovery. It excludes preprocessing, IndexOutsource
+and external oracle comparison. Its label is INTEGRATED LOCAL E2E WALL TIME;
+MEAN is primary and tail quantiles supplementary. Stage wall measurements
+include masked-message waits; their sum is not substituted for the outer timer.
+No sockets are implemented and no TCP/distributed latency is claimed. Measured
+application byte lengths support separately labelled NETWORK PAYLOAD LOWER BOUND
+calculations under an explicitly stated aggregate-bandwidth assumption.
+
+The native real harness calls this production API and independently computes
+its comparison oracle from raw strings. Saved PHASE10 public K/G/S capacities
+are used only for trusted offline reservation, never as intermediate outputs.
+The existing in-memory BSMJ builder is used only during IndexOutsource setup;
+PSMJ/global payload/Target sidecars are loaded from their original hash-verified
+files. Persistent Anchor/alignment formats remain outside this change. Static
+field-volume accounting must not be described as materialized disk files.
+
+Completion evidence and metrics: results/phase11-results.md. Full-string encrypted
+retrieval, exact edit-distance verification and application record fetching are
+not implemented. Query-time DO=NO; paper modified=NO.
+
+Final PHASE11 status: CANDIDATE DISCOVERY E2E = COMPLETE for the supported
+normal q=4 domain, 0<=tau_i<r_i (Anchor r1..14, Target r1..16).
+Final real replay:149/149 invalid queries rejected,854/854 valid queries correct,
+1510 recovered pairs; FP/FN/duplicates/wrong AnchorID/wrong TargetID all0.
+See results/phase11-results.md for final timing, communication, offline material,
+static accounting, memory and security evidence. Short-string completeness OPEN;
+full-string exact verification NO; query-time DO NO; paper modified NO.
