@@ -491,7 +491,7 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
 - **PHASE 6:** exact-K Candidate Compaction implemented; output remains secret payload shares.
 - **PHASE 7:** private K*r Target routing implemented; public buckets, local Y shares.
 - **PHASE 8:** Target group-level Private Equality implemented; Match remains secret.
-- **PHASE 9:** Target Position + Target Aggregation.
+- **PHASE 9:** Target posting Position + Validity only; Target Aggregation deferred.
 - **PHASE 10:** Candidate ID Generation.
 - **PHASE 11:** the sole Candidate Discovery runner.
 - **PHASE 12:** real workload and production E2E.
@@ -638,3 +638,46 @@ Repeated bucket access may reuse static data but never removes comparisons.
 Target Position, Target Aggregation and Candidate ID Generation remain unstarted.
 See results/phase8-results.md for proof, real replay, timings and limitations.
 Paper modified=NO.
+
+## PHASE9 — Target posting Position + Validity
+
+Target PE is COMPLETE. Target Position reuses PHASE4 `Preprocess`,
+`UserPreprocessing.ConsumeBounds`, `ReducePosition`, and `EvalPosition`, with the
+same external LLAMA backend, Bin=7/Bout=1 and local rb subtraction. No new
+comparison protocol is introduced. TargetBucketBits=16, B=65536, Q=4 and all
+sealed PSMJ hashes/tier/group/slot semantics remain unchanged.
+
+Full Target scan: 67896 usable records, 63849 indexed, 4047 short strings;
+maximum indexed rune length=66, real posting position=62, normal query occurrence
+position=60. Dummy positions reconstruct to zero. With Upos=62, clamped bounds
+L and R lie in [0,62], R+1 lies in [1,63], and p-bound lies in [-63,62], inside
+signed Bin7. PHASE4's uint32 tau saturation/overflow rule is retained; real replay
+uses its saved tau family 0 through 5, and tests cover tau=62 and maximum uint32.
+
+The initial QueryToken gains `Position []anchorfilter.PositionToken`, one per
+Target occurrence: `(PID[16], Ltilde uint32, RplusTilde uint32)`. Query User alone
+holds one-time eta_L/eta_R, computes the masked clipped bounds, then stays offline.
+Each party's Q_pool packet holds its PHASE4 rho_L/rho_R, opaque lower/upper SCMP
+keys, local rb shares and two existing F2 Beaver triple shares per physical slot.
+No tau, unmasked bounds, qgram, key, or peer share is added to the cloud token.
+The new Position-token API explicitly rejects <4-rune Target strings as OPEN
+completeness, without a fallback or silent entry into the normal path.
+
+For every physical slot in public route/group/slot order, including dummy slots:
+`PosOK = [p>=L] XOR [p>=R+1]`, `A = GroupMatch AND PosOK`,
+`Hit = A AND Validity`. Group Match replication is local. Neither Match nor Hit
+is opened. A maximum 1024-slot chunk bounds transient Position/AND buffers; only
+final HitShares and their public output layout persist for the full query.
+
+`TargetPostingHits` carries Manifest, LayoutID, CompactionID, QueryID, K,
+Occurrences, AnchorRecordIDShare[K], Routes (CandidateIndex, OccurrenceID,
+BucketID, SlotOffset, SlotCount, Groups of GroupOrdinal/PadWidth/SlotRelativeOffset),
+and HitShares[S]. It carries no Target record ID, posting incidence, plaintext
+position/validity or group identity. No sorting, compaction, dummy removal or
+Match-dependent skip occurs. The exact sealed physical slot ordering is preserved.
+
+Position loading reuses the hash-validated PHASE8 PartyIndex; Begin validates
+manifest, lineage, query/compaction IDs, occurrence order, exact group offsets and
+counts, packet ownership/capacity/PIDs, and one-time consumption. Every message
+binds that query and public structure. Target Record Aggregation, B2A, incidence,
+Candidate ID Generation and final recovery remain unstarted. Paper unchanged.

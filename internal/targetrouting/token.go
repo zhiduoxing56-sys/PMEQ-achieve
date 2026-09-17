@@ -4,6 +4,7 @@ package targetrouting
 
 import (
 	"errors"
+	"pmeq/internal/anchorfilter"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/targetcrypto"
 )
@@ -41,4 +42,5 @@ type QueryToken struct {
 	QueryID  [16]byte
 	Party    uint8
 	Words    []WordToken
+	Position []anchorfilter.PositionToken
 }

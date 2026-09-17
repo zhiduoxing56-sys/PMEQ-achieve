@@ -371,3 +371,29 @@ Target Private Equality/Position/Aggregation remain unstarted. Paper modified=NO
   local F2 Match shares. No D/E/Y/T field or peer value is returned. Unused packed
   lanes are masked and cannot become output entries. No Target Position,
   Target Aggregation or Candidate ID Generation is implemented. Paper unchanged.
+
+## PHASE9 Target Position invariants
+
+- Position uses unchanged PHASE4 SCMP preprocessing/masked bounds/EvalPosition
+  and rb convention (Bin7/Bout1). All semantic differences p-L and p-(R+1) are
+  in [-63,62]. Masked ring representatives may cover [0,127]; they are not
+  unmasked signed positions. No automatic Bin enlargement occurs.
+- The Query User masks bounds at initial token creation. No plaintext tau or
+  extra bounds are exposed; no subsequent user/DO query is performed. Repeated
+  occurrences have independent PID/eta packets. Repeated bucket/slot accesses
+  consume distinct one-time rho, SCMP keys and Beaver triples.
+- Only p+rho values and existing Beaver d/e masked differences cross servers.
+  Public metadata/framing binds manifest/lineage/query/compaction/order. No raw
+  Position, Validity, Match, PosOK or Hit is opened by production code.
+- Each party retains only its own secret shares. Under the same trusted-dealer,
+  semi-honest noncolluding model as PHASE4, independent masks hide position and
+  bounds; SCMP yields output shares and fresh Beaver triples hide both product
+  openings. Group replication and chunk boundaries use public structure only.
+- Every physical slot, including dummy and unmatched groups, is evaluated.
+  Output remains F2 and follows the exact sealed route/group/slot order for later
+  hidden incidence. No target identity, posting-to-record relation or peer share
+  is exported. Hit-count reconstruction is restricted to trusted test oracles.
+- Packet copies share a single-use guard; Begin burns all capacity. Misbound
+  tokens, lineages, manifests, shapes and reordered protocol frames are rejected.
+- No Target Record Aggregation, B2A, Candidate ID Generation or final recovery
+  is implemented. Short-string completeness stays OPEN; paper unchanged.

@@ -1,0 +1,4 @@
+=== RUN   TestNativePositionBoundsAndComposition
+--- PASS: TestNativePositionBoundsAndComposition (21.08s)
+PASS
+ok  	pmeq/internal/targetposition	22.126s

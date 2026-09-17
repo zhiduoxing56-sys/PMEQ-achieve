@@ -1,4 +1,4 @@
-//go:build phase8integration
+//go:build phase8integration || phase9integration
 
 package aggregation
 
@@ -46,6 +46,10 @@ type peExperiment struct {
 }
 
 var peExp *peExperiment
+var setupPostingOracle func(*testing.T, *harness, [2]indexbuild.PartyIndex)
+var preparePostingToken func(*testing.T, *harness, peWorkload) (targetrouting.QueryToken, targetrouting.QueryToken)
+var afterGroupPE func(*testing.T, targetpe.TargetGroupMatches, targetpe.TargetGroupMatches, peContext, []uint64)
+var finishPosting func(*testing.T)
 
 func init() {
 	harnessTargetBits = 16
@@ -231,6 +235,9 @@ func setupPE(t *testing.T, h *harness) {
 		t.Fatal("logical groups")
 	}
 	peExp = x
+	if setupPostingOracle != nil {
+		setupPostingOracle(t, h, ps)
+	}
 }
 
 type peContext struct {
@@ -242,6 +249,10 @@ func beforePE(t *testing.T, h *harness, Q string, tau int) any {
 	q := peExp.trace[peExp.queries]
 	if q.Anchor != Q || q.Tau != tau {
 		t.Fatal("seeded workload mismatch", peExp.queries, Q, tau)
+	}
+	if preparePostingToken != nil {
+		a, b := preparePostingToken(t, h, q)
+		return peContext{a, b, q}
 	}
 	a, b, e := targetquery.GenerateTokens(peExp.idx[0].Manifest(), h.kt, q.Target)
 	must(t, e)
@@ -333,6 +344,9 @@ func afterPE(t *testing.T, h *harness, a, b CompactedCandidates, ctx any) {
 	if m0.PayloadBytes+m1.PayloadBytes != uint64(8160*targetpe.Words(g)) {
 		t.Fatal("codec accounting")
 	}
+	if afterGroupPE != nil {
+		afterGroupPE(t, o0, o1, c, actual)
+	}
 	x.queries++
 	x.routes += len(o0.Routes)
 	x.groups += g
@@ -340,6 +354,9 @@ func afterPE(t *testing.T, h *harness, a, b CompactedCandidates, ctx any) {
 }
 func finishPE(t *testing.T) {
 	x := peExp
+	if finishPosting != nil {
+		finishPosting(t)
+	}
 	sort.Ints(x.counts)
 	pct := func(n int) int { return x.counts[(len(x.counts)*n+99)/100-1] }
 	if x.queries != 1003 || x.routes != 466105 || x.groups != 2209949 || x.one != 2554 || x.zero != 463551 {

@@ -133,3 +133,9 @@ func BatchAND(x0, x1, y0, y1 []share.BitShare) ([]share.BitShare, []share.BitSha
 	z1, err := Finish(1, t1, o)
 	return z0, z1, err
 }
+
+// Slice reserves a subrange of an already allocated one-time batch. Lifecycle
+// enforcement belongs to its owning query packet.
+func (p PartyBatch) Slice(lo, hi int) PartyBatch {
+	return PartyBatch{p.a[lo:hi], p.b[lo:hi], p.c[lo:hi]}
+}

@@ -1,0 +1,39 @@
+=== RUN   TestPositionNativeBenchmarks
+    benchmark_native_test.go:257: POSITION_BENCH S=212 warmup=10 measured=50 p50_ms=[0.080349 1.004092 0.080864 0.018155 0.015705 0.001095 1.229376] p95_ms=[0.121923 1.372386 0.10723 0.023642 0.020244 0.001304 1.590958] scmp_offline_party=122536 beaver_offline_party=1272 online_scmp=3392 online_and=1696 framing=3762 heap_delta=280288
+    benchmark_native_test.go:260: POSITION_MEMORY S=212 VmHWM:	  306944 kB
+    benchmark_native_test.go:260: POSITION_MEMORY S=212 VmRSS:	  147444 kB
+    benchmark_native_test.go:257: POSITION_BENCH S=24444 warmup=10 measured=50 p50_ms=[5.106523 94.907984 6.196245 1.554928 1.380363 0.096265 109.249791] p95_ms=[6.354013 116.806933 8.119259 2.010676 1.788358 0.141924 134.050017] scmp_offline_party=14128632 beaver_offline_party=146664 online_scmp=391104 online_and=195552 framing=404928 heap_delta=32049408
+    benchmark_native_test.go:260: POSITION_MEMORY S=24444 VmHWM:	  306944 kB
+    benchmark_native_test.go:260: POSITION_MEMORY S=24444 VmRSS:	  296756 kB
+    benchmark_native_test.go:257: POSITION_BENCH S=215484 warmup=10 measured=50 p50_ms=[38.449502 686.033331 43.961038 10.843994 9.817889 1.219129 790.335785] p95_ms=[42.58502 776.806152 50.468959 12.993745 11.505029 1.477911 896.767107] scmp_offline_party=124549752 beaver_offline_party=1292904 online_scmp=3447744 online_and=1723872 framing=3611178 heap_delta=284159760
+    benchmark_native_test.go:260: POSITION_MEMORY S=215484 VmHWM:	  795588 kB
+    benchmark_native_test.go:260: POSITION_MEMORY S=215484 VmRSS:	  729960 kB
+    benchmark_native_test.go:257: POSITION_BENCH S=764768 warmup=5 measured=20 p50_ms=[109.552128 2236.390379 145.314514 36.572341 33.479695 3.33213 2559.439589] p95_ms=[125.281415 2462.447552 160.632156 43.821027 39.186455 4.420391 2828.257477] scmp_offline_party=442035904 beaver_offline_party=4588608 online_scmp=12236288 online_and=6118144 framing=12944700 heap_delta=1009391376
+    benchmark_native_test.go:260: POSITION_MEMORY S=764768 VmHWM:	 2232744 kB
+    benchmark_native_test.go:260: POSITION_MEMORY S=764768 VmRSS:	 2181700 kB
+--- PASS: TestPositionNativeBenchmarks (619.96s)
+PASS
+ok  	pmeq/internal/targetposition	620.071s
+	Command being timed: "/tmp/go/bin/go test -tags phase6native ./internal/targetposition -run ^TestPositionNativeBenchmarks$ -count=1 -v -timeout=120m"
+	User time (seconds): 641.18
+	System time (seconds): 157.27
+	Percent of CPU this job got: 132%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 10:03.96
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2232744
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 71
+	Minor (reclaiming a frame) page faults: 18208997
+	Voluntary context switches: 1197924
+	Involuntary context switches: 3070
+	Swaps: 0
+	File system inputs: 8
+	File system outputs: 25104
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

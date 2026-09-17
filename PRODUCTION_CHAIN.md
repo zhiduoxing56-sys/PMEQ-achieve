@@ -41,7 +41,7 @@ IndexOutsource
 - **Target Private Equality:** PHASE8 implements Option4 local canonical
   differences, direct natural XOR-share input and packed Boolean Beaver equality.
   It ends at secret group Match shares; no input adapter and no hit opening.
-- **Target Position Filtering:** awaiting implementation.
+- **Target Position Filtering:** PHASE9 implements PHASE4 SCMP plus two F2 AND layers; posting Hit stays secret.
 - **Target Record Aggregation:** awaiting implementation and an independent security audit.
 - **Candidate ID Generation:** awaiting implementation.
 - **Canonical Candidate Discovery runner:** does not exist; may be created only in PHASE 11.
@@ -193,3 +193,23 @@ Target Private Equality=COMPLETE. Target Position, Target Record Aggregation,
 Candidate ID Generation and production Candidate Discovery runner remain absent.
 The full native run is a trusted composition correctness harness; reported PE
 components are not TCP E2E latency. Paper modified=NO.
+
+PHASE9 current boundary adds Target Position after secret Target PE:
+`TargetGroupMatches -> PHASE4 LLAMA interval -> two F2 AND layers -> TargetPostingHits`.
+The sealed PHASE7B artifact is read locally through the hash/manifest/lineage-
+validated PHASE8 PartyIndex. The Position projection exports only own Position
+and Validity shares, with public PadWidths; no record ID or T share enters output.
+
+The authorized initial `targetquery.GeneratePositionTokens` extends the initial
+word token with one masked-bound PositionToken per occurrence. Q_pool SCMP and
+Beaver material is allocated before that initial token; each party receives only
+its own material. A capacity upper bound is permitted and unused material burns.
+Routing never triggers Query User/DO interaction. The replay's trusted setup
+uses saved public workload capacities before any Anchor execution.
+
+All real and dummy physical slots are processed in route/group/slot order.
+The two AND layers are GroupMatch AND Position, then AND Validity. Output keeps
+secret posting hits and the same AnchorRecordIDShare association. There is no
+Target record aggregation or target candidate generation. Short strings remain
+an explicitly reported completeness issue. See results/phase9-results.md for
+full native replay, per-component measurements and exact communication scope.

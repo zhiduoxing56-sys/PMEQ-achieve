@@ -860,3 +860,36 @@ gofmt, go test ./..., go vet ./..., go test -race -timeout=60m ./...,
 native-tag vet and git diff --check PASS. PHASE5=SEALED, Compaction=COMPLETE,
 Routing=COMPLETE, PSMJ=SEALED, Target Private Equality=COMPLETE.
 Paper modified=NO.
+
+## PHASE9 — Target Position Filtering
+
+Begin bd84b29eec8911e2dc64c1118623dbb4529b3d15, clean. Anchor Position audit found
+its existing interface reusable: trusted offline eta/rho and SCMP keys, initial
+masked L/R+1 bounds, Ring32 reduction, real LLAMA EvalPosition with local rb
+correction, followed by existing F2 Beaver layers. Target initial QueryToken
+previously lacked this material; the authorized Query User API now supplies it
+before Anchor, with no subsequent Query User or DO contact.
+
+Full area_alias domain remains compatible with Bin7/Bout1: maximum position62,
+indexed rune length66, query occurrence position60; 4047 short rows remain OPEN.
+No sealed PSMJ or prior protocol mathematics changed. Production loads the same
+hash-validated files and checks lineage and output group layout before expanding
+Match shares locally across all physical slots. It evaluates Position on real
+and dummy slots, then Match AND Position AND Validity, outputting secret posting
+hits. Streaming chunks cap transient arrays at1024 slots and preserve physical
+slot order for the next phase; no record incidence/aggregation is performed.
+
+The original PHASE8 real replay gained optional test hooks so PHASE9 consumes
+actual Target PE results, never oracle-created Match. Native boundary and sealed
+composition tests cover clamping, dummy validity, unmatched groups, repeated
+occurrences, one-time capacity, zero output and coherence guards. The full native
+replay and benchmark evidence are in results/phase9-results.md and raw logs.
+The old repository is read-only; all external builds run under /tmp. Paper NO.
+
+PHASE9 final validation: 1003 queries, 466105 routes, 2209949 group comparisons,
+9380900 physical slots, 4144 posting hits, 751 zero-hit queries, errors=0. All1003
+S values match PHASE7B element-by-element. S min/p50/p90/p95/p99/max =
+0/212/8032/24444/215484/764768. Native component benchmarks and ordinary/native
+race checks PASS; gofmt, go test, go vet and diff checks PASS.
+Target Position complete=YES; group Match and posting Hit stay secret in production.
+Target Aggregation/Candidate ID Generation/final recovery remain unstarted.

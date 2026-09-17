@@ -3,6 +3,8 @@ package targetquery
 
 import (
 	"crypto/rand"
+	"errors"
+	"pmeq/internal/anchorfilter"
 	"pmeq/internal/targetcrypto"
 	"pmeq/internal/targetrouting"
 )
@@ -41,6 +43,34 @@ func GenerateTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text s
 		occurrence := targetrouting.Occurrence{OccurrenceID: uint32(h), Position: uint32(4 * h)}
 		a.Words[h] = targetrouting.WordToken{Occurrence: occurrence, WordPointShare: p, BucketWordShare: u}
 		b.Words[h] = targetrouting.WordToken{Occurrence: occurrence, WordPointShare: q, BucketWordShare: v}
+	}
+	return a, b, nil
+}
+
+var ErrShortTarget = errors.New("targetquery: target shorter than q=4; completeness remains OPEN")
+
+// GeneratePositionTokens runs at the initial Query User boundary only. users
+// are preprovisioned one-time PHASE4 packets, one capacity per occurrence.
+func GeneratePositionTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text string, tau uint32, users []anchorfilter.UserPreprocessing) (targetrouting.QueryToken, targetrouting.QueryToken, error) {
+	if len([]rune(text)) < 4 {
+		return targetrouting.QueryToken{}, targetrouting.QueryToken{}, ErrShortTarget
+	}
+	if len(users) != len([]rune(text))/4 {
+		return targetrouting.QueryToken{}, targetrouting.QueryToken{}, targetrouting.ErrBinding
+	}
+	a, b, e := GenerateTokens(m, key, text)
+	if e != nil {
+		return a, b, e
+	}
+	a.Position = make([]anchorfilter.PositionToken, len(users))
+	b.Position = make([]anchorfilter.PositionToken, len(users))
+	for i := range users {
+		pid, l, r, e := users[i].ConsumeBounds(uint32(4*i), tau, 62)
+		if e != nil {
+			return a, b, e
+		}
+		a.Position[i] = anchorfilter.PositionToken{PID: pid, Ltilde: l, RplusTilde: r}
+		b.Position[i] = a.Position[i]
 	}
 	return a, b, nil
 }
