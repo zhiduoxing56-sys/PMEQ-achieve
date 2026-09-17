@@ -338,3 +338,36 @@ Target Private Equality/Position/Aggregation remain unstarted. Paper modified=NO
 - PHASE5=SEALED; Compaction=COMPLETE; Private Routing=COMPLETE. PSMJ=SEALED and
   Target B final choice=FROZEN after full materialization/route/schema gates.
   PE, Target Position, Target Aggregation remain unimplemented. Paper unchanged.
+
+
+## PHASE8 private group equality
+
+- Load validates version1, IndexID, Q4, independent Target bits16, all8 tiers,
+  own artifact SHA256/lengths and the final payload/alignment LayoutID lineage.
+  Begin rejects routing metadata/lineage mismatches. No query-time raw DB lookup
+  or PSMJ rebuild exists. Group ordinals are fixed by the hash-bound sealed files.
+- Only one party's Y/T shares enter its local difference helper. Canonical
+  encoding is injective: D0=D1 iff Y0+Y1=T0+T1. Identity is supported; malformed
+  local encodings fail. No hash, truncation or scalar reinterpretation is used.
+- CS0's input bit is1 XOR E0_i and CS1's is E1_i. XOR reconstructs bitwise
+  equality. The old random input-share adapter has no additional necessary
+  security role for these naturally private inputs; zero input bytes are sent.
+- At every gate fresh independent triples mask d=x XOR a and e=y XOR b.
+  Reuse of triples is forbidden. 64 lanes are independent F2 gates. Scalar and
+  packed operations use the same existing Beaver Finish convention, party0 d&e.
+- A query packet is consumed atomically once, including unused upper-bound
+  capacity; copies share this guard. Sessions enforce round order and bind
+  IndexID/LayoutID/CompactionID/QueryID/packetID/public structure/route layout.
+  These checks are coherence/replay checks, not malicious-security authentication.
+- Given its existing Y_u/T_u, a party can compute D_u/E_u itself; these local
+  computations leak no additional information. Fresh masked openings are
+  simulatable under the existing trusted-preprocessing, semi-honest noncolluding
+  model. The final equality bit remains XOR-shared, never publicly opened.
+- Public dimensions and beta determine G. G/offsets/group counts add no plaintext
+  hit leakage. No claim is made to hide existing public bucket access patterns.
+  Peer E/D, full Y/T, join value, qgram and plaintext Match never enter one
+  production party's state. Test-only reconstruction is confined to the oracle.
+- Output contains only public route descriptors, local Anchor ID shares and
+  local F2 Match shares. No D/E/Y/T field or peer value is returned. Unused packed
+  lanes are masked and cannot become output entries. No Target Position,
+  Target Aggregation or Candidate ID Generation is implemented. Paper unchanged.

@@ -1,0 +1,35 @@
+=== RUN   TestPEBenchmarks
+    benchmark_test.go:254: PE_MEMORY G=1 workers=1 rss_kib=140628 hwm_kib=176896
+    benchmark_test.go:255: PE_BENCH mode=small G=1 W=1 workers=1 warmup=10 measured=50 A_ms=[0.051243 0.130779] B_ms=[0.020894 0.039485] C_ms=[0.016049 0.044584] D_ms=[0.012169 0.023548] E_ms=[0.102174 0.214564] offline_each=6120 online=8160 framing=992 encoding_both=64 matches_both=2 heap_delta=39952
+    benchmark_test.go:254: PE_MEMORY G=49 workers=1 rss_kib=140628 hwm_kib=176896
+    benchmark_test.go:255: PE_BENCH mode=small G=49 W=1 workers=1 warmup=10 measured=50 A_ms=[2.233 2.438235] B_ms=[0.057911 0.073101] C_ms=[0.015529 0.02384] D_ms=[0.017414 0.041501] E_ms=[2.328905 2.5207020000000004] offline_each=6120 online=8160 framing=992 encoding_both=3136 matches_both=98 heap_delta=44816
+    benchmark_test.go:254: PE_MEMORY G=1908 workers=1 rss_kib=140628 hwm_kib=176896
+    benchmark_test.go:255: PE_BENCH mode=small G=1908 W=30 workers=1 warmup=10 measured=50 A_ms=[81.643478 90.346649] B_ms=[1.635654 1.743336] C_ms=[0.122368 0.176546] D_ms=[0.180552 0.212274] E_ms=[83.607769 92.275692] offline_each=183600 online=244800 framing=992 encoding_both=122112 matches_both=3816 heap_delta=1265616
+    benchmark_test.go:254: PE_MEMORY G=5745 workers=1 rss_kib=143956 hwm_kib=176896
+    benchmark_test.go:255: PE_BENCH mode=small G=5745 W=90 workers=1 warmup=10 measured=50 A_ms=[247.458216 263.030305] B_ms=[4.885449 5.311002] C_ms=[0.322609 0.489546] D_ms=[0.455622 0.642997] E_ms=[253.130979 268.913805] offline_each=550800 online=734400 framing=992 encoding_both=367680 matches_both=11490 heap_delta=3743408
+--- PASS: TestPEBenchmarks (26.05s)
+PASS
+ok  	pmeq/internal/targetpe	26.055s
+	Command being timed: "/tmp/go/bin/go test ./internal/targetpe -run ^TestPEBenchmarks$ -count=1 -v -timeout=60m"
+	User time (seconds): 32.99
+	System time (seconds): 1.58
+	Percent of CPU this job got: 135%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:25.54
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 176896
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 53
+	Minor (reclaiming a frame) page faults: 93018
+	Voluntary context switches: 75504
+	Involuntary context switches: 93
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 15184
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

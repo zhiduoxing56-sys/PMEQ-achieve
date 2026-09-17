@@ -1,4 +1,4 @@
-//go:build phase7integration
+//go:build phase7integration && !phase8integration
 
 package aggregation
 

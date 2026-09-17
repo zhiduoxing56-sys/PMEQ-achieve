@@ -1,0 +1,17 @@
+=== RUN   TestBatchANDExhaustiveAndRandom
+--- PASS: TestBatchANDExhaustiveAndRandom (0.20s)
+=== RUN   TestPackedScalarDifferential
+--- PASS: TestPackedScalarDifferential (0.00s)
+PASS
+ok  	pmeq/internal/f2beaver	0.209s
+=== RUN   TestOption4PrivateEquality100k
+    pe_test.go:101: Option4+PE equal=100000 unequal=100000 false_negative=0 false_positive=0
+--- PASS: TestOption4PrivateEquality100k (22.61s)
+=== RUN   TestEdgesBindingsAndWorkers
+--- PASS: TestEdgesBindingsAndWorkers (0.01s)
+=== RUN   TestSessionGuards
+--- PASS: TestSessionGuards (0.00s)
+=== RUN   TestSealedManifestLineageAndStructure
+--- PASS: TestSealedManifestLineageAndStructure (2.33s)
+PASS
+ok  	pmeq/internal/targetpe	24.954s

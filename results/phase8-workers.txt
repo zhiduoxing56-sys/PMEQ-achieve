@@ -1,0 +1,35 @@
+=== RUN   TestPEBenchmarks
+    benchmark_test.go:238: PE_BENCH mode=workers G=50754 W=794 workers=1 warmup=10 measured=50 A_ms=[2089.172168 2256.920385] B_ms=[41.306846 51.736238] C_ms=[2.534261 2.727722] D_ms=[3.293863 3.92362] E_ms=[2136.1585910000003 2306.0300780000002] offline_each=4859280 online=6479040 framing=992 encoding_both=3248256 matches_both=101508 heap_delta=33489088
+    benchmark_test.go:238: PE_BENCH mode=workers G=50754 W=794 workers=4 warmup=10 measured=50 A_ms=[2043.582172 2137.618108] B_ms=[14.387791 17.996938] C_ms=[2.534675 3.124043] D_ms=[3.223504 3.633585] E_ms=[2068.824145 2158.1275210000003] offline_each=4859280 online=6479040 framing=992 encoding_both=3248256 matches_both=101508 heap_delta=33502864
+    benchmark_test.go:238: PE_BENCH mode=workers G=50754 W=794 workers=8 warmup=10 measured=50 A_ms=[2154.126585 2835.823689] B_ms=[13.738288 16.115962] C_ms=[2.707563 4.235523] D_ms=[3.353071 5.338158] E_ms=[2172.859717 2859.326503] offline_each=4859280 online=6479040 framing=992 encoding_both=3248256 matches_both=101508 heap_delta=33510288
+    benchmark_test.go:238: PE_BENCH mode=workers G=50754 W=794 workers=16 warmup=10 measured=50 A_ms=[2127.985398 2381.143974] B_ms=[11.947256 13.822943] C_ms=[2.769501 3.752219] D_ms=[3.447756 4.341898] E_ms=[2145.7582099999995 2404.5666280000005] offline_each=4859280 online=6479040 framing=992 encoding_both=3248256 matches_both=101508 heap_delta=33531872
+    benchmark_test.go:238: PE_BENCH mode=workers G=180227 W=2817 workers=1 warmup=5 measured=20 A_ms=[6911.56201 7040.386261] B_ms=[142.105372 157.125891] C_ms=[17.723159 21.48093] D_ms=[11.447094 12.518659] E_ms=[7082.242198 7224.169416] offline_each=17240040 online=22986720 framing=992 encoding_both=11534528 matches_both=360454 heap_delta=118527696
+    benchmark_test.go:238: PE_BENCH mode=workers G=180227 W=2817 workers=4 warmup=5 measured=20 A_ms=[6922.89878 7309.866719] B_ms=[48.751896 53.459654] C_ms=[19.088078 21.036729] D_ms=[11.575436 13.002409] E_ms=[7002.873245000001 7392.618119] offline_each=17240040 online=22986720 framing=992 encoding_both=11534528 matches_both=360454 heap_delta=118534976
+    benchmark_test.go:238: PE_BENCH mode=workers G=180227 W=2817 workers=8 warmup=5 measured=20 A_ms=[6197.042417 7229.421931] B_ms=[43.458993 48.086467] C_ms=[18.364207 20.980486] D_ms=[11.055128 12.588373] E_ms=[6272.770644 7301.369706999999] offline_each=17240040 online=22986720 framing=992 encoding_both=11534528 matches_both=360454 heap_delta=118541392
+    benchmark_test.go:238: PE_BENCH mode=workers G=180227 W=2817 workers=16 warmup=5 measured=20 A_ms=[6186.877962 6239.633423] B_ms=[39.800082 43.963403] C_ms=[18.555715 19.741961] D_ms=[10.592597 11.705765] E_ms=[6256.210679000001 6311.882142999999] offline_each=17240040 online=22986720 framing=992 encoding_both=11534528 matches_both=360454 heap_delta=118554448
+--- PASS: TestPEBenchmarks (1210.48s)
+PASS
+ok  	pmeq/internal/targetpe	1210.496s
+	Command being timed: "/tmp/go/bin/go test ./internal/targetpe -run ^TestPEBenchmarks$ -count=1 -v -timeout=60m"
+	User time (seconds): 1196.14
+	System time (seconds): 18.40
+	Percent of CPU this job got: 103%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 19:38.70
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 302252
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 52
+	Minor (reclaiming a frame) page faults: 2602880
+	Voluntary context switches: 367798
+	Involuntary context switches: 2830
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 16872
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

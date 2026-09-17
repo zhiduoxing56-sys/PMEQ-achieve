@@ -95,13 +95,14 @@ func Finish(party uint8, triples PartyBatch, opened Opened) ([]share.BitShare, e
 	}
 	z := make([]share.BitShare, len(opened.D))
 	for i := range z {
-		v := triples.c[i].Value()
-		v = v.Add(domain.Bit(bool(opened.D[i]) && bool(triples.b[i].Value())))
-		v = v.Add(domain.Bit(bool(opened.E[i]) && bool(triples.a[i].Value())))
-		if party == 0 {
-			v = v.Add(domain.Bit(bool(opened.D[i]) && bool(opened.E[i])))
+		bit := func(v domain.Bit) uint64 {
+			if bool(v) {
+				return 1
+			}
+			return 0
 		}
-		z[i] = share.NewBitShare(v)
+		v := finishWord(party, bit(triples.a[i].Value()), bit(triples.b[i].Value()), bit(triples.c[i].Value()), bit(opened.D[i]), bit(opened.E[i]))
+		z[i] = share.NewBitShare(domain.Bit(v != 0))
 	}
 	return z, nil
 }

@@ -812,3 +812,51 @@ gofmt, go test ./..., go vet ./..., native-tag vet, git diff --check: PASS.
 Additional race checks for new artifact packages/indexbuild/routing: PASS.
 PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
 Target Private Equality/Target Position/Target Aggregation started=no.
+
+## PHASE8 — Target private equality
+
+Begin HEAD e22a54ecbceb048c774d9130f26ce3bd9c7e8e2b; clean. One commit:
+`phase 8: add target private equality`. Old repository read-only; paper unchanged.
+
+Target bits16/B65536/Q4/8 tiers, PSMJ, PHASE5/6/7 and KHPRF semantics unchanged.
+`internal/targetpe` loads hash-bound sealed PSMJ and global payload lineage;
+no Target index rebuild or raw DB access exists in production. The native test
+restores the SAME final offline DealerLayout before existing Alignment calls,
+closing the PHASE7B lineage gap without relabelling old Keep coordinates.
+All65536 bucket structures are audited without comparing secret T values.
+
+Option4 locally computes D0=Y0-T0 and D1=T1-Y1, canonical32-byte encodings.
+The initial shares1 XOR bit(E0) and bit(E1) directly represent bitwise equality;
+old input adapter required=NO. No input message. A255-gate/8-round AND tree uses
+packed uint64 F2 lanes in the existing f2beaver package; scalar and packed paths
+share one Finish formula and party0 d&e convention. No new Beaver protocol.
+Query packet consumption is one-time across copied handles; upper-bound
+capacity packets consume actual prefixes and burn unused material. No online DO.
+
+Output is secret group MatchShares with route offsets/counts, all query/layout/
+compaction/index bindings, occurrences and Anchor ID shares. No peer E/D/Y/T or
+plaintext hit is output. Canonical identity/zero and malformed inputs are tested.
+Correctness:100000 equal+100000 unequal,0 false negatives/positives;
+102400 packed/scalar lanes;100000 old/current differential comparisons,0 errors.
+
+Actual complete native replay:1003 queries,466105 routes,2209949 comparisons;
+463551 zero-match routes,2554 one-match routes,0 multi-match routes,0 errors.
+G min0,p50=49,p90=1908,p95=5745,p99=50754,max180227, derived from this replay.
+All hit statistics are trusted-test-only. Full Y and Match remain unopened in
+production. Canonical Candidate Discovery/Target Position/Aggregation/ID output
+are not started. See results/phase8-results.md for timings, worker sweep,
+communication, memory, artifact assertions and security simulation.
+
+W=ceil(G/64);255W triple words;6120W bytes/party offline,12240W combined.
+Online actual payload=8160W plus992 bytes framing for G>0; G=0 sends nothing.
+Savings over PHASE7B adapter projection=64G bytes. Input packing is included in
+current PE compute; old standalone reference excluded that cost. Benchmarks are
+component sums, not TCP E2E.10 warmup/50 measured, max5/20. Default workers1
+because Boolean computation is about2% of total; faster packed configurations
+are reported separately, without attributing shared-host D/encoding variation
+to worker scaling. No standalone primitive normalization is sold as query latency.
+
+gofmt, go test ./..., go vet ./..., go test -race -timeout=60m ./...,
+native-tag vet and git diff --check PASS. PHASE5=SEALED, Compaction=COMPLETE,
+Routing=COMPLETE, PSMJ=SEALED, Target Private Equality=COMPLETE.
+Paper modified=NO.

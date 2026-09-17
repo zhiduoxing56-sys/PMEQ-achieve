@@ -1,0 +1,41 @@
+{
+  "IndexID": [
+    174,
+    252,
+    253,
+    254,
+    75,
+    51,
+    255,
+    162,
+    58,
+    81,
+    235,
+    247,
+    199,
+    71,
+    34,
+    215
+  ],
+  "LayoutID": [
+    137,
+    49,
+    179,
+    145,
+    130,
+    238,
+    235,
+    122,
+    161,
+    67,
+    213,
+    137,
+    79,
+    46,
+    165,
+    10
+  ],
+  "N": 120071,
+  "SourcePayloadManifestSHA256": "14fde19650cf82b03e9f0fc651b92b1ee459a602e59d7a190546d82661cc2b23",
+  "Meaning": "Public lineage assertion; native trusted offline setup restores DealerLayout from these SAME sealed payload files before Alignment. This is not a persistent alignment/permutation file."
+}

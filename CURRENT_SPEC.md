@@ -186,7 +186,7 @@ CS0: A = Enc(Y0 - T0)
 CS1: B = Enc(T1 - Y1)
 ```
 
-with `Y_u = PartEval(kappa_u)` and `Y0 + Y1 = T` on a match. Each party encodes
+with `Y_u` supplied by PHASE7 private routing and `Y0 + Y1 = T` on a match. Each party encodes
 its own difference locally; the canonical encoding never enters a multi-party
 computation. The equality identity is
 
@@ -490,7 +490,7 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
 - **PHASE 5:** SEALED; hidden incidence, deduplication, global alignment and Keep implemented.
 - **PHASE 6:** exact-K Candidate Compaction implemented; output remains secret payload shares.
 - **PHASE 7:** private K*r Target routing implemented; public buckets, local Y shares.
-- **PHASE 8:** Target Private Equality.
+- **PHASE 8:** Target group-level Private Equality implemented; Match remains secret.
 - **PHASE 9:** Target Position + Target Aggregation.
 - **PHASE 10:** Candidate ID Generation.
 - **PHASE 11:** the sole Candidate Discovery runner.
@@ -596,3 +596,45 @@ No old persistent alignment existed or was replaced in this phase. KJoin,
 point shares, logical grouping, tiers, all online algebra and Position semantics
 are unchanged. PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
 Target PE, Target Position and Target Aggregation are not started. Paper modified=NO.
+
+
+## PHASE8 — Target 256-bit Private Equality
+
+TargetBucketBits=16, B=65536, PSMJ=SEALED. All existing group definitions,
+KHPRF, point-share algebra, q4 and8-tier padding remain unchanged.
+`targetpe.Load` verifies final manifest/version/Q/tiers, own PSMJ and global
+payload file hashes, and the trusted PHASE5 alignment lineage. `Begin` requires
+RoutedCandidates.Manifest/LayoutID to match this loaded state; old Keep/payload
+coordinates cannot be relabelled. PHASE7B did not persist alignment: the native
+experiment restores the final payload's DealerLayout in trusted offline setup
+before any Alignment call. No Target index is rebuilt at query time.
+
+CS0 locally computes D0=Y0-T0; CS1 computes D1=T1-Y1. Their canonical Ristretto
+encodings are exactly32 bytes. CS0 input bit share is1 XOR E0_i, CS1's is E1_i.
+These are natural XOR shares of NOT(E0_i XOR E1_i); no input-share adapter or
+input message is required. Equality uses a balanced256→128→…→1 AND tree:
+255 AND gates,8 sequential masked-opening rounds. The existing f2beaver package
+now has packed F2 storage; scalar and packed paths share ONE Finish formula,
+with CS0 alone adding d&e. It is not Ring64 multiplication.
+
+Flatten query route order then public bucket ordinal. G is total comparisons,
+W=ceil(G/64); 255W one-time triple words,6120W bytes per cloud,12240W combined.
+Online payload=8160W bytes both directions, plus992 bytes framing for G>0.
+G=0 consumes no triple words and emits no messages. Input bytes=0, replacing
+the historical PHASE7B projection's unnecessary +64G adapter term.
+
+Packets belong to offline Q_pool. A packet may reserve a public capacity above
+actual G; Begin consumes the actual prefix and burns the WHOLE packet, including
+unused capacity. Packet copies share a one-use mutex guard. No online dealer
+fallback exists. Exact-size experiments distinguish used bytes from upper-bound
+capacity provisioning. Scalar shares/point shares/DB are never online inputs to
+an offline preprocessing call.
+
+Output TargetGroupMatches contains Manifest, LayoutID, CompactionID, QueryID,
+K, occurrences/positions, original AnchorRecordIDShare[K], per-route candidate/
+occurrence/bucket plus MatchOffset/GroupCount, and MatchShares[G] in F2.
+No D/E/peer value or plaintext hit is output. Padding lanes never enter output.
+Repeated bucket access may reuse static data but never removes comparisons.
+Target Position, Target Aggregation and Candidate ID Generation remain unstarted.
+See results/phase8-results.md for proof, real replay, timings and limitations.
+Paper modified=NO.

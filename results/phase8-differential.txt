@@ -1,0 +1,6 @@
+=== RUN   TestOldStandaloneDifferential
+    reference_test.go:37: CURRENT_REFERENCE G=100000 packing=76.829679ms boolean_compute=8.785789ms message_processing=8.949639ms payload_bytes=12754080
+    reference_test.go:45: old standalone vs current: 100000 identical shared inputs/results, errors=0
+--- PASS: TestOldStandaloneDifferential (0.25s)
+PASS
+ok  	pmeq/internal/targetpe	0.254s

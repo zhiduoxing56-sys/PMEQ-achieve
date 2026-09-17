@@ -20,7 +20,8 @@ IndexOutsource
   MusicBrainz `area`/`area_alias`: q=4 code-point postings, Anchor q-gram
   groups, Target `(joinID,qgram)` groups, party-local fresh shares, and frozen
   per-group tiers `{4,16,64,256,1024,4096,8192,16384}`. The uniform per-bucket
-  maximum is experiment baseline only. Persistent format is not implemented.
+  maximum is experiment baseline only. PHASE7B adds the sealed Target v1
+  artifact; a persistent Anchor index/alignment format remains deferred.
 - **Anchor Match:** 128-bit DPF is wired to tiered Anchor groups and replicated
   locally to their variable-width slots.
 - **Anchor Position Filtering:** PHASE 4A foundation implemented. Query
@@ -37,12 +38,9 @@ IndexOutsource
   DO-generated per-record global payload under the same LayoutID.
 - **Candidate Compaction:** PHASE 6 migrates the audited two-stage hidden shuffle, opens shuffled Keep and retains exactly K local secret payloads.
 - **KHPRF Routing:** PHASE 7 implements K*r routing with public Target buckets and party-local Y shares.
-- **Target Private Equality:** OPTION 4 approved. The Target stored group key is
-  the additive Ristretto255 point share pair `T = T0 + T1`; the future equality
-  compares `Enc(Y0 - T0)` against `Enc(T1 - Y1)` under full-256-bit Private
-  Equality. PHASE 3B delivered the routing foundation
-  (`internal/targetcrypto`). The equality protocol itself is PHASE 8 and does
-  not exist. Target DPF retired.
+- **Target Private Equality:** PHASE8 implements Option4 local canonical
+  differences, direct natural XOR-share input and packed Boolean Beaver equality.
+  It ends at secret group Match shares; no input adapter and no hit opening.
 - **Target Position Filtering:** awaiting implementation.
 - **Target Record Aggregation:** awaiting implementation and an independent security audit.
 - **Candidate ID Generation:** awaiting implementation.
@@ -175,3 +173,23 @@ See results/phase7b-results.md. PE/Position costs there are projections only;
 none of Target PE, Target Position or Target Aggregation is implemented.
 PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
 Paper modified=NO.
+
+
+PHASE8 current party-local boundary:
+Verified final PSMJ + verified global-payload/alignment lineage + RoutedCandidates
+-> own D0=Y0-T0 / D1=T1-Y1 -> own canonical256-bit input
+-> direct XOR share (party0 complements bits) ->8 Beaver opening rounds
+-> TargetGroupMatches(MatchOffset,GroupCount,secret MatchShares), with candidate
+ID shares and occurrence positions carried through unchanged.
+
+A cloud loads only its own hash-bound artifact. Public structural digests cover
+all65536 buckets and each ordered PadWidth; they are bound in every message.
+File hashes and the sealed DO construction bind the paired group ordinals;
+public structure comparison does not compare secret T values.
+All PE triples are prepared offline in finite Q_pool packets, consumed once.
+No full Y/T, canonical peer E, or Match is opened in production.
+Target B remains65536/FROZEN, PSMJ=SEALED, PHASE5=SEALED, Compaction/Routing=COMPLETE.
+Target Private Equality=COMPLETE. Target Position, Target Record Aggregation,
+Candidate ID Generation and production Candidate Discovery runner remain absent.
+The full native run is a trusted composition correctness harness; reported PE
+components are not TCP E2E latency. Paper modified=NO.
