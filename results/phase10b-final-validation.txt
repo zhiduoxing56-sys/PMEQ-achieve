@@ -1,0 +1,16 @@
+AUTHORITATIVE REPO = /home/tenggn/projects/clean_pmeq
+Begin HEAD = 33e0dd3 (clean at entry)
+Final-source checks:
+gofmt: PASS (no differences)
+go test ./...: PASS
+go vet ./...: PASS
+go test -race -timeout=60m ./...: PASS
+Native target aggregation race/edge/capacity/manifest tests: PASS
+Native integration-tag vet: PASS
+Exact loaded-manifest negative binding and positive sealed load: PASS
+git diff --check: PASS
+Obsolete absolute-path git grep: NO MATCHES
+Original sealed artifact hashes: UNCHANGED
+Full replay: 1003 upstream, 149 invalid-threshold rejects, 854 pair validations
+Full replay and representative measurements preceded only final manifest-pinning guard.
+No paper, backup or alternate-repository modification.

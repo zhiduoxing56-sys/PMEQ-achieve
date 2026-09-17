@@ -893,3 +893,76 @@ S values match PHASE7B element-by-element. S min/p50/p90/p95/p99/max =
 race checks PASS; gofmt, go test, go vet and diff checks PASS.
 Target Position complete=YES; group Match and posting Hit stay secret in production.
 Target Aggregation/Candidate ID Generation/final recovery remain unstarted.
+
+
+## PHASE10B — Target record aggregation and candidate-pair shares
+
+Begin HEAD33e0dd3, clean, physical/Git top-level verified exactly
+`/home/tenggn/projects/clean_pmeq`. Sealed PSMJ/payload lengths and SHA256 verified
+before changes; obsolete-path search empty. No alternate repository created or
+used; backup and old repository not modified. Old Target aggregation/output was
+an equation reference only; no old runtime/harness was copied.
+
+Human review freezes PARTIAL REUSE: fixed join-local D26,lambda=r-tau with
+0<=tau<r, Ring64 IDs, retained secret PHASE8 Match, F/z/C/Keep, fixed26K secret
+pair output, no second compaction/count opening, short completeness OPEN.
+
+Implementation reuses clean incidence and comparison equations. A separate local
+coefficient decoder permits26-row matrices without changing PHASE5's power-of-two
+PrepareLayout or any sealed Anchor mathematics. Ring64 uses existing additive
+Beaver/B2A equations in the required ring. Original PHASE9 Output cleared its PE
+input; the new single-consumption retained-Match handoff closes that interface
+gap without repeating PE. The historical3x7-bit ID representation is not migrated.
+
+Full offline sidecar generation and independent reconstruction audit cover65536
+buckets,310331 groups,1317260 slots,34248760 coefficients and8068606 Ring64
+payloads,0 errors. Max aliases26/max multiplicity3/short rows4047. Per-party
+incidence34248760 bytes, TargetID64548848 bytes, total framed100301133 bytes.
+Original PSMJ bytes/hashes remain unchanged. The own-file loader checks all
+public ordered widths and paired sidecar generation binding.
+
+Replay policy correction was explicitly approved after finding149 historical
+Tau>=r_target cases: preserve historical Tau/Position, reject those149 at the
+new aggregation gate, and validate pairs for854. The1003 upstream routes/slots
+remain unchanged. A first integration attempt caught cleared retained Match;
+that interface was fixed before the successful evidence run. No partial run is
+counted as1003-query completion. All final evidence, metrics and commands are in
+results/phase10b-results.md and companion raw files.
+
+Final recovery/PHASE11 runner/PHASE12 E2E are not implemented. No plaintext shortcut,
+new aggregation protocol, Target index rebuild, query-time DO or paper change.
+
+
+Final hardening adds public K/S/G capacity prefixes for the same fixed r class,
+with unused capacity burned by the query claim. A new PHASE5 comparison-prefix
+adapter changes no comparison mathematics or existing Anchor calls. Native/race
+prefix tests cover r1/r16 and K0. Both sidecar-generation hashes bind the online
+transcript, and both declared sidecar lengths must match the sealed dimensions.
+After these additions the final source was frozen and the complete real replay
+and representative benchmarks rerun; preliminary runs are not added to the1003
+query count. The normal build's GoFiles explicitly exclude phase10audit hooks.
+
+
+Memory-evidence correction: the replay's frame-size sampling threshold leaves
+small queries unsampled; zero Heap entries are explicitly missing observations,
+not zero memory. Supplemental native small/mean representatives sample before
+and after each invocation as well. The report separates replay sampling coverage
+from unconditional representative measurements. The mean-S representative is
+chosen from actual accepted historical queries, never a synthetic K/r product.
+
+Final metadata hardening pins LoadSidecar to the exact manifest digest retained
+by the actual PHASE8 PartyIndex. The negative regression changes manifest bytes
+while preserving IndexID and parsed semantics; it is rejected before sidecar I/O.
+The positive regression loads all buckets of the existing own-party artifact.
+This final guard does not change the replay/benchmark algebra, data or timers;
+those runs used the same verified manifest bytes. Ordinary/native/race/vet checks
+are rerun on this final source; full replay and benchmark evidence precede only
+this metadata guard.
+
+Final gates PASS: gofmt, go test ./..., go vet ./..., full
+go test -race -timeout=60m ./..., native aggregation race tests and integration-tag
+vet, git diff --check and empty obsolete-path git grep. Full replay is1003
+upstream/149 threshold rejections/854 pair validations,1510 oracle pairs;
+false positives/false negatives/duplicates/wrong AnchorID/wrong TargetID all0.
+Target Aggregation complete=YES; Candidate ID Generation complete=YES.
+Final pair count and Target IDs opened to clouds=NO. Final recovery=no.

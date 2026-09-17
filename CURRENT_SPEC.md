@@ -492,7 +492,7 @@ an all-bucket resident store, a persistent material pool, or a monolithic E2E ru
 - **PHASE 7:** private K*r Target routing implemented; public buckets, local Y shares.
 - **PHASE 8:** Target group-level Private Equality implemented; Match remains secret.
 - **PHASE 9:** Target posting Position + Validity only; Target Aggregation deferred.
-- **PHASE 10:** Candidate ID Generation.
+- **PHASE 10:** Target Record Aggregation and fixed-domain Candidate ID Generation (PHASE10B); no final recovery.
 - **PHASE 11:** the sole Candidate Discovery runner.
 - **PHASE 12:** real workload and production E2E.
 
@@ -681,3 +681,95 @@ manifest, lineage, query/compaction IDs, occurrence order, exact group offsets a
 counts, packet ownership/capacity/PIDs, and one-time consumption. Every message
 binds that query and public structure. Target Record Aggregation, B2A, incidence,
 Candidate ID Generation and final recovery remain unstarted. Paper unchanged.
+
+
+## PHASE10B — fixed-domain Target record aggregation and candidate pairs
+
+AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`.
+Begin HEAD `33e0dd3`, clean. Human review freezes PARTIAL REUSE and the following
+boundary; earlier phase-local “not started” statements above are historical.
+Final validation evidence is recorded in `results/phase10b-results.md`.
+
+DTarget=26 for EVERY compacted Anchor candidate. Trusted DO sorts all Target
+record IDs numerically within each join, including the 4047 short-name rows,
+and assigns ranks 0..25. Actual alias counts and this plaintext mapping never
+enter party state. No candidate-specific capacity or global Target permutation
+is used. A full raw-table audit establishes maximum join size26. The sealed
+PSMJ remains unchanged; no index or posting order is rebuilt online.
+
+Initial authorized-user threshold validation requires 1<=r_target<=16 and
+0<=tau_target<r_target, explicitly lambda_target=r_target-tau_target. The user
+masks 1 and lambda with existing PHASE5 BoundMask material before Anchor begins.
+Clouds receive masked bounds bound to QueryID and the one-use packet ID, not
+plaintext tau/lambda. A zero chunk count is rejected; completeness remains OPEN.
+
+Offline sidecars use magic PMEQTG01, party byte, IndexID and the SHA256 of the
+EXACT original sealed Target manifest bytes. Every bucket0..65535 serializes
+its group count, ordered PadWidths, dense column-major26-by-T local incidence
+bytes, then group-major26 Ring64 local payloads. The trusted sidecar manifest
+binds both sidecar SHA256/lengths, original manifest SHA256, original IndexID,
+public structure digest, D26 and maximum multiplicity3. Loading compares every
+ordered width against PHASE8's already verified own PSMJ, and pins the original
+manifest digest to the exact bytes retained by PHASE8's loader. Thus original version,
+Q4, width16, tiers, group/slot order, and both PSMJ hashes remain bound. A copied
+sidecar from another sharing generation cannot join a query transcript: both
+sidecar hashes also enter the online session binding. Hashes assume trusted DO
+provisioning, not malicious-party authentication.
+
+E_beta[u,s]=1 iff slot s is real and has join-local rank u; all other entries
+are0. Each coefficient, including zero/dummy entries, is independently shared
+in Z/128Z. Each (group,u) ID payload is the record at rank u in that group's JOIN,
+even if that record does not contain this group's qgram; absent ranks are0.
+Every Ring64 payload, including zero, is freshly split. It is never a3x7-bit
+limb encoding. Incidence fields total34248760 bytes/party; TargetID fields
+64548848 bytes/party; complete framed sidecar100301133 bytes/party. Both files
+are local ignored artifacts; their manifests/audit are tracked.
+
+PHASE9's original secret GroupMatch is retained until a single aggregation
+handoff retrieves it; PE is not rerun. TargetPostingHits still preserves exact
+route/group/physical-slot order. The aggregate entry point checks the Match/Hit
+manifests, lineage, CompactionID/QueryID, occurrence order, Anchor ID shares,
+route/group offsets, sidecar dimensions, packet ownership and exact public shape.
+
+F[c,h,u]=sum_s E_beta[u,s]*Hit[c,h,s] modulo128, using existing Hit B2A and the
+existing scalar-vector incidence kernel in64-posting chunks. No26-by-S product
+matrix is created. F<=3 is certified by the trusted full-data multiplicity audit
+and enforced as required loader/runtime metadata; secret F is never opened to
+assert a bound. z=[F>=1] uses unchanged LLAMA Bin7/Bout1 and local rb correction.
+Existing B2A yields arithmetic z; C[c,u]=sum_h z[c,h,u], C<=r<=16. Existing LLAMA
+then computes KeepTarget=[C>=lambda]. Values remain secret throughout.
+
+Ring64 Beaver uses the same additive-ring multiplication equations, with fresh
+triples and party0's d*e correction. Ring64 B2A is b0+b1-2*b0*b1; no limb/ring
+reinterpretation is used. Local ID_h[c,u]=sum_g Match[c,h,g]*Payload[g,u]. The
+sealed logical groups give at most one matching group per route. With seen=0,
+rep_h=z_h AND NOT(seen), then seen=seen XOR rep_h. This F2 recurrence runs for
+all r occurrences with fresh triples. TargetIDSelected=sum_h rep_h*ID_h uses
+Ring64 conversion/multiplication. Finally AnchorIDMasked=Keep*AnchorID[c] and
+TargetIDMasked=Keep*TargetIDSelected. Reconstructed inactive IDs are0.
+
+CandidatePairShares contains Manifest, LayoutID, CompactionID, QueryID, K,
+DTarget26, and three c-major/u-minor arrays of length26K: PairKeepShares(F2),
+AnchorIDShares(Ring64), TargetIDShares(Ring64). There is NO second compaction,
+no final pair count field/opening, and no Query User recovery implementation.
+Field storage is17*26K bytes/party, excluding public metadata and Go headers.
+
+Preprocessing is an offline finite public-capacity packet class (K_max,r,S_max,G_max),
+prepared before the initial token. The actual K/S/G may be smaller; the existing
+comparison and arithmetic packets consume public prefixes and the entire unused
+capacity burns. r is the chosen occurrence class. Pools provision compatible
+bounds offline; no query-time dealer/refill or raw lookup exists. Packet copies
+share a claim guard; chunk streams reserve disjoint masks. Timing sums
+exclude transport waits and the opt-in trusted audit hook. Production excludes
+that hook (`phase10audit` is strictly a correctness-test build).
+
+Historical replay policy, explicitly approved: preserve all1003 historical
+queries and their Position Tau.149 have invalid Target aggregation thresholds
+and are rejection cases;854 continue through candidate-pair validation. No Tau
+is clamped or changed. All1003 still execute the original upstream chain and
+preserve466105 routes/9380900 physical slots. Report final pair distributions
+only over the854 accepted queries, never impute zero results for rejected ones.
+
+PHASE11 canonical runner, PHASE12 production E2E and Query User final recovery
+remain outside this phase. Query-time DO=no; short-string completeness=OPEN;
+paper modified=NO.

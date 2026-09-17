@@ -42,8 +42,8 @@ IndexOutsource
   differences, direct natural XOR-share input and packed Boolean Beaver equality.
   It ends at secret group Match shares; no input adapter and no hit opening.
 - **Target Position Filtering:** PHASE9 implements PHASE4 SCMP plus two F2 AND layers; posting Hit stays secret.
-- **Target Record Aggregation:** awaiting implementation and an independent security audit.
-- **Candidate ID Generation:** awaiting implementation.
+- **Target Record Aggregation:** PHASE10B fixed D26 hidden incidence, F/z/C/Keep; evidence in results/phase10b-results.md.
+- **Candidate ID Generation:** PHASE10B fixed26K secret pair shares; no final count opening or recovery.
 - **Canonical Candidate Discovery runner:** does not exist; may be created only in PHASE 11.
 - **Production E2E:** does not exist; production E2E may be claimed only in PHASE 12.
 
@@ -213,3 +213,28 @@ secret posting hits and the same AnchorRecordIDShare association. There is no
 Target record aggregation or target candidate generation. Short strings remain
 an explicitly reported completeness issue. See results/phase9-results.md for
 full native replay, per-component measurements and exact communication scope.
+
+
+PHASE10B current party-local boundary (supersedes earlier phase-local status):
+Original PHASE8 secret GroupMatch retained after PHASE9
++ PHASE9 physical posting Hit shares + authenticated own offline sidecar
+-> existing Z128 Hit B2A -> chunked26-row incidence -> F
+-> real LLAMA z -> Z128 z B2A -> local cross-occurrence C
+-> real LLAMA KeepTarget
+-> Ring64 GroupMatch selection from group/ordinal ID payloads
+-> F2 first-positive representative for r1..16
+-> Ring64 representative selection -> Ring64 Keep masking
+-> CandidatePairShares in fixed candidate/ordinal order, length26K.
+
+The same join-local ordinal aligns occurrences without a global permutation.
+D26 hides actual per-candidate alias count. Lambda is explicitly r-tau with
+0<=tau<r. Both sidecar hashes and full original manifest/order are bound.
+Only masked comparison/Beaver messages cross clouds. PairKeep/IDs remain secret;
+no second compaction or final pair-count opening occurs. The output contains
+neither actual nalias nor plaintext IDs. Query User recovery remains absent.
+
+The trusted native validation keeps all1003 historical upstream queries, rejects
+149 invalid aggregation thresholds, and verifies854 pair outputs. No historical
+query Tau is silently modified. The complete replay is a correctness harness,
+not the PHASE11 canonical production runner or PHASE12 production E2E.
+AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`; paper modified=NO.

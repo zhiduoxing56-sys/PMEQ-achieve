@@ -1,0 +1,10 @@
+{
+  "CheckedBuckets": 65536,
+  "CheckedGroups": 310331,
+  "CheckedPhysicalSlots": 1317260,
+  "RealSlots": 480945,
+  "MaxAliases": 26,
+  "MaxMultiplicity": 3,
+  "ShortRecords": 4047,
+  "Errors": 0
+}

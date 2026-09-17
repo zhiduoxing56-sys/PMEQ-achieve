@@ -346,7 +346,7 @@ func (s *Session) Output() (TargetPostingHits, error) {
 	}
 	s.done = true
 	s.materials = nil
-	s.in = targetpe.TargetGroupMatches{}
+	// Retained until PHASE10 consumes the original secret GroupMatch result.
 	out := s.out
 	s.out = TargetPostingHits{}
 	return out, nil

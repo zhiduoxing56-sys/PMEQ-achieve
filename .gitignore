@@ -1,3 +1,4 @@
 # Large party-local share artifacts remain local; manifests and hashes are tracked.
 /artifacts/phase7b/*.bin
+/artifacts/phase10b/*.bin
 __pycache__/

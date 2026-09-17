@@ -1,0 +1,76 @@
+=== RUN   TestReal1000Queries
+    phase8_integration_test.go:141: SEALED hashes/manifest/lineage PASS; full 65536-bucket public structure PASS
+    phase9_integration_test.go:80: TARGET_DOMAIN records=67896 indexed=63849 short=4047 max_posting=62 max_runes=66 max_query_position=60 Bin=7 Bout=1
+    phase10_integration_test.go:110: PHASE10 sidecars loaded: all 65536 buckets/310331 groups/1317260 slots match sealed Position order
+    aggregation_test.go:505: real queries 0/1000
+    phase10_integration_test.go:263: PHASE10 query=49 K=38 r=4 S=3184 pairs=0 errors=0
+    aggregation_test.go:505: real queries 50/1000
+    phase10_integration_test.go:263: PHASE10 query=99 K=5 r=4 S=484 pairs=0 errors=0
+    aggregation_test.go:505: real queries 100/1000
+    phase10_integration_test.go:263: PHASE10 query=149 K=8 r=1 S=156 pairs=0 errors=0
+    aggregation_test.go:505: real queries 150/1000
+    phase10_integration_test.go:263: PHASE10 query=199 K=3 r=1 S=52 pairs=0 errors=0
+    aggregation_test.go:505: real queries 200/1000
+    aggregation_test.go:505: real queries 250/1000
+    phase10_integration_test.go:263: PHASE10 query=299 K=4 r=2 S=148 pairs=0 errors=0
+    aggregation_test.go:505: real queries 300/1000
+    phase10_integration_test.go:263: PHASE10 query=349 K=1 r=1 S=16 pairs=0 errors=0
+    aggregation_test.go:505: real queries 350/1000
+    aggregation_test.go:505: real queries 400/1000
+    phase10_integration_test.go:263: PHASE10 query=449 K=27 r=4 S=2228 pairs=0 errors=0
+    aggregation_test.go:505: real queries 450/1000
+    phase10_integration_test.go:263: PHASE10 query=499 K=1 r=2 S=12 pairs=0 errors=0
+    aggregation_test.go:505: real queries 500/1000
+    phase10_integration_test.go:263: PHASE10 query=549 K=383 r=2 S=15324 pairs=0 errors=0
+    aggregation_test.go:505: real queries 550/1000
+    phase10_integration_test.go:263: PHASE10 query=599 K=33 r=3 S=1976 pairs=0 errors=0
+    aggregation_test.go:505: real queries 600/1000
+    phase10_integration_test.go:263: PHASE10 query=649 K=1 r=5 S=116 pairs=0 errors=0
+    aggregation_test.go:505: real queries 650/1000
+    phase10_integration_test.go:263: PHASE10 query=699 K=61 r=5 S=5884 pairs=0 errors=0
+    aggregation_test.go:505: real queries 700/1000
+    phase10_integration_test.go:263: PHASE10 query=749 K=1 r=3 S=64 pairs=0 errors=0
+    aggregation_test.go:505: real queries 750/1000
+    phase10_integration_test.go:263: PHASE10 query=799 K=101 r=6 S=11572 pairs=0 errors=0
+    aggregation_test.go:505: real queries 800/1000
+    phase10_integration_test.go:263: PHASE10 query=849 K=2 r=1 S=44 pairs=0 errors=0
+    aggregation_test.go:505: real queries 850/1000
+    phase10_integration_test.go:263: PHASE10 query=899 K=1 r=3 S=44 pairs=0 errors=0
+    aggregation_test.go:505: real queries 900/1000
+    phase10_integration_test.go:263: PHASE10 query=949 K=107 r=2 S=4184 pairs=0 errors=0
+    aggregation_test.go:505: real queries 950/1000
+    phase10_integration_test.go:263: PHASE10 query=999 K=5 r=4 S=440 pairs=0 errors=0
+    aggregation_test.go:511: PHASE6 K n=1000 min=1 p50=5 p90=151 p95=431 p99=2843 max=4780
+    aggregation_test.go:517: COMPONENT pct=0.50 query="Kōzushima" intrinsic=32772 stats={XF:225.608µs Perm:1.622795ms Sum:215.58µs B2AZ:4.211µs FComparisons:160 R:2 T:332 P:35968 K:1 Peak:1030154088}
+    aggregation_test.go:517: COMPONENT pct=0.95 query="Negrilla de Palencia" intrinsic=25174016 stats={XF:178.456596ms Perm:4.570611ms Sum:685.295µs B2AZ:62.903µs FComparisons:6560 R:5 T:8700 P:25342848 K:1 Peak:1081301576}
+    aggregation_test.go:517: COMPONENT pct=0.99 query="Saint-Pierre-d'Oléron" intrinsic=68255872 stats={XF:471.405342ms Perm:4.008959ms Sum:549.717µs B2AZ:139.448µs FComparisons:9616 R:5 T:9780 P:68338560 K:1 Peak:1496857936}
+    aggregation_test.go:523: 1000 random + 3 workload-quantile real queries: zero errors
+    phase10_integration_test.go:283: PHASE10 queries=1003 rejected=149 pair_verified=854 routes=466105 groups=2209949 slots=9380900 pairs=1510 false_positive=0 false_negative=0 duplicates=0 wrong_anchor=0 wrong_target=0
+    phase9_integration_test.go:195: TARGET_POSITION queries=1003 routes=466105 groups=2209949 physical_slots=9380900 hits=4144 zero_hit_queries=751 errors=0 S min=0 p50=212 p90=8032 p95=24444 p99=215484 max=764768 offline_bytes=10956891200
+    phase8_integration_test.go:365: PRIVATE_EQUALITY queries=1003 routes=466105 totalG=2209949 zero=463551 one=2554 multi=0 errors=0 G min=0 p50=49 p90=1908 p95=5745 p99=50754 max=180227
+--- PASS: TestReal1000Queries (1485.94s)
+PASS
+ok  	pmeq/internal/aggregation	1486.048s
+	Command being timed: "/tmp/go/bin/go test -tags phase10integration phase9integration phase6native phase10audit ./internal/aggregation -run ^TestReal1000Queries$ -count=1 -timeout=90m -v"
+	User time (seconds): 1640.53
+	System time (seconds): 411.51
+	Percent of CPU this job got: 140%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 24:19.24
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 7089776
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 73
+	Minor (reclaiming a frame) page faults: 14066453
+	Voluntary context switches: 2053555
+	Involuntary context switches: 9443
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 33144
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

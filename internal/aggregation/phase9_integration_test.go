@@ -27,6 +27,19 @@ var postingCounts []int
 var postingTotal, postingHits, postingZero int
 var postingOffline uint64
 
+// PHASE10 hooks belong only to this opt-in trusted test harness. External
+// test packages can extend the real chain without a production import cycle.
+type Phase10Query struct {
+	Query, Tau, K, R, S, G int
+	Target                 string
+	QueryID                [16]byte
+}
+
+var Phase10Setup func(*testing.T, [2]*targetpe.PartyIndex, []indexbuild.AreaAliasRecord)
+var Phase10Prepare func(*testing.T, Phase10Query)
+var Phase10After func(*testing.T, [2]targetposition.TargetPostingHits, [2]targetpe.TargetGroupMatches, []uint64)
+var Phase10Finish func(*testing.T)
+
 func init() {
 	setupPostingOracle = setupPostings
 	preparePostingToken = preparePostings
@@ -68,18 +81,23 @@ func setupPostings(t *testing.T, h *harness, ps [2]indexbuild.PartyIndex) {
 	if maxP > 62 || maxQ > 62 {
 		t.Fatal("Target domain exceeds frozen Bin7")
 	}
+	if Phase10Setup != nil {
+		Phase10Setup(t, peExp.idx, rows)
+	}
 }
 func preparePostings(t *testing.T, h *harness, q peWorkload) (targetrouting.QueryToken, targetrouting.QueryToken) {
 	// Trusted offline replay provisioning from the previously published workload.
 	// Production uses a reserved upper bound. This happens before initial token,
 	// before Anchor, never from secret Match or a cloud query-time dealer call.
 	capacities := make([]int, len(q.Words))
+	groupCapacity := 0
 	for _, j := range q.Joins {
 		a, e := targetcrypto.JoinBucketComponent(h.kt, j, 16)
 		must(t, e)
 		for hi, w := range q.Words {
 			b, e := targetcrypto.WordBucketComponent(h.kt, w.QGram, 16)
 			must(t, e)
+			groupCapacity += len(postingOracle[uint16(a)^uint16(b)])
 			for _, gs := range postingOracle[uint16(a)^uint16(b)] {
 				capacities[hi] += len(gs)
 			}
@@ -92,6 +110,13 @@ func preparePostings(t *testing.T, h *harness, q peWorkload) (targetrouting.Quer
 	// Same supported threshold family as Anchor, selected at initial QueryToken.
 	u, v, e := targetquery.GeneratePositionTokens(peExp.idx[0].Manifest(), h.kt, q.Target, uint32(q.Tau), users)
 	must(t, e)
+	if Phase10Prepare != nil {
+		slots := 0
+		for _, n := range capacities {
+			slots += n
+		}
+		Phase10Prepare(t, Phase10Query{q.Query, q.Tau, len(q.Joins), len(q.Words), slots, groupCapacity, q.Target, u.QueryID})
+	}
 	return u, v
 }
 func checkPostings(t *testing.T, a, b targetpe.TargetGroupMatches, c peContext, ids []uint64) {
@@ -111,6 +136,13 @@ func checkPostings(t *testing.T, a, b targetpe.TargetGroupMatches, c peContext, 
 	must(t, e)
 	p, e := y.Output()
 	must(t, e)
+	if Phase10After != nil {
+		gm0, err := x.RetainedGroupMatches()
+		must(t, err)
+		gm1, err := y.RetainedGroupMatches()
+		must(t, err)
+		Phase10After(t, [2]targetposition.TargetPostingHits{o, p}, [2]targetpe.TargetGroupMatches{gm0, gm1}, ids)
+	}
 	hits := 0
 	for ri, r := range o.Routes {
 		off := r.SlotOffset
@@ -150,6 +182,9 @@ func checkPostings(t *testing.T, a, b targetpe.TargetGroupMatches, c peContext, 
 	postingPackets = [2]targetposition.Packet{}
 }
 func finishPostings(t *testing.T) {
+	if Phase10Finish != nil {
+		Phase10Finish(t)
+	}
 	raw, e := json.Marshal(postingCounts)
 	must(t, e)
 	if path := os.Getenv("PMEQ_POSITION_COUNTS"); path != "" {

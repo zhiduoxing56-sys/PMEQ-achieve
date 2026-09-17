@@ -32,7 +32,8 @@ type positionFixture struct {
 	tau        uint32
 }
 
-func positionFixtures(t *testing.T) []positionFixture {
+func positionFixtures(t *testing.T) []positionFixture { return positionFixturesAt(t, false) }
+func positionFixturesAt(t *testing.T, targetOnly bool) []positionFixture {
 	idx := loadIndexes(t)
 	dir := "../../artifacts/phase7b"
 	f, e := os.Open(filepath.Join(dir, "manifest.json"))
@@ -95,7 +96,12 @@ func positionFixtures(t *testing.T) []positionFixture {
 			}
 		}
 	}
-	sorted := append([]int(nil), counts...)
+	sorted := []int{}
+	for i, n := range counts {
+		if !targetOnly || int(qs[i].Tau) < len([]rune(qs[i].Target))/4 {
+			sorted = append(sorted, n)
+		}
+	}
 	sort.Ints(sorted)
 	var raw [32]byte
 	for i := range raw {
@@ -104,10 +110,35 @@ func positionFixtures(t *testing.T) []positionFixture {
 	key, e := targetcrypto.NewMasterKey(raw)
 	must(t, e)
 	var out []positionFixture
-	for _, percent := range []int{50, 95, 99, 100} {
-		want := sorted[(len(sorted)*percent+99)/100-1]
+	percentiles := []int{50, 95, 99, 100}
+	if targetOnly {
+		percentiles = append(percentiles, -1)
+	}
+	for _, percent := range percentiles {
+		want := 0
+		if percent < 0 {
+			sum := 0
+			for _, v := range sorted {
+				sum += v
+			}
+			want = sorted[0]
+			distance := func(v int) int64 {
+				d := int64(v)*int64(len(sorted)) - int64(sum)
+				if d < 0 {
+					return -d
+				}
+				return d
+			}
+			for _, v := range sorted {
+				if distance(v) < distance(want) {
+					want = v
+				}
+			}
+		} else {
+			want = sorted[(len(sorted)*percent+99)/100-1]
+		}
 		qi := 0
-		for counts[qi] != want {
+		for counts[qi] != want || (targetOnly && int(qs[qi].Tau) >= len([]rune(qs[qi].Target))/4) {
 			qi++
 		}
 		q := qs[qi]

@@ -28,11 +28,12 @@ type AlignmentLineage struct {
 	N                 int
 }
 type PartyIndex struct {
-	manifest  indexbuild.TargetManifest
-	lineage   AlignmentLineage
-	party     uint8
-	buckets   [65536][]indexbuild.TargetPartyGroup
-	structure [32]byte
+	manifest       indexbuild.TargetManifest
+	lineage        AlignmentLineage
+	party          uint8
+	buckets        [65536][]indexbuild.TargetPartyGroup
+	structure      [32]byte
+	manifestDigest [32]byte
 }
 
 // Load verifies the trusted public manifests, own sealed PSMJ and own payload
@@ -41,7 +42,14 @@ func Load(manifest, payloadManifest io.Reader, psmj, payload io.Reader, party ui
 	if party > 1 {
 		return nil, ErrBinding
 	}
-	m, e := indexbuild.ReadTargetManifest(manifest)
+	rawManifest, e := io.ReadAll(io.LimitReader(manifest, 16385))
+	if e != nil {
+		return nil, e
+	}
+	if len(rawManifest) > 16384 {
+		return nil, ErrBinding
+	}
+	m, e := indexbuild.ReadTargetManifest(bytes.NewReader(rawManifest))
 	if e != nil {
 		return nil, e
 	}
@@ -83,7 +91,7 @@ func Load(manifest, payloadManifest io.Reader, psmj, payload io.Reader, party ui
 	if uint64(counter.n) != m.PartyBytes[party] || hex.EncodeToString(h.Sum(nil)) != m.PartySHA256[party] {
 		return nil, ErrBinding
 	}
-	out := &PartyIndex{manifest: m, lineage: alignment, party: party}
+	out := &PartyIndex{manifest: m, lineage: alignment, party: party, manifestDigest: sha256.Sum256(rawManifest)}
 	for _, b := range idx.TargetBuckets {
 		out.buckets[b.BucketID] = b.Groups
 	}
@@ -109,6 +117,10 @@ func (c *countReader) Read(b []byte) (int, error) { n, e := c.r.Read(b); c.n += 
 // StructureDigest scans all 65536 buckets, group counts and PadWidth order.
 // Its exchange reveals no secret T values. Hash-verified owner files bind ordinals.
 func (p *PartyIndex) StructureDigest() [32]byte { return p.structure }
+
+// ManifestDigest binds extensions to the exact manifest bytes used by Load,
+// not merely a reused IndexID or identical public group dimensions.
+func (p *PartyIndex) ManifestDigest() [32]byte { return p.manifestDigest }
 func (p *PartyIndex) Manifest() targetrouting.Manifest {
 	return targetrouting.Manifest{IndexID: p.manifest.IndexID, TargetBucketBits: 16, Q: 4}
 }

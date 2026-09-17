@@ -1,0 +1,5 @@
+=== RUN   TestEverySidecarCoefficientAndPayload
+    audit_test.go:174: all coefficients=34248760 all Ring64 payloads=8068606 reconstructed correctly; both parties all 128 marginals present
+--- PASS: TestEverySidecarCoefficientAndPayload (2.87s)
+PASS
+ok  	pmeq/internal/targetaggregation/gen	2.875s
