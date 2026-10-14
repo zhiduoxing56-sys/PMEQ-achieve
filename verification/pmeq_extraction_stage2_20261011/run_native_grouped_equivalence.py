@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""Extraction preprocessing precedes unchanged native query execution."""
+import json,pathlib,os,secrets,hashlib,struct,time,subprocess,uuid
+import role_driver as d
+P=pathlib.Path(__file__).resolve().parent
+def main():
+ root=P/'native-grouped-original-equivalence';root.mkdir(exist_ok=False);tickets={}
+ prep_started=time.time()
+ for trial in range(5):
+  for aliases in [0,1,2,3,4,26]:
+   folder=root/uuid.uuid4().hex;folder.mkdir();os.chmod(folder,0o700)
+   kp=folder/'DO-only.key';kp.write_bytes(secrets.token_bytes(32));os.chmod(kp,0o600)
+   binding='PMEQ-native-IndexID-01-LayoutID-02-CompactionID-03-QueryID-04-ticket-'+uuid.uuid4().hex
+   d.run(['prep-grouped',folder,52,26,kp,binding],preexec_fn=d.limits(14))
+   d.run(['prep-shuffle',folder,52,kp,binding],preexec_fn=d.limits(14))
+   d.fsync_files(list(folder.glob('*.bin')))
+   tickets[(trial,aliases)]=(folder,binding)
+ prep_finished=time.time();results=[];cmd=json.loads((P/'native-command.json').read_text());env=os.environ.copy();env.update(cmd['env_overrides'])
+ for trial in range(5):
+  exports=root/f'exports-{trial}';exports.mkdir();env['PMEQ_EXTRACTION_OUTPUT_DIR']=str(exports)
+  args=cmd['command'][:];args[args.index('-count=5')]='-count=1';args[args.index('phase6native')]='phase6native,phase10audit';args[args.index('TestNativeExtractionExport')]='TestNativeGroupedExtractionExport'
+  started=time.time()
+  with (root/f'native-{trial}.log').open('w') as log:
+   r=subprocess.run(args,cwd=cmd['cwd'],env=env,stdout=log,stderr=subprocess.STDOUT,preexec_fn=d.limits(8))
+  assert r.returncode==0,(root/f'native-{trial}.log').read_text()
+  assert len(list(exports.glob('*.json')))==6
+  for source in exports.glob('*.json'):
+   v=json.loads(source.read_text());aliases=v['Aliases'];folder,binding=tickets[(trial,aliases)]
+   assert v['Bindings']=={k:[a]+[0]*15 for k,a in [('IndexID',1),('LayoutID',2),('CompactionID',3),('QueryID',4)]},v['Bindings']
+   shares=v['Parties'];L=len(shares[0]['keep']);assert L==52
+   hits=[i for i in range(L) if shares[0]['keep'][i]^shares[1]['keep'][i]];M=len(hits)
+   assert v['N']==26
+   for i in range(L):
+    originalA=(shares[0]['NativeMaskedAnchor'][i]+shares[1]['NativeMaskedAnchor'][i])%2**64
+    originalT=(shares[0]['NativeMaskedTarget'][i]+shares[1]['NativeMaskedTarget'][i])%2**64
+    assert originalA==((shares[0]['Anchor'][i]+shares[1]['Anchor'][i])%2**64 if i in hits else 0)
+    assert originalT==((shares[0]['Target'][i]+shares[1]['Target'][i])%2**64 if i in hits else 0)
+   with (folder/'expected.bin').open('wb') as out:
+    for i in hits:out.write(struct.pack('<QQQ',i,(shares[0]['NativeMaskedAnchor'][i]+shares[1]['NativeMaskedAnchor'][i])%2**64,(shares[0]['NativeMaskedTarget'][i]+shares[1]['NativeMaskedTarget'][i])%2**64))
+   for party in [0,1]:
+    header=bytearray((folder/f'shuffle{party}.bin').read_bytes()[:56]);header[49]=3
+    bits=bytearray((L+7)//8)
+    for i,b in enumerate(shares[party]['keep']):bits[i//8]|=int(b)<<(i%8)
+    with (folder/f'input{party}.bin').open('wb') as out:
+     out.write(header);out.write(bits)
+     for a,b in zip(shares[party]['Anchor'],shares[party]['Target']):out.write(struct.pack('<QQ',a,b))
+   os.environ['SRE_GROUP_N']='26'
+   result=d.execute(folder,'sre',adaptive=True,cpu_pins=(8,10),client_cpu=12)
+   result.update(trial=trial,aliases=aliases,L=L,M=M,source_native_fixture=str(source.relative_to(P)),native_backend='LLAMA SCMP phase6native',
+    psmj_changed=False,exact_equivalence_to_original_native_masked_candidate_pairs=True,original_go_source_hashes_unchanged=True,preprocessing_finished_unix=prep_finished,native_query_started_unix=started,
+    extraction_input_boundary='actual raw anchor shares and original private-selected target shares, captured by existing trusted phase10audit before masking; original Keep from LLAMA SCMP',all_branches_bank_reserved=True,
+    branch='Grouped anchor BCH-Ring M<=3' if M<=3 else 'existing packed private permutation fallback',
+    fixture_is_functional_not_private_security_evidence=True)
+   assert prep_finished<started
+   results.append(result)
+ (P/'native-grouped-equivalence-results.json').write_text(json.dumps(results,indent=2)+'\n')
+ print('COMPLETE',len(results),'NATIVE PIPELINE + ISOLATED EXTRACTION TESTS; DO PREPROCESSING PRECEDES QUERY',flush=True)
+if __name__=='__main__':main()

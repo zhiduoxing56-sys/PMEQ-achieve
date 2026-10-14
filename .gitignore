@@ -1,0 +1,26 @@
+# Private data and runtime state are never published.
+/data/
+/artifacts/
+/results/
+/state/
+**/private/
+**/cache/
+**/tmp/
+**/bin/
+**/.venv/
+**/__pycache__/
+*.pyc
+*.duckdb
+*.parquet
+*.xlsx
+*.csv
+*.tbl
+*.bin
+*.key
+*.pem
+*.consumed
+*.o
+*.a
+*.so
+.env
+.env.*

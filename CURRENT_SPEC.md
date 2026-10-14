@@ -1,0 +1,847 @@
+# CURRENT PMEQ Production Engineering Specification
+
+This document is the current production engineering specification for PMEQ.
+
+## 1. Sources of truth
+
+- Old repository: `/home/tenggn/projects/new-pmeq` — read-only reference only.
+- New repository: `/home/tenggn/projects/clean_pmeq` — the only production source of truth.
+- Source snapshot: `/home/tenggn/projects/PMEQ_SNAPSHOT_PRE_ANCHOR_AGG_20260915T190526+0800/source.tar`
+- Snapshot SHA256: `a456dec8a84236b333c043b7ce68033b6418f6c6ac8e2ca494858b62f66792a0`
+
+The current engineering specification takes precedence over the paper text. The paper is only a provisional implementation target and may be changed when implementation, security, interface, or logic defects are found. Old code must not enter the production repository through a compatibility layer.
+
+## 2. System model
+
+- **DO:** trusted; responsible for IndexOutsource and preprocessing; offline during queries.
+- **CS0 / CS1:** semi-honest and non-colluding.
+- **Query User:** authorized and honest.
+
+## 3. Dataset and query object
+
+- Sole raw database: MusicBrainz fullexport `20260905-002519`.
+- Primary tables: `area(id,name)` and `area_alias(id,name,area)`.
+- Join condition: `area.id = area_alias.area`.
+- `q = 4`.
+- Anchor: `area.name`.
+- Target: `area_alias.name`.
+
+## 4. Current Candidate Discovery boundary
+
+The only intended chain is:
+
+IndexOutsource
+→ Anchor Match
+→ Anchor Position Filtering
+→ Anchor Record Aggregation
+→ Anchor Keep
+→ Secure Candidate Compaction
+→ KHPRF Private Routing
+→ Target Private Equality
+→ Target Position Filtering
+→ Target Record Aggregation
+→ Candidate ID Generation
+→ Query User final candidate-pair recovery
+
+Candidate Discovery ends when the authorized Query User recovers the generated candidate ID pairs. Full-string Candidate Retrieval is a separate future problem. The current project must not claim that full-string Candidate Retrieval has been implemented.
+
+## 5. Frozen primitives and designs
+
+### Sharing
+
+Additive Secret Sharing.
+
+### Anchor logical key and production representation
+
+The Anchor logical key is:
+
+```text
+w_B = BSMJ || Table || SearchAttr || JoinAttr || qgram
+```
+
+The Anchor production representation is:
+
+```text
+z_B = Trunc128(
+  HMAC-SHA256_kB(
+    "PMEQ-BSMJ-INDEX-V1" || w_B
+  )
+)
+```
+
+The engineering meaning of concatenation inside `w_B` is the following
+canonical, length-delimited byte encoding:
+
+```text
+U32BE(len(UTF8("BSMJ"))) || UTF8("BSMJ")
+|| U32BE(len(UTF8("area"))) || UTF8("area")
+|| U32BE(len(UTF8("name"))) || UTF8("name")
+|| U32BE(len(UTF8("id"))) || UTF8("id")
+|| U32BE(len(UTF8(qgram))) || UTF8(qgram)
+```
+
+Every length is the UTF-8 byte length. A qgram must be valid UTF-8 and contain
+exactly four Unicode code points. Encoding preserves the exact input bytes and
+case: it performs no NFC, NFKC, case folding, whitespace trimming, or other
+normalization.
+
+`k_B` is exactly 256 bits and is held only by the DO and authorized Query User.
+CS0 and CS1 do not know it. The DO and authorized Query User must call the one
+shared canonical encoder; role-specific duplicate encoders are forbidden.
+`Trunc128` means copying bytes 0 through 15 of the complete HMAC-SHA256 digest
+directly into an opaque 16-byte value, with no integer reinterpretation.
+
+Bucket mapping is not defined by PHASE 2B. In particular, this specification
+does not yet choose whether a future bucket function consumes a logical key or
+`z_B`; that decision belongs to PHASE 3.
+
+Anchor Match uses a 128-bit DPF with security parameter 128 and GGM depth 128.
+Its input `Point` is the Anchor `Value`'s 16 bytes copied verbatim. Tree levels
+consume byte 0 through byte 15 and consume each byte from its most-significant
+bit to its least-significant bit. This traversal convention does not reinterpret
+the Anchor value as an integer.
+
+The DPF output group is `F_2`, `beta = 1`, and each local evaluation returns one
+`share.BitShare`. Per-slot `Validity` and `PositionPredicate` values are also
+`share.BitShare`. PHASE 4A computes
+
+```text
+Match AND Validity AND PositionPredicate
+```
+
+with two batched Beaver multiplications in `F_2`. Its final output is the
+party-local posting hit share `x_{h,s}` in `F_2`; B2A is implemented at the
+PHASE 5 aggregation boundary, not inside filtering.
+
+The DPF PRG uses each 128-bit seed `s` as an AES-128 key with four exact,
+distinct 16-byte domain blocks:
+
+```text
+C_L = 00000000000000000000000000000000
+C_R = 00000000000000000000000000000001
+C_T = 00000000000000000000000000000002
+C_V = 00000000000000000000000000000003
+
+G(s) = AES_s(C_L) || AES_s(C_R)
+       || MSB(AES_s(C_T)[0]) || second-MSB(AES_s(C_T)[0])
+Convert(s) = MSB(AES_s(C_V)[0])
+```
+
+Its security argument relies on AES-128 PRF/PRP security for a random
+seed-as-key evaluated on fixed, distinct input blocks, providing the
+pseudorandom expansion required by the GGM/DPF construction. Tests provide
+correctness evidence only; they do not prove PRG security.
+
+PHASE11 serializes each own DPF key in2322 bytes: root seed16, control1,
+128 correction words of18 bytes, and final bit1. The separate codec boundary
+checks canonical bits and lengths; the opaque evaluation API is unchanged.
+The old 64-bit DPF and Target DPF are permanently retired from the production
+path.
+
+### Padding and validity
+
+Production padding is the frozen per-group tier ladder
+`{4,16,64,256,1024,4096,8192,16384}`. Each group's public `PadWidth` is the
+smallest tier greater than or equal to its real posting count. `PadWidth`
+reveals the corresponding coarse real-size class and is allowed structural
+leakage. Validity remains secret-shared per slot: `real = 1`, `dummy = 0`.
+
+### KHPRF routing
+
+Retain the current Ristretto255 KHPRF design.
+
+### Candidate compaction
+
+Use exact-K secure compaction.
+
+- Input: secret Keep / payload.
+- Process: two-stage secure shuffle.
+- Permitted opening: shuffled Keep.
+- Output: exactly K payload shares.
+- Permitted leakage: K.
+
+### Target match
+
+Target DPF is permanently retired.
+
+**OPTION 4 is approved.** The Target stored group key is the KHPRF group point
+
+```text
+T = (kappa_J + kappa_w) * P          (Ristretto255)
+```
+
+shared additively in the group:
+
+```text
+T = T0 + T1
+```
+
+Each party's production state holds only its own `canonical 32-byte encoding of
+T_u`. `Enc(T0) XOR Enc(T1)` has no protocol meaning. No cloud may reconstruct
+`T`, and no production type or function may reconstruct, open, or reveal a full
+target point or scalar.
+
+Target Match remains **full-256-bit Private Equality**, evaluated over the two
+parties' locally computed private inputs:
+
+```text
+CS0: A = Enc(Y0 - T0)
+CS1: B = Enc(T1 - Y1)
+```
+
+with `Y_u` supplied by PHASE7 private routing and `Y0 + Y1 = T` on a match. Each party encodes
+its own difference locally; the canonical encoding never enters a multi-party
+computation. The equality identity is
+
+```text
+Y = T  <=>  Enc(Y0 - T0) = Enc(T1 - Y1)
+```
+
+which holds because Ristretto255 canonical encoding is injective on the group.
+
+### Target routing primitives (PHASE 3B)
+
+- Master key: `k_T`, 256 bits, held only by the DO and an authorized Query User.
+- Canonical encoding: the single length-delimited `Frame` encoder. No bare
+  string concatenation.
+- Scalar mapping: `HMAC-SHA512(k_T, Frame(domain, ...))` -> 64 bytes ->
+  `Scalar.SetUniformBytes`. `Element.SetUniformBytes` must not substitute for
+  the scalar mapping, and `k_T` is never a plain hash message field.
+- Base point: `P = Element.SetUniformBytes(SHA512("PMEQ-TARGET-KHPRF-POINT-V1"))`.
+  The canonical generator is deliberately not used.
+- Bucket component: `HMAC-SHA256(k_T, Frame(domain, ...))`, first `k` bits
+  MSB-first, combined by XOR in `F_2^k`. `B = 2^k`; no modulo reduction.
+  PHASE 3B left the width open; PHASE 7B freezes TargetBucketBits=16
+  independently of AnchorBucketBits=16. The primitive remains parameterized.
+
+### Base outsourced index schema (PHASE 3C1; padding frozen in PHASE 3C3)
+
+PHASE 3C1 implements the trusted-DO, in-memory base index builder for the raw
+MusicBrainz `area` and `area_alias` COPY text tables. It does not define a
+persistent index format and does not generate the full-dataset index.
+
+Q-grams are exactly four Unicode code points. For `r := []rune(name)`, the
+builder emits every `string(r[i:i+4])` at zero-based code-point position `i`,
+including repeated occurrences. There is no byte slicing, normalization,
+trimming, or case folding. Names shorter than four code points are counted and
+excluded from this main index; the completeness policy remains open.
+
+The Anchor logical group identity is the q-gram. Its public group value is
+`z_B = anchorindex.Encode(k_B, qgram)`. Its bucket is the first `k` bits of
+`z_B`, MSB-first, for `1 <= k <= 16`. Each Anchor party slot contains exactly
+one local share of the record ID, position, validity, `kappa_J`, and `beta_J`.
+
+The Target logical group identity is the tuple `(area_alias.area, qgram)`, not
+the q-gram alone. The DO derives the full group point only during trusted
+construction and stores one additive Ristretto point share per party. The
+Target bucket is
+
+```text
+JoinBucketComponent(k_T, area_alias.area, k)
+XOR WordBucketComponent(k_T, qgram, k).
+```
+
+Each Target party slot contains exactly one local share of alias ID, position,
+and validity. It contains no join value or routing payload.
+
+Padding is per group. For a nonempty group with `n` real postings:
+
+```text
+PadWidth(n) = min { L in {4,16,64,256,1024,4096,8192,16384} : L >= n }.
+```
+
+An input group larger than 16,384 is an error; there is no dynamic tier, exact
+width, or bucket-maximum fallback. Anchor and Target use the same ladder. A
+bucket's total slots are `sum_g PadWidth(g)`, never
+`GroupCount * bucket.LPad`. Real validity is shared from one. Dummy record ID, position, validity,
+Anchor scalar, and Anchor bucket component are all shared afresh from semantic
+zero; no local all-zero convention or plaintext dummy flag exists. Group count
+and every group's `PadWidth` are public structural metadata. This coarse
+size-class leakage is accepted in exchange for substantially lower padding.
+The PHASE 3C2 per-bucket-maximum layout remains available only as an experiment
+baseline. No cap/overflow, dummy-group, or ORAM policy is implemented.
+
+The public metadata contains only `q`, both bucket widths, and for each
+nonempty Anchor/Target bucket its bucket ID, total slots, and group count. Each
+party group contains the same public `PadWidth`, and its local slots slice has
+exactly that length. Buckets do not carry a production `LPad`. Party
+state contains no plaintext name, q-gram, join ID, raw record, peer share, both
+shares, full Target point, or derivation key.
+
+### Open items carried forward
+
+- **SHORT-STRING COMPLETENESS = OPEN.** Strings shorter than `q` cannot be
+  indexed by the `q`-gram chain. The live counts are 644 `area` records and
+  4,047 `area_alias` records. No policy is frozen here: an out-of-domain
+  restriction is **not** adopted, and no short-string index is implemented.
+- **Anchor B = 65536 FROZEN in PHASE 5B2.** AnchorBucketBits=16. The Target
+  bucket-width primitive remains independently parameterized.
+- **PHASE 5 PAYLOAD ALIGNMENT = CLOSED in PHASE 5B2.** Keep and fresh DO-generated
+  per-record payload use the same hidden global LayoutID. PHASE 6 adds fresh exact-K compaction.
+- The paper is **not modified** by PHASE 3C3; it will be synchronised once the
+  protocol is stable.
+
+### Anchor filtering foundation (PHASE 4A)
+
+Query signatures are non-overlapping complete four-code-point chunks. For
+`r := []rune(Q)`, occurrence `h` is `string(r[4h:4h+4])` at zero-based rune
+position `4h`; an incomplete tail is dropped and repeated chunks remain
+distinct occurrences. Database names continue to use overlapping q-grams.
+
+The MusicBrainz snapshot has maximum real Anchor/Target positions `54/62` and
+maximum indexed rune lengths `58/66`. Thus public `U_pos=62` and the minimal
+signed LLAMA width is `Bin=7`, satisfying `U_pos+1 < 2^(Bin-1)`. Each cloud
+reduces its stored Ring32 share modulo `2^Bin` locally; positions are never
+reconstructed and reshared.
+
+For `L=max(0,pQ-tau)` and `R=min(U_pos,pQ+tau)`, external validated LLAMA SCMP
+with `Bout=1` supplies shares of `[p>=L]` and `[p>=R+1]`; their XOR is the
+inclusive position predicate. The clean Go repository implements the masked
+input algebra and an opaque SCMP adapter, not LLAMA itself. Each one-use `pid`
+has query-user `(pid,eta_L,eta_R)` and party-local `(pid,Bin,rho_L[],rho_R[],
+lower keys[],upper keys[])`; preprocessing depends only on `Bin`, capacity,
+and fresh randomness. Evaluation subtracts each key's local `rb` output mask.
+
+The authorized-user `anchorquery` package derives Anchor HMAC/DPF material.
+Each cloud token contains only its DPF key, public bucket ID, `pid`, and masked
+bounds. Filtering iterates variable-width group slot slices and returns
+`x = Match AND Validity AND PositionPredicate` as `F_2` shares. It performs no
+record aggregation, compaction, Target filtering, or B2A. IndexOutsource is
+sealed. PHASE 5B2 freezes Anchor B and implements payload alignment;
+short-string completeness remains open. The paper is unchanged.
+
+### Secure permutation
+
+Retain the two-party secure permutation primitive.
+
+## 6. Frozen status of Anchor Aggregation
+
+The mathematical target is:
+
+```text
+F_{h,j} = sum_{s:phi_h(s)=j} x_{h,s}
+
+z_{h,j} = 1[F_{h,j}>0]
+```
+
+Then use hidden global coordinate `gamma` and two-party secure permutation to align records across groups:
+
+```text
+z_h
+→ hidden permutation
+→ y_h
+
+C = sum_h y_h
+
+Keep_j = 1[C_j >= lambda]
+```
+
+**PARTIAL REUSE approved; PHASE 5B1 implements the hidden posting-to-F boundary.**
+
+Old Z128 aggregation rows/wrapper must not be migrated because party-local rows expose `phi_h(s)` and `t_h`. The new boundary reuses the existing B2A and scalar-vector Beaver mathematics with independent coefficient shares.
+
+### PHASE 5B0/5B1 incidence interface
+
+For an accessed bucket, T is the sum of group PadWidths; M is its number of
+distinct real records (DO-only); D is zero for M=0, otherwise the smallest
+power of two >= M. D is a public record-capacity class, not a group PadWidth.
+The DO randomly injects records into [0,D). A has D rows and T columns.
+Real columns are unit incidence vectors; dummy columns and unused rows are
+zero. Each coefficient, including zero, is freshly shared in Z/128Z.
+Each cloud holds only its own column-major coefficient shares and public D/T.
+
+`internal/incidence` accepts PHASE4 `share.BitShare` inputs. One batched B2A
+layer computes x=x0+x1-2*x0*x1 using Z128 Beaver. A scalar-vector Beaver triple
+per posting then computes F[j]=sum_s A[j,s]*x_s modulo 128. Accumulation is
+chunked, with no intermediate product matrix. The public chunk limit is
+configurable; default 64 is an experimental local-compute choice.
+Exact integer-count semantics require F<128; current full-data k=14 buckets
+have at most 3 occurrences of one record. Future SCMP also needs its signed
+range checks. This stage returns F, not [F>0].
+
+Static incidence shares are reusable. B2A/vector triples are one-time offline
+material. Online messages are only masked d/e differences. BigState posting
+conversion/evaluation is unnecessary for this direct A*x boundary and is not
+migrated. The PHASE 5B1 package still ends at F; PHASE 5B2 completes the
+following stages in `internal/aggregation`, without compaction or routing.
+
+The implemented next-stage interface is F -> z -> global alignment -> Keep[gamma]. The
+DO independently creates fresh per-record ID/KJoin/JoinBucket shares at the
+same hidden gamma/Global LayoutID. Payload must not be folded from posting
+shares. Posting KappaJoinShare/BucketJoinShare are DEPRECATED / REDUNDANT for
+the new aggregation path, retained until a later schema cleanup. Short-string
+completeness remains OPEN; the paper is unchanged.
+
+### PHASE 5B2 complete Anchor record aggregation
+
+AnchorBucketBits=16, B=65536. All base indexes use the posting tiers
+4/16/64/256/1024/4096/8192/16384; uniform bucket-max is experiment baseline only.
+The full raw-data maximum same-record/same-qgram occurrence count is 2.
+Thus correctly filtered F<=2<64. F->z and C->Keep use external LLAMA signed
+SCMP Bin=7, Bout=1; local raw evaluation output has key.rb removed. Fresh
+input masks and masked query-user bounds are one-time offline material.
+
+z is converted once from F2 to Z128 before alignment, reusing existing B2A.
+DO fixes N_global=120071 and a random gamma and LayoutID. It independently
+shares (record ID, KJoin, JoinBucket) once per record at gamma; posting payloads
+are never folded. D local coordinates are embedded into N_global, unused
+coordinates and appended zeros complete pi to a permutation.
+
+DO samples rho and sets sigma[rho[i]]=pi[i]. In PHASE 5B3 rho is generated
+from a fresh crypto/rand 32-byte seed using the frozen PRG below. CS0 holds
+only this seed representation of rho; CS1 only uint32 sigma. Two-stage masked scatter is the existing old permutation
+mathematics, not a new aggregation protocol. Fresh a1,c1,a2,c2 yield
+b1=scatter(rho,a1)-c1, b2=scatter(sigma,a2)-c2. CS0 material is c1,a2,b2;
+CS1 material is a1,b1,c2. Online CS1 sends d1=x1-a1; CS0 computes
+r0=scatter(rho,x0+d1)+c1 and sends d2=r0-a2. Outputs are
+y0=b2 and y1=scatter(sigma,b1+d2)+c2. All arithmetic is modulo 128.
+
+Each cloud locally sums aligned vectors. Normal queries require 1<=r<=14
+and 0<=tau<r; lambda=r-tau, C<=14. Final CandidateInput has LayoutID,
+KeepShare[] and Payload[] with equal global lengths. This is the sole future
+compaction input; no compaction or routing is implemented here.
+
+The offline interface can provision chosen bucket invocations before queries;
+no online method accepts raw records or dealer mapping. Experiments simulate
+this pool in a trusted coordinator. Full static factors are quantified below,
+not confused with one-time query material or all materialized in RAM.
+Composition tests use explicitly test-only SCMP reference keys; real SCMP
+performance comes only from the external LLAMA component. No monolithic
+native Go/LLAMA E2E or persistent index format is claimed. Paper modified=NO.
+
+### PHASE 5B3 static representation and preprocessing freeze
+
+N_global=120071, Anchor B=65536 and posting tiers
+4/16/64/256/1024/4096/8192/16384 remain frozen; aggregation mathematics is unchanged.
+Per bucket, DO uses crypto/rand to generate rhoSeed[32]. ExpandRho v1 is:
+AES-256-CTR(key=rhoSeed, IV=ASCII "PMEQ-RHO-PRG-V1!"), interpreting successive
+four stream bytes as little-endian uint32; descending Fisher-Yates from N-1
+to 1. For bound=i+1, reject words v below 2^32 mod bound, then j=v mod bound.
+The CTR counter follows Go's standard big-endian increment. This rejection
+removes modulo bias; the resulting permutation is computationally pseudorandom,
+not information-theoretically uniform over S_N from only 256 seed bits.
+
+CS0 static state is exactly LayoutID, BucketID, rhoSeed. CS1 static state is
+exactly LayoutID, BucketID, sigma []uint32. DO computes sigma[rho[i]]=pi[i].
+Neither party receives pi/gamma or the peer factor. rhoSeed is CS0-local
+representation, NOT a shared secret. CS0 expands only the accessed invocation's
+rho []uint32 and releases it afterwards; CS1 loads only the accessed sigma.
+No startup all-bucket rho expansion exists. pi/gamma permutation coordinates
+also use uint32; loop indices and lengths may use int, but coordinate arrays do not.
+
+For 53383 nonempty buckets, factor data alone: CS0=1708256 bytes,
+CS1=25639000772, combined=25640709028, versus 102556003088 previously.
+Per bucket: 32 + 4*N = 480316 bytes (old 16*N=1921136). This is 3.999733509x
+smaller, NOT a claim that all CS1 state now fits the experiment RAM limit.
+Layout/bucket metadata, slice headers, map and allocator overhead are separate.
+The experiment holds selected party-state objects; no new persistence or
+compression format is defined.
+
+`PreprocessingPoolSize = Q_pool` is a public system parameter, without a
+frozen/default numeric value. One packet means one complete query invocation:
+r independently masked qchunk subpackets plus final Keep threshold material.
+It is prepared in an offline epoch and consumed once. A sealed party-local
+packet registry rejects duplicate/unknown consumption, exhaustion and online
+refill. The registry is lifecycle/accounting, not a serializer or a store of
+peer materials; typed party-local correlated packets retain their one-use guards.
+Tests generate only their required packets in the trusted offline coordinator.
+
+PoolStorage = Q_pool * per-query offline material
+
+This equality uses an equal-capacity packet class. For heterogeneous workloads,
+PoolStorage=sum_i S_offline(i), or Q_pool times a declared capacity upper bound;
+do not multiply a percentile by Q_pool and claim a complete pool size.
+The PHASE5 aggregation-only byte count (both parties) remains:
+S_agg=4P+8T+6Dsum+6Nr+(2*K_SCMP+2)*(Dsum+N)+(r+1).
+K_SCMP=284 for the measured external codec. Static state is excluded. If the
+pool covers Anchor filtering too, add its independently accounted PHASE4
+position/Boolean preprocessing; S_agg is not that larger pool's total.
+These are correlated-material payload bytes; PacketID registry/container
+metadata and allocator overhead are separate, not hidden in S_agg.
+
+STATIC REUSABLE: global payload shares, LayoutID, DO-only gamma, bucket A
+shares, rhoSeed/sigma, and outsourced index/DPF evaluation points and parameters.
+Query DPF tokens are still query-generated, not reclassified as static keys.
+ONE-TIME: SCMP input/bound/output masks and keys, B2A triples, incidence Beaver
+triples, permutation masks, final Keep threshold material. Keep currently uses
+SCMP and has no separate Keep Beaver triples; any future such triples would
+also be one-time, never static. No unlimited-query/no-preprocessing claim is made.
+
+An online cloud consumes only previously provisioned local state. Exhaustion
+requires a new offline provisioning epoch, never query-time DO or raw DB access.
+Candidate Compaction is implemented by PHASE 6 below. Paper modified=NO.
+
+PHASE5 = SEALED (PHASE 5B3): Anchor aggregation correctness passes, posting
+mapping remains hidden in party-local incidence shares, Keep/payload share one
+LayoutID, static factor storage is quantified, finite one-time preprocessing
+is explicit, and online party APIs require neither DO nor raw DB access.
+This seals the normal-query aggregation component, not short-string completeness,
+an all-bucket resident store, a persistent material pool, or a monolithic E2E runner.
+
+## 7. Phase gates
+
+- **PHASE 0:** new repository + Git + specification documents.
+- **PHASE 1:** foundational domains / sharing types.
+- **PHASE 2:** AnchorIndexEncode HMAC-128 + 128-bit DPF.
+- **PHASE 3:** entirely new IndexOutsource production schema.
+- **PHASE 3B:** Target routing foundation primitives (approved OPTION 4
+  representation; keyed scalar mapping; fixed KHPRF base point; additive point
+  and scalar sharing; domain-separated bucket components). Primitive layer only:
+  no IndexOutsource, no private equality, no Beaver, no B2A, no runner.
+- **PHASE 4:** Anchor filtering foundation implemented through F2 posting-hit
+  shares; native LLAMA remains an external validated component.
+- **PHASE 5:** SEALED; hidden incidence, deduplication, global alignment and Keep implemented.
+- **PHASE 6:** exact-K Candidate Compaction implemented; output remains secret payload shares.
+- **PHASE 7:** private K*r Target routing implemented; public buckets, local Y shares.
+- **PHASE 8:** Target group-level Private Equality implemented; Match remains secret.
+- **PHASE 9:** Target posting Position + Validity only; Target Aggregation deferred.
+- **PHASE 10:** Target Record Aggregation and fixed-domain Candidate ID Generation (PHASE10B); no final recovery.
+- **PHASE 11:** the sole Candidate Discovery runner, authorized final recovery and integrated local E2E measurement.
+- **PHASE 12:** reserved; the current supported-domain local E2E workload validation is part of PHASE11. No distributed deployment is claimed.
+
+No later Candidate Discovery phase may begin until PHASE 5 passes both correctness and single-party security audits.
+
+
+## PHASE 6 — Exact-K secure candidate compaction
+
+PHASE5 = SEALED. The migrated old two-stage masked shuffle applies fresh
+query-specific tau0/tau1 to the whole F2/Ring64/Ristretto-scalar/BucketShare
+product tuple. Static PHASE5 rho/sigma is never reused for compaction.
+`PreprocessCompaction` is offline-only. CS0 receives only tau0/c0/t1/r1;
+CS1 only tau1/t0/r0/c1. Each fresh CompactionID identifies one consumed packet.
+All randomness comes from crypto/rand, including unbiased permutations.
+
+Input: CandidateInput{LayoutID, KeepShare[N], Payload[N]}, N_global=120071.
+PayloadShare={RecordIDShare Ring64 additive, KappaJoinShare canonical scalar
+additive, BucketJoinShare uint16 XOR}. All fields follow the same gamma order.
+
+Output: CompactedCandidates{LayoutID, CompactionID, K, RecordIDShare[K],
+KappaJoinShare[K], BucketJoinShare[K]}. K is the number of opened shuffled ones;
+zero candidates means zero-length arrays. The fresh output order carries no
+original gamma semantics. No output coordinate mapping is provided.
+
+Additional compaction leakage L_cand=K, with N public. Open only final shuffled
+Keep after both permutation stages, never static Keep[gamma] or payload fields.
+No query-time DO, raw DB, ID reconstruction, KJoin or bucket reconstruction.
+Consumed packet state releases its temporary N-sized arrays after extraction.
+Offline packets may be provisioned in the existing finite sealed Q_pool.
+
+See results/phase6-audit.md for old call graph, algebra, simulation, holdings,
+byte/memory accounting and reproduction; results/phase6-results.md for measured
+validation. Native experiments use an opt-in external LLAMA test adapter; the
+sealed production PHASE5 implementation is unchanged. No transport/persistent
+pool/complete Candidate Discovery runner is claimed by this component migration.
+PHASE 7 below implements private routing. Target filtering remains not started. Paper modified=NO.
+
+
+## PHASE 7 — private candidate routing to PSMJ
+
+PHASE5=SEALED; Candidate Compaction=COMPLETE. TargetBucketBits is an explicit,
+independent parameter bound by targetrouting.Manifest/IndexID and builder
+PublicMetadata. PHASE7 used the then-last validated Target bits=8 (B=256),
+with Anchor bits=16. PHASE7B subsequently materializes and freezes Target bits=16;
+see the final artifact binding below. Historical PHASE7 evidence remains unchanged.
+
+The PHASE6 handoff now carries TargetBucketBits. Its explicit-width offline
+compaction constructor masks within the selected XOR domain; its legacy
+constructor still defaults to 16. This preserves the existing shuffle protocol
+and avoids invalid upper mask bits for an 8-bit index. No existing 16-bit
+payload is silently truncated or relabeled. PHASE5 production logic is unchanged.
+
+Query User targetquery.GenerateTokens splits Q_target into complete q=4 rune
+chunks at position 4*h, retaining repeated occurrences. For each, it freshly
+shares KWord(k_T,w)*P as a point and WordBucketComponent(k_T,w,k) as XOR shares.
+Only h, position and the two local share fields, plus manifest/query metadata,
+are sent to each cloud. No qgram, Q_target, master key, plaintext scalar/bucket
+or peer share is sent. User is offline after this initial token generation.
+
+Cloud u locally computes J_u[c]=KappaJoinShare_u[c]*P once per candidate,
+Y_u[c,h]=J_u[c]+WordPointShare_u[h], and a width-checked XOR bucket share.
+The only peer opening is beta[c,h]=b0[c,h] XOR b1[c,h]. Output carries
+Manifest/LayoutID/CompactionID/QueryID, AnchorRecordIDShare[K], Occurrences[r]
+and Routes[K*r]{CandidateIndex,OccurrenceID,BucketID,Y_u}. c is scoped to the
+fresh CompactionID; no global coordinate or plaintext ID is restored.
+K=0 produces zero routes, no dummy computation and no bucket message.
+
+Public leakage: K, r_target, accessed Target beta[c,h], and public layout/index
+dimensions. Full Y remains secret-shared. No H_route, Target DPF/CW token,
+Target Private Equality, Target Position or Target Aggregation starts here.
+See results/phase7-audit.md and results/phase7-results.md for proofs, exact
+codecs, real-data checks, worker/grid measurements and memory. Paper modified=NO.
+
+
+## PHASE 7B — final Target artifact
+
+**TargetBucketBits=16; B=65536; Target B final choice=FROZEN; PSMJ=SEALED.**
+AnchorBucketBits remains independently fixed at16. The six-width comparison
+uses the actual joint 1003-query/466105-route workload, restored by a fresh
+native replay because PHASE7 saved only aggregates. See results/phase7b-results.md
+for full provenance, quantiles, storage, leakage, and projection limitations.
+
+`indexbuild.BuildFinalTarget` exposes no bucket-width argument. Its output is
+serialized as one v1 PSMJ file per cloud, bound to a trusted TargetManifest:
+IndexID, version1, Q4, AnchorBucketBits16, TargetBucketBits16, tier ladder
+4/16/64/256/1024/4096/8192/16384, dimensions, byte lengths and SHA256 digests.
+The final local artifact is artifacts/phase7b; large share files are git-ignored,
+while the public manifests/hashes and correctness evidence are committed.
+Only the matching party file is distributed to each cloud.
+
+`targetrouting.LoadIndex` validates this manifest and returns BoundIndex. Its
+Prepare method uses that bound width and rejects mismatched token/candidate
+shares. The generic lower-level constructors remain experimental primitives;
+production callers use the final artifact entry points. No implicit tie between
+Anchor and Target widths is introduced merely because both are now16.
+
+Global payload material has the same width, with IndexID/LayoutID/party binding.
+The newly provisioned offline LayoutID requires its corresponding existing
+PHASE5 DealerLayout/alignment; it cannot be relabelled as an old Keep layout.
+No old persistent alignment existed or was replaced in this phase. KJoin,
+point shares, logical grouping, tiers, all online algebra and Position semantics
+are unchanged. PHASE5=SEALED; Candidate Compaction=COMPLETE; Private Routing=COMPLETE.
+Target PE, Target Position and Target Aggregation are not started. Paper modified=NO.
+
+
+## PHASE8 — Target 256-bit Private Equality
+
+TargetBucketBits=16, B=65536, PSMJ=SEALED. All existing group definitions,
+KHPRF, point-share algebra, q4 and8-tier padding remain unchanged.
+`targetpe.Load` verifies final manifest/version/Q/tiers, own PSMJ and global
+payload file hashes, and the trusted PHASE5 alignment lineage. `Begin` requires
+RoutedCandidates.Manifest/LayoutID to match this loaded state; old Keep/payload
+coordinates cannot be relabelled. PHASE7B did not persist alignment: the native
+experiment restores the final payload's DealerLayout in trusted offline setup
+before any Alignment call. No Target index is rebuilt at query time.
+
+CS0 locally computes D0=Y0-T0; CS1 computes D1=T1-Y1. Their canonical Ristretto
+encodings are exactly32 bytes. CS0 input bit share is1 XOR E0_i, CS1's is E1_i.
+These are natural XOR shares of NOT(E0_i XOR E1_i); no input-share adapter or
+input message is required. Equality uses a balanced256→128→…→1 AND tree:
+255 AND gates,8 sequential masked-opening rounds. The existing f2beaver package
+now has packed F2 storage; scalar and packed paths share ONE Finish formula,
+with CS0 alone adding d&e. It is not Ring64 multiplication.
+
+Flatten query route order then public bucket ordinal. G is total comparisons,
+W=ceil(G/64); 255W one-time triple words,6120W bytes per cloud,12240W combined.
+Online payload=8160W bytes both directions, plus992 bytes framing for G>0.
+G=0 consumes no triple words and emits no messages. Input bytes=0, replacing
+the historical PHASE7B projection's unnecessary +64G adapter term.
+
+Packets belong to offline Q_pool. A packet may reserve a public capacity above
+actual G; Begin consumes the actual prefix and burns the WHOLE packet, including
+unused capacity. Packet copies share a one-use mutex guard. No online dealer
+fallback exists. Exact-size experiments distinguish used bytes from upper-bound
+capacity provisioning. Scalar shares/point shares/DB are never online inputs to
+an offline preprocessing call.
+
+Output TargetGroupMatches contains Manifest, LayoutID, CompactionID, QueryID,
+K, occurrences/positions, original AnchorRecordIDShare[K], per-route candidate/
+occurrence/bucket plus MatchOffset/GroupCount, and MatchShares[G] in F2.
+No D/E/peer value or plaintext hit is output. Padding lanes never enter output.
+Repeated bucket access may reuse static data but never removes comparisons.
+Target Position, Target Aggregation and Candidate ID Generation remain unstarted.
+See results/phase8-results.md for proof, real replay, timings and limitations.
+Paper modified=NO.
+
+## PHASE9 — Target posting Position + Validity
+
+Target PE is COMPLETE. Target Position reuses PHASE4 `Preprocess`,
+`UserPreprocessing.ConsumeBounds`, `ReducePosition`, and `EvalPosition`, with the
+same external LLAMA backend, Bin=7/Bout=1 and local rb subtraction. No new
+comparison protocol is introduced. TargetBucketBits=16, B=65536, Q=4 and all
+sealed PSMJ hashes/tier/group/slot semantics remain unchanged.
+
+Full Target scan: 67896 usable records, 63849 indexed, 4047 short strings;
+maximum indexed rune length=66, real posting position=62, normal query occurrence
+position=60. Dummy positions reconstruct to zero. With Upos=62, clamped bounds
+L and R lie in [0,62], R+1 lies in [1,63], and p-bound lies in [-63,62], inside
+signed Bin7. PHASE4's uint32 tau saturation/overflow rule is retained; real replay
+uses its saved tau family 0 through 5, and tests cover tau=62 and maximum uint32.
+
+The initial QueryToken gains `Position []anchorfilter.PositionToken`, one per
+Target occurrence: `(PID[16], Ltilde uint32, RplusTilde uint32)`. Query User alone
+holds one-time eta_L/eta_R, computes the masked clipped bounds, then stays offline.
+Each party's Q_pool packet holds its PHASE4 rho_L/rho_R, opaque lower/upper SCMP
+keys, local rb shares and two existing F2 Beaver triple shares per physical slot.
+No tau, unmasked bounds, qgram, key, or peer share is added to the cloud token.
+The new Position-token API explicitly rejects <4-rune Target strings as OPEN
+completeness, without a fallback or silent entry into the normal path.
+
+For every physical slot in public route/group/slot order, including dummy slots:
+`PosOK = [p>=L] XOR [p>=R+1]`, `A = GroupMatch AND PosOK`,
+`Hit = A AND Validity`. Group Match replication is local. Neither Match nor Hit
+is opened. A maximum 1024-slot chunk bounds transient Position/AND buffers; only
+final HitShares and their public output layout persist for the full query.
+
+`TargetPostingHits` carries Manifest, LayoutID, CompactionID, QueryID, K,
+Occurrences, AnchorRecordIDShare[K], Routes (CandidateIndex, OccurrenceID,
+BucketID, SlotOffset, SlotCount, Groups of GroupOrdinal/PadWidth/SlotRelativeOffset),
+and HitShares[S]. It carries no Target record ID, posting incidence, plaintext
+position/validity or group identity. No sorting, compaction, dummy removal or
+Match-dependent skip occurs. The exact sealed physical slot ordering is preserved.
+
+Position loading reuses the hash-validated PHASE8 PartyIndex; Begin validates
+manifest, lineage, query/compaction IDs, occurrence order, exact group offsets and
+counts, packet ownership/capacity/PIDs, and one-time consumption. Every message
+binds that query and public structure. Target Record Aggregation, B2A, incidence,
+Candidate ID Generation and final recovery remain unstarted. Paper unchanged.
+
+
+## PHASE10B — fixed-domain Target record aggregation and candidate pairs
+
+AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`.
+Begin HEAD `33e0dd3`, clean. Human review freezes PARTIAL REUSE and the following
+boundary; earlier phase-local “not started” statements above are historical.
+Final validation evidence is recorded in `results/phase10b-results.md`.
+
+DTarget=26 for EVERY compacted Anchor candidate. Trusted DO sorts all Target
+record IDs numerically within each join, including the 4047 short-name rows,
+and assigns ranks 0..25. Actual alias counts and this plaintext mapping never
+enter party state. No candidate-specific capacity or global Target permutation
+is used. A full raw-table audit establishes maximum join size26. The sealed
+PSMJ remains unchanged; no index or posting order is rebuilt online.
+
+Initial authorized-user threshold validation requires 1<=r_target<=16 and
+0<=tau_target<r_target, explicitly lambda_target=r_target-tau_target. The user
+masks 1 and lambda with existing PHASE5 BoundMask material before Anchor begins.
+Clouds receive masked bounds bound to QueryID and the one-use packet ID, not
+plaintext tau/lambda. A zero chunk count is rejected; completeness remains OPEN.
+
+Offline sidecars use magic PMEQTG01, party byte, IndexID and the SHA256 of the
+EXACT original sealed Target manifest bytes. Every bucket0..65535 serializes
+its group count, ordered PadWidths, dense column-major26-by-T local incidence
+bytes, then group-major26 Ring64 local payloads. The trusted sidecar manifest
+binds both sidecar SHA256/lengths, original manifest SHA256, original IndexID,
+public structure digest, D26 and maximum multiplicity3. Loading compares every
+ordered width against PHASE8's already verified own PSMJ, and pins the original
+manifest digest to the exact bytes retained by PHASE8's loader. Thus original version,
+Q4, width16, tiers, group/slot order, and both PSMJ hashes remain bound. A copied
+sidecar from another sharing generation cannot join a query transcript: both
+sidecar hashes also enter the online session binding. Hashes assume trusted DO
+provisioning, not malicious-party authentication.
+
+E_beta[u,s]=1 iff slot s is real and has join-local rank u; all other entries
+are0. Each coefficient, including zero/dummy entries, is independently shared
+in Z/128Z. Each (group,u) ID payload is the record at rank u in that group's JOIN,
+even if that record does not contain this group's qgram; absent ranks are0.
+Every Ring64 payload, including zero, is freshly split. It is never a3x7-bit
+limb encoding. Incidence fields total34248760 bytes/party; TargetID fields
+64548848 bytes/party; complete framed sidecar100301133 bytes/party. Both files
+are local ignored artifacts; their manifests/audit are tracked.
+
+PHASE9's original secret GroupMatch is retained until a single aggregation
+handoff retrieves it; PE is not rerun. TargetPostingHits still preserves exact
+route/group/physical-slot order. The aggregate entry point checks the Match/Hit
+manifests, lineage, CompactionID/QueryID, occurrence order, Anchor ID shares,
+route/group offsets, sidecar dimensions, packet ownership and exact public shape.
+
+F[c,h,u]=sum_s E_beta[u,s]*Hit[c,h,s] modulo128, using existing Hit B2A and the
+existing scalar-vector incidence kernel in64-posting chunks. No26-by-S product
+matrix is created. F<=3 is certified by the trusted full-data multiplicity audit
+and enforced as required loader/runtime metadata; secret F is never opened to
+assert a bound. z=[F>=1] uses unchanged LLAMA Bin7/Bout1 and local rb correction.
+Existing B2A yields arithmetic z; C[c,u]=sum_h z[c,h,u], C<=r<=16. Existing LLAMA
+then computes KeepTarget=[C>=lambda]. Values remain secret throughout.
+
+Ring64 Beaver uses the same additive-ring multiplication equations, with fresh
+triples and party0's d*e correction. Ring64 B2A is b0+b1-2*b0*b1; no limb/ring
+reinterpretation is used. Local ID_h[c,u]=sum_g Match[c,h,g]*Payload[g,u]. The
+sealed logical groups give at most one matching group per route. With seen=0,
+rep_h=z_h AND NOT(seen), then seen=seen XOR rep_h. This F2 recurrence runs for
+all r occurrences with fresh triples. TargetIDSelected=sum_h rep_h*ID_h uses
+Ring64 conversion/multiplication. Finally AnchorIDMasked=Keep*AnchorID[c] and
+TargetIDMasked=Keep*TargetIDSelected. Reconstructed inactive IDs are0.
+
+CandidatePairShares contains Manifest, LayoutID, CompactionID, QueryID, K,
+DTarget26, and three c-major/u-minor arrays of length26K: PairKeepShares(F2),
+AnchorIDShares(Ring64), TargetIDShares(Ring64). There is NO second compaction,
+no final pair count field/opening, and no Query User recovery implementation.
+Field storage is17*26K bytes/party, excluding public metadata and Go headers.
+
+Preprocessing is an offline finite public-capacity packet class (K_max,r,S_max,G_max),
+prepared before the initial token. The actual K/S/G may be smaller; the existing
+comparison and arithmetic packets consume public prefixes and the entire unused
+capacity burns. r is the chosen occurrence class. Pools provision compatible
+bounds offline; no query-time dealer/refill or raw lookup exists. Packet copies
+share a claim guard; chunk streams reserve disjoint masks. Timing sums
+exclude transport waits and the opt-in trusted audit hook. Production excludes
+that hook (`phase10audit` is strictly a correctness-test build).
+
+Historical replay policy, explicitly approved: preserve all1003 historical
+queries and their Position Tau.149 have invalid Target aggregation thresholds
+and are rejection cases;854 continue through candidate-pair validation. No Tau
+is clamped or changed. All1003 still execute the original upstream chain and
+preserve466105 routes/9380900 physical slots. Report final pair distributions
+only over the854 accepted queries, never impute zero results for rejected ones.
+
+PHASE11 canonical runner, PHASE12 production E2E and Query User final recovery
+remain outside this phase. Query-time DO=no; short-string completeness=OPEN;
+paper modified=NO.
+
+## PHASE11 — final user recovery and integrated local runner
+
+AUTHORITATIVE REPO = `/home/tenggn/projects/clean_pmeq`.
+The user's PHASE11 instruction advances integrated E2E into this phase; earlier
+PHASE12-only runner gates and phase-local “unstarted” text are historical.
+The cryptographic stages, q4, both bucket widths16, tiers and sealed Target
+artifacts remain unchanged. No stage optimization or new protocol is introduced.
+
+`discovery.RunLocal(ctx, Query, UserKeys, UserPacket, [2]*Static,
+[2]*PartyPacket, SCMPBackend)` is the canonical integrated Go runner. Query has
+Anchor/Target strings and separate TauAnchor/TauTarget. Static objects and all
+one-time packets must already be provisioned. `discovery.Provision` is a separate
+trusted OFFLINE operation, never called from the runner. The runtime consumes
+existing party-local primitive APIs and encoded byte messages. It does not use
+the old test coordinators that generate triples between online stages.
+
+Before using any packet, validate complete q4 chunk counts: Anchor r1..14,
+Target r1..16, 0<=tau_i<r_i, lambda_i=r_i-tau_i. Historical Tau values are preserved:
+149 invalid Target queries are rejected at entry;854 valid queries execute the
+entire chain. Unlike PHASE10 diagnostic replay, rejected queries do not run
+Anchor. Short strings (Anchor644,Target4047) remain COMPLETENESS OPEN with no
+fallback. Existing full/nonoverlapping chunk and incomplete-tail rules remain.
+
+Each cloud worker receives ONLY its own static, own packet, own encoded token,
+SCMP Eval backend and byte endpoint. There is no online raw lookup, dealer or
+user callback. The user sends initial tokens, remains offline during cloud
+processing, and receives final fixed26K result shares. An outer local
+coordinator transports bytes; it is not a cloud principal. Existing Target
+bindings remain; a query/packet/sequence/role envelope also wraps every cloud
+message. Packet copies share a mutex-protected one-use claim guard.
+
+`candidatequery.Recover(expectedBinding,cs0Bytes,cs1Bytes)` is QUERY USER ONLY.
+It checks manifest/IndexID, LayoutID, CompactionID, QueryID, sender role, D26,
+matching K, canonical bits and exact lengths. Keep=Keep0 XOR Keep1. IDs add
+mod2^64. Keep1 appends (AnchorRecordID,TargetRecordID); Keep0 requires both
+reconstructed masked IDs0. Duplicate pairs fail closed rather than being silently
+removed. Result is CandidatePairs{QueryID,Pairs}. Clouds never see this list or
+its cardinality. The result codec has86 header bytes plus17*26K bytes/party;
+all slots are emitted regardless of Keep. No second cloud compaction/sort exists.
+
+The integrated online timer surrounds initial token generation, actual concurrent
+cloud execution and final user recovery. It excludes preprocessing, IndexOutsource
+and external oracle comparison. Its label is INTEGRATED LOCAL E2E WALL TIME;
+MEAN is primary and tail quantiles supplementary. Stage wall measurements
+include masked-message waits; their sum is not substituted for the outer timer.
+No sockets are implemented and no TCP/distributed latency is claimed. Measured
+application byte lengths support separately labelled NETWORK PAYLOAD LOWER BOUND
+calculations under an explicitly stated aggregate-bandwidth assumption.
+
+The native real harness calls this production API and independently computes
+its comparison oracle from raw strings. Saved PHASE10 public K/G/S capacities
+are used only for trusted offline reservation, never as intermediate outputs.
+The existing in-memory BSMJ builder is used only during IndexOutsource setup;
+PSMJ/global payload/Target sidecars are loaded from their original hash-verified
+files. Persistent Anchor/alignment formats remain outside this change. Static
+field-volume accounting must not be described as materialized disk files.
+
+Completion evidence and metrics: results/phase11-results.md. Full-string encrypted
+retrieval, exact edit-distance verification and application record fetching are
+not implemented. Query-time DO=NO; paper modified=NO.
+
+Final PHASE11 status: CANDIDATE DISCOVERY E2E = COMPLETE for the supported
+normal q=4 domain, 0<=tau_i<r_i (Anchor r1..14, Target r1..16).
+Final real replay:149/149 invalid queries rejected,854/854 valid queries correct,
+1510 recovered pairs; FP/FN/duplicates/wrong AnchorID/wrong TargetID all0.
+See results/phase11-results.md for final timing, communication, offline material,
+static accounting, memory and security evidence. Short-string completeness OPEN;
+full-string exact verification NO; query-time DO NO; paper modified NO.
