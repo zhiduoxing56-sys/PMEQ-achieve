@@ -9,8 +9,8 @@
   "files": [
     {
       "path": "reports/production-handoff-20261015/01-decisions.md",
-      "bytes": 6928,
-      "sha256": "5596648b9b07dcd6f18a0b5744196fd92865e2805a989d0c526ebe6b622642ad"
+      "bytes": 6936,
+      "sha256": "7538c09e10295d7e4dbb337d7b4c3b14df3419d3e324d260bf2e47f6d2b2b4d4"
     },
     {
       "path": "reports/production-handoff-20261015/02-source-diff.json",
