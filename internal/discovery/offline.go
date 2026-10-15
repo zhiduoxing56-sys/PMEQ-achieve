@@ -41,16 +41,16 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	if a == nil || b == nil || a.party != 0 || b.party != 1 || a.target == nil || b.target == nil || a.target.Lineage() != b.target.Lineage() || a.target.ManifestDigest() != b.target.ManifestDigest() || len(buckets) < 1 || len(buckets) > 14 || len(capacities) != shape.R || backend == nil {
 		return nil, nil, nil, cost, ErrBinding
 	}
-	if a.movieBinding != b.movieBinding {
+	if a.movieBinding != b.movieBinding || a.keyFingerprint != b.keyFingerprint {
 		return nil, nil, nil, cost, ErrBinding
 	}
 	movie := a.movieBinding != [32]byte{}
 	if movie {
-		if len(buckets) != imdbprod.AnchorSignatures || shape.K != imdbprod.CandidateCapacity || shape.R != imdbprod.TargetSignatures || shape.Capacity() != imdbprod.TargetDimension || shape.S != 1760000 || shape.G != 440000 {
+		if len(buckets) != imdbprod.AnchorSignatures || shape.K != imdbprod.CandidateCapacity || shape.R != imdbprod.TargetSignatures || shape.Capacity() != imdbprod.TargetDimension || shape.S != imdbprod.TargetSignatures*imdbprod.TargetGroupCapacity || shape.G != imdbprod.TargetGroupCapacity {
 			return nil, nil, nil, cost, ErrBinding
 		}
 		for _, capacity := range capacities {
-			if capacity != 440000 {
+			if capacity != imdbprod.TargetGroupCapacity {
 				return nil, nil, nil, cost, ErrBinding
 			}
 		}
@@ -62,19 +62,35 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	if n != a.target.Lineage().N || len(b.payload.Slots) != n || a.payload.LayoutID != a.target.Lineage().LayoutID || b.payload.LayoutID != a.payload.LayoutID || shape.K < 0 || shape.K > n {
 		return nil, nil, nil, cost, ErrBinding
 	}
-	u = &UserPacket{g: &guard{}, layout: a.payload.LayoutID, buckets: append([]uint32(nil), buckets...), movieBinding: a.movieBinding}
+	u = &UserPacket{g: &guard{}, layout: a.payload.LayoutID, buckets: append([]uint32(nil), buckets...), movieBinding: a.movieBinding, keyFingerprint: a.keyFingerprint}
 	_, err = rand.Read(u.id[:])
 	check(err)
 	p0 = &PartyPacket{g: &guard{}, id: u.id, party: 0, movieBinding: a.movieBinding}
 	p1 = &PartyPacket{g: &guard{}, id: u.id, party: 1, movieBinding: a.movieBinding}
 	cb := &counter{b: backend}
 	for _, id := range buckets {
-		as, ok := a.anchor[id]
-		if !ok {
-			check(ErrBinding)
+		// Bucket presence is public. An empty bucket contributes the zero
+		// vector and needs no sigma, zero-polynomial gates, or alignment masks.
+		if movie && a.anchorStore != nil && b.anchorStore != nil {
+			_, aok := a.anchorStore.Meta(id)
+			_, bok := b.anchorStore.Meta(id)
+			if aok != bok {
+				check(ErrBinding)
+			}
+			if !aok {
+				user, v, w, e := anchorfilter.Preprocess(0, imdbprod.PositionBin, cb)
+				check(e)
+				u.anchor = append(u.anchor, user)
+				p0.anchor = append(p0.anchor, anchorPacket{bucket: id, empty: true, position: v})
+				p1.anchor = append(p1.anchor, anchorPacket{bucket: id, empty: true, position: w})
+				continue
+			}
 		}
-		bs, ok := b.anchor[id]
-		if !ok || as.Stage0 == nil || bs.Stage1 == nil || bs.Stage1.GlobalRecords() != n || as.D < 0 || as.D > n || as.D != bs.D || as.T != bs.T {
+		as, e := a.anchorFor(id)
+		check(e)
+		bs, e := b.anchorFor(id)
+		check(e)
+		if as.Stage0 == nil || bs.Stage1 == nil || bs.Stage1.GlobalRecords() != n || as.D < 0 || as.D > n || as.D != bs.D || as.T != bs.T {
 			check(ErrBinding)
 		}
 		t, d := as.T, as.D
@@ -105,6 +121,9 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 		cost.AnchorAggregation += uint64(6 * d)
 		x.p0, y.p1, err = aggregation.PreprocessPermutation(as.Stage0, bs.Stage1)
 		check(err)
+		if b.anchorStore != nil {
+			bs.Stage1.Discard()
+		}
 		cost.AnchorAggregation += uint64(6 * n)
 		p0.anchor = append(p0.anchor, x)
 		p1.anchor = append(p1.anchor, y)

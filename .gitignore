@@ -2,3 +2,4 @@
 /artifacts/phase7b/*.bin
 /artifacts/phase10b/*.bin
 __pycache__/
+/.private/

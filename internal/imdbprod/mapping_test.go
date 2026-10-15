@@ -36,15 +36,19 @@ func TestFrozenMappingRoundTrip(t *testing.T) {
 			t.Fatal("target reverse map", target.ID)
 		}
 	}
-	b, err := manifest.Bind([16]byte{1}, [16]byte{2})
+	fingerprint := KeyFingerprint([32]byte{1}, [32]byte{2})
+	b, err := manifest.Bind([16]byte{1}, [16]byte{2}, fingerprint)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = b.Digest(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = manifest.Bind([16]byte{}, [16]byte{2}); err == nil {
+	if _, err = manifest.Bind([16]byte{}, [16]byte{2}, fingerprint); err == nil {
 		t.Fatal("zero index ID accepted")
+	}
+	if _, err = manifest.Bind([16]byte{1}, [16]byte{2}, ""); err == nil {
+		t.Fatal("missing key identity accepted")
 	}
 	if err = Production().CheckCandidates(10001); err == nil {
 		t.Fatal("candidate overflow accepted")

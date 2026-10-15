@@ -10,6 +10,7 @@ import (
 	"github.com/gtank/ristretto255"
 	"pmeq/internal/anchorindex"
 	"pmeq/internal/domain"
+	"pmeq/internal/incidence"
 	"pmeq/internal/preprocess"
 	"pmeq/internal/share"
 	"pmeq/internal/targetcrypto"
@@ -186,6 +187,71 @@ func Build(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.Key, kT
 // and movie join IDs. The trusted caller must verify the frozen mapping first.
 func BuildMovie(areas []AreaRecord, joins []uint64, movies []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
 	return buildProjectionWithMode(areas, movies, joins, kB, kT, 16, 16, true)
+}
+
+// VisitMovieAnchorBuckets shares exactly one keyed movie anchor bucket at a
+// time. The logical q-gram map remains DO-local, while padded party buckets
+// and all subsequent permutation scratch die after visit returns. A filter
+// permits resource-controlled probes and resume without making unused shares.
+func VisitMovieAnchorBuckets(areas []AreaRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, filter func(uint32) bool, visit func(BucketMetadata, AnchorPartyBucket, AnchorPartyBucket, []incidence.Posting) error) error {
+	if len(areas) != len(joins) || visit == nil {
+		return errors.New("indexbuild: invalid movie anchor visitor")
+	}
+	anchors, _, _, err := buildLogicalProjectionMode(areas, nil, joins, kB, kT, 16, 16, true)
+	if err != nil {
+		return err
+	}
+	sort.Slice(anchors, func(i, j int) bool {
+		if anchors[i].bucket != anchors[j].bucket {
+			return anchors[i].bucket < anchors[j].bucket
+		}
+		return bytes.Compare(anchors[i].z[:], anchors[j].z[:]) < 0
+	})
+	for start := 0; start < len(anchors); {
+		end := start + 1
+		for end < len(anchors) && anchors[end].bucket == anchors[start].bucket {
+			end++
+		}
+		id := anchors[start].bucket
+		if filter == nil || filter(id) {
+			meta := BucketMetadata{BucketID: id, GroupCount: uint32(end - start)}
+			b0, b1 := AnchorPartyBucket{BucketID: id}, AnchorPartyBucket{BucketID: id}
+			var posts []incidence.Posting
+			for i := start; i < end; i++ {
+				g := anchors[i]
+				pad, e := TierWidth(len(g.postings))
+				if e != nil {
+					return e
+				}
+				meta.TotalSlots += uint64(pad)
+				p0, p1 := AnchorPartyGroup{Z: g.z, PadWidth: uint32(pad)}, AnchorPartyGroup{Z: g.z, PadWidth: uint32(pad)}
+				p0.Slots = make([]AnchorPartySlot, 0, pad)
+				p1.Slots = make([]AnchorPartySlot, 0, pad)
+				for j := 0; j < pad; j++ {
+					var object, join uint64
+					var pos uint32
+					valid := domain.BitZero
+					if j < len(g.postings) {
+						object, join, pos, valid = g.postings[j].recordID, g.postings[j].joinID, g.postings[j].position, domain.BitOne
+					}
+					s0, s1, e := makeAnchorSlot(object, join, pos, valid, kT, 16)
+					if e != nil {
+						return e
+					}
+					p0.Slots = append(p0.Slots, s0)
+					p1.Slots = append(p1.Slots, s1)
+					posts = append(posts, incidence.Posting{RecordID: object, Real: valid == domain.BitOne})
+				}
+				b0.Groups = append(b0.Groups, p0)
+				b1.Groups = append(b1.Groups, p1)
+			}
+			if err := visit(meta, b0, b1, posts); err != nil {
+				return err
+			}
+		}
+		start = end
+	}
+	return nil
 }
 
 func buildProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {

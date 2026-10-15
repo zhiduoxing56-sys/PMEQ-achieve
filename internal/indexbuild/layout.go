@@ -1,6 +1,7 @@
 package indexbuild
 
 import (
+	"errors"
 	"sort"
 
 	"pmeq/internal/anchorindex"
@@ -88,6 +89,20 @@ func AnalyzeTierLayout(areas []AreaRecord, aliases []AreaAliasRecord, kB anchori
 		return LayoutAnalysis{}, err
 	}
 	return analyzeTierFromLogical(anchors, targets, stats, anchorBits, targetBits)
+}
+
+// AnalyzeMovieTierLayout performs the production movie-domain keyed layout
+// pass without making shares or generating the secret index. It is safe for a
+// bounded-memory DO preflight and uses the same logical builder as BuildMovie.
+func AnalyzeMovieTierLayout(areas []AreaRecord, joins []uint64, movies []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey) (LayoutAnalysis, error) {
+	if len(areas) != len(joins) {
+		return LayoutAnalysis{}, errors.New("indexbuild: object/join input length mismatch")
+	}
+	anchors, targets, stats, err := buildLogicalProjectionMode(areas, movies, joins, kB, kT, 16, 16, true)
+	if err != nil {
+		return LayoutAnalysis{}, err
+	}
+	return analyzeTierFromLogical(anchors, targets, stats, 16, 16)
 }
 
 func analyzeTierFromLogical(anchors []anchorLogicalGroup, targets []targetLogicalGroup, stats BuildStats, anchorBits, targetBits int) (LayoutAnalysis, error) {

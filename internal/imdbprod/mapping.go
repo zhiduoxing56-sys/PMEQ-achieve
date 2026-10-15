@@ -238,11 +238,12 @@ type Binding struct {
 	MotherDatabaseSHA256 string   `json:"mother_database_sha256"`
 	IdentityMapSHA256    string   `json:"identity_map_sha256"`
 	TargetMapSHA256      string   `json:"target_map_sha256"`
+	KeyFingerprint       string   `json:"key_fingerprint"`
 	IndexID              [16]byte `json:"index_id"`
 	LayoutID             [16]byte `json:"layout_id"`
 }
 
-func (fm FreezeManifest) Bind(indexID, layoutID [16]byte) (Binding, error) {
+func (fm FreezeManifest) Bind(indexID, layoutID [16]byte, keyFingerprint string) (Binding, error) {
 	if indexID == [16]byte{} || layoutID == [16]byte{} || fm.Version != Version || fm.AnchorSequenceSHA256 != AnchorSequenceSHA256 || fm.TargetSequenceSHA256 != TargetSequenceSHA256 || fm.SourceManifestSHA256 != SourceManifestSHA256 || fm.MotherDatabaseSHA256 != MotherDatabaseSHA256 || fm.Files["identity_map.jsonl"].SHA256 != IdentityMapSHA256 || fm.Files["target_map.jsonl"].SHA256 != TargetMapSHA256 {
 		return Binding{}, ErrContract
 	}
@@ -250,14 +251,34 @@ func (fm FreezeManifest) Bind(indexID, layoutID [16]byte) (Binding, error) {
 	if e != nil {
 		return Binding{}, e
 	}
-	return Binding{Version, digest, fm.SourceManifestSHA256, fm.MotherDatabaseSHA256,
-		fm.Files["identity_map.jsonl"].SHA256, fm.Files["target_map.jsonl"].SHA256, indexID, layoutID}, nil
+	if _, e := validFingerprint(keyFingerprint); e != nil {
+		return Binding{}, e
+	}
+	return Binding{Version: Version, ContractSHA256: digest, SourceManifestSHA256: fm.SourceManifestSHA256, MotherDatabaseSHA256: fm.MotherDatabaseSHA256,
+		IdentityMapSHA256: fm.Files["identity_map.jsonl"].SHA256, TargetMapSHA256: fm.Files["target_map.jsonl"].SHA256,
+		KeyFingerprint: keyFingerprint, IndexID: indexID, LayoutID: layoutID}, nil
+}
+
+func validFingerprint(s string) ([32]byte, error) {
+	var out [32]byte
+	b, e := hex.DecodeString(s)
+	if e != nil || len(b) != 32 || s != hex.EncodeToString(b) {
+		return out, ErrContract
+	}
+	copy(out[:], b)
+	if out == [32]byte{} {
+		return out, ErrContract
+	}
+	return out, nil
 }
 
 func (b Binding) Digest() ([32]byte, error) {
 	p, err := Production().DigestHex()
 	if err != nil || b.Version != Version || b.ContractSHA256 != p || b.IndexID == [16]byte{} || b.LayoutID == [16]byte{} || b.SourceManifestSHA256 != SourceManifestSHA256 || b.MotherDatabaseSHA256 != MotherDatabaseSHA256 || b.IdentityMapSHA256 != IdentityMapSHA256 || b.TargetMapSHA256 != TargetMapSHA256 {
 		return [32]byte{}, ErrContract
+	}
+	if _, err = validFingerprint(b.KeyFingerprint); err != nil {
+		return [32]byte{}, err
 	}
 	raw, err := json.Marshal(b)
 	if err != nil {

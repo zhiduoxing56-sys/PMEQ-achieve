@@ -162,8 +162,20 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 	count := aggregation.NewCount(st.payload.LayoutID, n)
 	for h, q := range t.anchor {
 		ap := &p.anchor[h]
-		as, ok := st.anchor[q.BucketID]
-		if !ok || ap.bucket != q.BucketID {
+		if ap.empty {
+			if st.anchorStore == nil || ap.bucket != q.BucketID {
+				check(ErrBinding)
+			}
+			if _, ok := st.anchorStore.Meta(q.BucketID); ok {
+				check(ErrBinding)
+			}
+			metrics.Diagnostics.Blocks = append(metrics.Diagnostics.Blocks, AnchorBlock{Block: h, Bucket: q.BucketID, GlobalCoordinates: n})
+			p.anchor[h] = anchorPacket{}
+			continue
+		}
+		as, e := st.anchorFor(q.BucketID)
+		check(e)
+		if ap.bucket != q.BucketID {
 			check(ErrBinding)
 		}
 		block := AnchorBlock{Block: h, Bucket: q.BucketID, Groups: len(as.Bucket.Groups), PaddedSlots: as.T, ObjectCoordinates: as.D, GlobalCoordinates: n, ReservedPositionSlots: len(ap.position.Lower), ReservedBooleanProducts: 2 * len(ap.position.Lower), ReservedGFProducts: uint64(ap.zero.TotalGates()), ReservedObjectB2A: ap.z.N}
@@ -274,6 +286,9 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 		partStarted = time.Now()
 		mark = s.mark()
 		check(count.Add(st.payload.LayoutID, y))
+		if st.anchorStore != nil && as.Stage1 != nil {
+			as.Stage1.Discard()
+		}
 		block.Accumulation = s.since(mark)
 		metrics.Diagnostics.Blocks = append(metrics.Diagnostics.Blocks, block)
 		metrics.Anchor.Count += time.Since(partStarted)
