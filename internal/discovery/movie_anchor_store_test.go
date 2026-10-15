@@ -143,7 +143,29 @@ func TestMovieAnchorStoreResumeLazyAndPermutation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d2, y0, err := loaded0.Stage0.Message2(p0, x, d1)
+	fresh0, err := s0.Load(17)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err = fresh0.Stage0.Message2(p0, x, d1); err == nil {
+		t.Fatal("fresh lazy pointer bypassed preprocessing binding")
+	}
+	wrong0, err := s0.Load(19)
+	if err != nil {
+		t.Fatal(err)
+	}
+	static0 := &Static{party: 0, anchorStore: s0}
+	if _, err = static0.anchorForPacket(&anchorPacket{}, 17); err == nil {
+		t.Fatal("unbound lazy stage accepted")
+	}
+	if _, err = static0.anchorForPacket(&anchorPacket{stage0: wrong0.Stage0}, 17); err == nil {
+		t.Fatal("cross-bucket stage accepted")
+	}
+	ready0, err := static0.anchorForPacket(&anchorPacket{stage0: loaded0.Stage0}, 17)
+	if err != nil || ready0.Stage0 != loaded0.Stage0 {
+		t.Fatal("authenticated preprocessing stage was not retained", err)
+	}
+	d2, y0, err := ready0.Stage0.Message2(p0, x, d1)
 	if err != nil {
 		t.Fatal(err)
 	}

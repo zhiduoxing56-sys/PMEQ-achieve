@@ -85,7 +85,69 @@ func enoughOfflineResources(path string) error {
 	}
 	return nil
 }
+func privateRunDirectory(privateRoot, resultRoot, ticket string) (string, error) {
+	root, e := filepath.Abs(resultRoot)
+	if e != nil || filepath.Dir(root) != privateRoot {
+		return "", fmt.Errorf("result root must be a direct child of .private")
+	}
+	if e = os.MkdirAll(root, 0700); e != nil {
+		return "", e
+	}
+	info, e := os.Lstat(root)
+	if e != nil || !info.IsDir() || info.Mode().Perm() != 0700 {
+		return "", fmt.Errorf("result root permissions are unsafe")
+	}
+	dir := filepath.Join(root, ticket)
+	if e = os.Mkdir(dir, 0700); e != nil {
+		return "", e // A second attempt must not overwrite the first one's evidence.
+	}
+	return dir, nil
+}
+func writeRunJSON(dir, name string, value any) (string, error) {
+	raw, e := json.MarshalIndent(value, "", "  ")
+	if e != nil {
+		return "", e
+	}
+	raw = append(raw, '\n')
+	f, e := os.OpenFile(filepath.Join(dir, name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if e != nil {
+		return "", e
+	}
+	_, e = f.Write(raw)
+	if e == nil {
+		e = f.Sync()
+	}
+	if closeErr := f.Close(); e == nil {
+		e = closeErr
+	}
+	if e != nil {
+		return "", e
+	}
+	d, e := os.Open(dir)
+	if e != nil {
+		return "", e
+	}
+	e = d.Sync()
+	d.Close()
+	if e != nil {
+		return "", e
+	}
+	h := sha256.Sum256(raw)
+	return hex.EncodeToString(h[:]), nil
+}
+func requireUnconsumedTicket(ticketDir, ticket string) error {
+	for _, role := range []string{"user", "cs0", "cs1"} {
+		marker := filepath.Join(ticketDir, role, ticket+".consumed")
+		if _, e := os.Lstat(marker); e == nil {
+			return fmt.Errorf("one-use ticket has already been consumed")
+		} else if !os.IsNotExist(e) {
+			return e
+		}
+	}
+	return nil
+}
 func run() error {
+	processStart := time.Now()
 	phase := flag.String("phase", "inspect", "inspect, buckets, issue, verify, or run")
 	start := flag.Bool("generate-full-ticket", false, "explicitly start expensive fixed-capacity preprocessing")
 	ownerRoot := flag.String("owner-root", ".private/imdb-v2-production", "sealed production root")
@@ -96,6 +158,7 @@ func run() error {
 	bucketText := flag.String("buckets", "", "four public bucket IDs in query occurrence order")
 	ticketText := flag.String("ticket", "", "ticket ID for read/run")
 	queryPath := flag.String("query-file", "", "local 0600 JSON query file")
+	resultRoot := flag.String("result-root", ".private/imdb-v2-query-results", "private output root for recovered pairs and metrics")
 	flag.Parse()
 	if *phase != "inspect" && *phase != "buckets" && *phase != "issue" && *phase != "verify" && *phase != "run" {
 		return fmt.Errorf("unsupported phase")
@@ -142,15 +205,18 @@ func run() error {
 	if e != nil {
 		return e
 	}
+	verifyStart := time.Now()
 	seal, e := imdbowner.VerifyProduction(owner, gate)
 	if e != nil {
 		return fmt.Errorf("complete anchor and target production seal required: %w", e)
 	}
+	indexVerifyNS := time.Since(verifyStart).Nanoseconds()
 	sealRaw, e := os.ReadFile(filepath.Join(owner, "production-seal.json"))
 	if e != nil {
 		return e
 	}
 	sealHash := sha256.Sum256(sealRaw)
+	partyOpenStart := time.Now()
 	st0, e := imdbowner.OpenParty(owner, 0, sealHash)
 	if e != nil {
 		return e
@@ -161,6 +227,7 @@ func run() error {
 		return e
 	}
 	defer st1.Close()
+	partyOpenNS := time.Since(partyOpenStart).Nanoseconds()
 	root, e := filepath.Abs(*ticketRoot)
 	if e != nil {
 		return e
@@ -198,6 +265,7 @@ func run() error {
 		if e != nil {
 			return e
 		}
+		provisionNS := time.Since(started).Nanoseconds()
 		sealed, digest, cost, e := discovery.PersistFullTicket(root, sealHash, u, a, b, st0, st1)
 		if e != nil {
 			return e
@@ -218,7 +286,7 @@ func run() error {
 		if closeErr != nil {
 			return closeErr
 		}
-		fmt.Printf("ticket=%s seal_sha256=%x roles_bytes=%v zero_bytes=%d elapsed=%s field_accounting=%+v index=%x\n", sealed.Ticket, digest, cost.RoleBytes, cost.Zero.MaterialBytes, time.Since(started).Round(time.Millisecond), estimated, seal.Binding.IndexID)
+		fmt.Printf("ticket=%s seal_sha256=%x roles_bytes=%v zero_bytes=%d elapsed=%s provision_ns=%d persist_ns=%d zero_serialize_ns=%d max_temporary_file_bytes=%d field_accounting=%+v index=%x\n", sealed.Ticket, digest, cost.RoleBytes, cost.Zero.MaterialBytes, time.Since(started).Round(time.Millisecond), provisionNS, cost.WallNS, cost.Zero.SerializeNS, cost.MaxTemporaryFileBytes, estimated, seal.Binding.IndexID)
 		return nil
 	}
 	var ticketID [16]byte
@@ -250,6 +318,9 @@ func run() error {
 	if ticketSeal.IndexSealSHA256 != hex.EncodeToString(sealHash[:]) {
 		return fmt.Errorf("ticket bound to another production seal")
 	}
+	if e = requireUnconsumedTicket(ticketDir, *ticketText); e != nil {
+		return e
+	}
 	manifestDigest := st0.TargetManifestDigestForTicket()
 	ud, e := discovery.TicketRoleDigest(ticketSeal, "user")
 	if e != nil {
@@ -276,8 +347,9 @@ func run() error {
 	if e != nil {
 		return e
 	}
+	ticketLoadNS := time.Since(loadStart).Nanoseconds()
 	if *phase == "verify" {
-		fmt.Printf("ticket_roles_verified=%s load=%s unconsumed=true\n", *ticketText, time.Since(loadStart).Round(time.Millisecond))
+		fmt.Printf("ticket_roles_verified=%s load=%s unconsumed=true\n", *ticketText, time.Duration(ticketLoadNS).Round(time.Millisecond))
 		return nil
 	}
 	if *phase == "run" {
@@ -285,13 +357,62 @@ func run() error {
 		if e != nil {
 			return e
 		}
-		keys := discovery.UserKeys{Anchor: gate.Keys.Anchor, Target: gate.Keys.Target}
-		wires, binding, metrics, e := discovery.RunCloudLocal(context.Background(), q, keys, u, [2]*discovery.Static{st0, st1}, [2]*discovery.PartyPacket{a, b}, scmpnative.Backend{})
+		privateRoot, e := filepath.Abs(".private")
 		if e != nil {
 			return e
 		}
+		resultDir, e := privateRunDirectory(privateRoot, *resultRoot, *ticketText)
+		if e != nil {
+			return e
+		}
+		queryRaw, e := os.ReadFile(*queryPath)
+		if e != nil {
+			return e
+		}
+		querySHA := sha256.Sum256(queryRaw)
+		if _, e = writeRunJSON(resultDir, "attempt.json", map[string]any{
+			"ticket": *ticketText, "query_sha256": hex.EncodeToString(querySHA[:]),
+			"production_seal_sha256": hex.EncodeToString(sealHash[:]),
+			"started_utc":            time.Now().UTC().Format(time.RFC3339Nano),
+		}); e != nil {
+			return e
+		}
+		keys := discovery.UserKeys{Anchor: gate.Keys.Anchor, Target: gate.Keys.Target}
+		onlineStart := time.Now()
+		wires, binding, metrics, e := discovery.RunCloudLocal(context.Background(), q, keys, u, [2]*discovery.Static{st0, st1}, [2]*discovery.PartyPacket{a, b}, scmpnative.Backend{})
+		if e != nil {
+			_, _ = writeRunJSON(resultDir, "failure.json", map[string]any{
+				"error": e.Error(), "metrics": metrics,
+				"online_elapsed_ns": time.Since(onlineStart).Nanoseconds(),
+				"failed_utc":        time.Now().UTC().Format(time.RFC3339Nano),
+			})
+			return e
+		}
+		recoveryStart := time.Now()
 		out, e := imdbrecovery.Recover(gate.Mapping, gate.Freeze, seal.Binding, binding, wires[0], wires[1])
 		if e != nil {
+			return e
+		}
+		metrics.Recovery = time.Since(recoveryStart)
+		metrics.LocalE2E += metrics.Recovery
+		onlineNS := time.Since(onlineStart).Nanoseconds()
+		pairSHA, e := writeRunJSON(resultDir, "pairs.json", out)
+		if e != nil {
+			return e
+		}
+		metricSHA, e := writeRunJSON(resultDir, "metrics.json", map[string]any{
+			"metrics": metrics, "index_verify_ns": indexVerifyNS,
+			"party_open_ns": partyOpenNS, "ticket_load_ns": ticketLoadNS,
+			"online_and_recovery_ns": onlineNS, "process_until_result_ns": time.Since(processStart).Nanoseconds(),
+		})
+		if e != nil {
+			return e
+		}
+		if _, e = writeRunJSON(resultDir, "complete.json", map[string]any{
+			"ticket": *ticketText, "query_id": hex.EncodeToString(out.QueryID[:]),
+			"pair_count": len(out.Pairs), "pairs_sha256": pairSHA, "metrics_sha256": metricSHA,
+			"completed_utc": time.Now().UTC().Format(time.RFC3339Nano),
+		}); e != nil {
 			return e
 		}
 		fmt.Printf("query_id=%x candidate_pairs=%d cloud=%s peak_heap=%d server_bytes=%d\n", out.QueryID, len(out.Pairs), metrics.Cloud, metrics.PeakHeap, metrics.ServerBytes)

@@ -140,6 +140,12 @@ type cloudMetrics struct {
 }
 
 func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPBackend, wire func([]byte) ([]byte, error)) (output []byte, metrics cloudMetrics, err error) {
+	var active *endpoint
+	defer func() {
+		if err != nil && active != nil {
+			err = fmt.Errorf("cloud phase %d: %w", active.phase, err)
+		}
+	}()
 	defer caught(&err)
 	started := time.Now()
 	if st == nil || p == nil || st.party != p.party || st.movieBinding != p.movieBinding {
@@ -152,6 +158,7 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 		check(ErrBinding)
 	}
 	s := &endpoint{party: st.party, query: t.target.QueryID, packet: p.id, wire: wire}
+	active = s
 	defer func() {
 		metrics.Sent = s.sent
 		metrics.PhaseBytes = s.phaseBytes
@@ -173,7 +180,7 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 			p.anchor[h] = anchorPacket{}
 			continue
 		}
-		as, e := st.anchorFor(q.BucketID)
+		as, e := st.anchorForPacket(ap, q.BucketID)
 		check(e)
 		if ap.bucket != q.BucketID {
 			check(ErrBinding)

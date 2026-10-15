@@ -121,6 +121,26 @@ func (s *Static) anchorFor(id uint32) (AnchorStatic, error) {
 	return a, nil
 }
 
+// anchorForPacket keeps the Stage0 instance authenticated during ticket
+// decoding. PermPrep0 binds to that exact pointer; a lazy store read creates
+// a new pointer even when the sealed bytes are identical.
+func (s *Static) anchorForPacket(p *anchorPacket, id uint32) (AnchorStatic, error) {
+	a, err := s.anchorFor(id)
+	if err != nil {
+		return a, err
+	}
+	if p == nil || (s.anchorStore != nil && s.party == 0 && p.stage0 == nil) {
+		return AnchorStatic{}, ErrBinding
+	}
+	if s.party == 0 && p.stage0 != nil {
+		if a.Stage0 == nil || *a.Stage0 != *p.stage0 {
+			return AnchorStatic{}, ErrBinding
+		}
+		a.Stage0 = p.stage0
+	}
+	return a, nil
+}
+
 func NewStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar) (*Static, error) {
 	if party > 1 || target == nil || sidecar == nil || target.Party() != party || payload.LayoutID != target.Lineage().LayoutID || target.Lineage().N < 0 || uint64(target.Lineage().N) > uint64(^uint32(0)) || len(payload.Slots) != target.Lineage().N {
 		return nil, ErrBinding
@@ -218,6 +238,7 @@ func (g *guard) claim() error {
 type anchorPacket struct {
 	zero     *zeroagg.Party
 	zeroRef  *zeroReference
+	stage0   *aggregation.Stage0 // invocation-local pointer bound to PermPrep0
 	bucket   uint32
 	empty    bool
 	position anchorfilter.PartyPreprocessing

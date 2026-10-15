@@ -121,6 +121,7 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 		cost.AnchorAggregation += uint64(6 * d)
 		x.p0, y.p1, err = aggregation.PreprocessPermutation(as.Stage0, bs.Stage1)
 		check(err)
+		x.stage0 = as.Stage0
 		if b.anchorStore != nil {
 			bs.Stage1.Discard()
 		}

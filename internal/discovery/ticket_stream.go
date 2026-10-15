@@ -209,6 +209,7 @@ func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, 
 		}
 		if s.party == 0 {
 			a.p0, err = aggregation.ReadPermPrep0Own(d, own.Stage0, imdbprod.AnchorObjects)
+			a.stage0 = own.Stage0
 		} else {
 			a.p1, err = aggregation.ReadPermPrep1Own(d, own.Stage1, imdbprod.AnchorObjects)
 		}
