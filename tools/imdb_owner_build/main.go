@@ -1,9 +1,10 @@
 // Command imdb_owner_build is the trusted owner entry for the fixed IMDb
 // production sample. The full anchor build is a separate, explicitly gated
-// operation; this command currently publishes and verifies the target stage.
+// operation; the anchor phase requires an explicit launch switch.
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -16,13 +17,37 @@ import (
 	"pmeq/internal/imdbprod"
 )
 
-func enoughResources(path string) error {
+func monitorAnchorBuild(root string, done <-chan struct{}) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			raw, err := os.ReadFile(filepath.Join(root, "anchor", "catalog.json"))
+			if err != nil {
+				continue
+			}
+			var disk syscall.Statfs_t
+			if syscall.Statfs(root, &disk) != nil {
+				continue
+			}
+			fmt.Printf("anchor progress: catalog_buckets=%d disk_available=%d bytes\n", bytes.Count(raw, []byte(`"Bucket":`)), uint64(disk.Bavail)*uint64(disk.Bsize))
+		}
+	}
+}
+
+func enoughResources(path string, diskFloor, memoryFloor, inodeFloor uint64) error {
 	var disk syscall.Statfs_t
 	if err := syscall.Statfs(path, &disk); err != nil {
 		return err
 	}
-	if uint64(disk.Bavail)*uint64(disk.Bsize) < 2<<30 {
-		return fmt.Errorf("less than 2 GiB disk available for target stage")
+	if uint64(disk.Bavail)*uint64(disk.Bsize) < diskFloor {
+		return fmt.Errorf("disk available %d bytes is below required %d bytes", uint64(disk.Bavail)*uint64(disk.Bsize), diskFloor)
+	}
+	if disk.Ffree < inodeFloor {
+		return fmt.Errorf("free inodes %d is below required %d", disk.Ffree, inodeFloor)
 	}
 	meminfo, err := os.ReadFile("/proc/meminfo")
 	if err != nil {
@@ -37,21 +62,28 @@ func enoughResources(path string) error {
 			break
 		}
 	}
-	if available < 2<<20 {
-		return fmt.Errorf("less than 2 GiB memory available for target stage")
+	if available*1024 < memoryFloor {
+		return fmt.Errorf("memory available %d bytes is below required %d bytes", available*1024, memoryFloor)
 	}
 	return nil
 }
 
 func run() error {
-	phase := flag.String("phase", "preflight", "preflight or target")
+	phase := flag.String("phase", "preflight", "preflight, target, anchor-preflight, or anchor")
+	startAnchor := flag.Bool("start-full-anchor-build", false, "explicitly authorize all remaining anchor buckets")
 	sample := flag.String("sample", "imdb_production_20261015", "immutable sample directory")
 	keyPath := flag.String("keys", ".private/imdb-production-keypair.json", "local trusted key file")
 	receipt := flag.String("receipt", ".private/imdb-key-backup-receipt.json", "verified backup receipt")
 	root := flag.String("root", ".private/imdb-v2-production", "private output root")
 	flag.Parse()
-	if *phase != "preflight" && *phase != "target" {
+	if *phase != "preflight" && *phase != "target" && *phase != "anchor-preflight" && *phase != "anchor" {
 		return fmt.Errorf("unsupported phase")
+	}
+	if *phase == "anchor" && !*startAnchor {
+		return fmt.Errorf("full anchor build is disabled; --start-full-anchor-build is required")
+	}
+	if *phase != "anchor" && *startAnchor {
+		return fmt.Errorf("launch switch is valid only for --phase anchor")
 	}
 	privateRoot, err := filepath.Abs(".private")
 	if err != nil {
@@ -94,8 +126,40 @@ func run() error {
 	if info, err := os.Lstat(outputRoot); err != nil || !info.IsDir() || info.Mode().Perm() != 0700 {
 		return fmt.Errorf("output root permissions are unsafe")
 	}
-	if err := enoughResources(outputRoot); err != nil {
-		return err
+	inodeFloor := uint64(2*len(gate.Layout.Metadata.AnchorBuckets) + 4096)
+	if *phase == "target" {
+		if err := enoughResources(outputRoot, 2<<30, 2<<30, 100); err != nil {
+			return err
+		}
+	} else {
+		// Reserve the complete projected anchor stage even on resume. This
+		// conservative floor leaves 8 GiB for temporary files and the OS.
+		floor := budget.AnchorCS0Bytes + budget.AnchorCS1Bytes + 8<<30
+		if err := enoughResources(outputRoot, floor, 8<<30, inodeFloor); err != nil {
+			return err
+		}
+		fmt.Printf("anchor resource gate: disk_floor=%d memory_floor=%d bytes inode_floor=%d (includes 8 GiB disk reserve)\n", floor, uint64(8<<30), inodeFloor)
+	}
+	if *phase == "anchor-preflight" || *phase == "anchor" {
+		if _, err := imdbowner.VerifyTargetStage(filepath.Join(outputRoot, "target"), gate.Freeze, gate.Keys); err != nil {
+			return err
+		}
+		fmt.Printf("anchor prerequisite verified: sealed target stage; offline ticket is not a build input\n")
+		if *phase == "anchor-preflight" {
+			fmt.Printf("full build remains disabled; use --phase anchor --start-full-anchor-build only after authorization\n")
+			return nil
+		}
+		monitorDone := make(chan struct{})
+		go monitorAnchorBuild(outputRoot, monitorDone)
+		defer close(monitorDone)
+		seal, err := imdbowner.BuildAnchorStageGuarded(outputRoot, gate, func() error {
+			return enoughResources(outputRoot, budget.AnchorCS0Bytes+budget.AnchorCS1Bytes+8<<30, 8<<30, inodeFloor)
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("anchor stage sealed: buckets=%d catalog=%s elapsed=%s\n", seal.AnchorBuckets, seal.AnchorCatalogSHA256, time.Since(start).Round(time.Millisecond))
+		return nil
 	}
 	targetRoot := filepath.Join(outputRoot, "target")
 	var seal imdbowner.TargetSeal

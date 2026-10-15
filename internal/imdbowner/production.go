@@ -31,9 +31,21 @@ type ProductionSeal struct {
 // global permutation and target-stage binding. Call it only after the explicit
 // full-build authorization and resource gate; it visits all 53k real buckets.
 func BuildAnchorStage(root string, gate Preflight) (ProductionSeal, error) {
+	return BuildAnchorStageGuarded(root, gate, nil)
+}
+
+// BuildAnchorStageGuarded checks the owner's resource gate before each new
+// bucket. A failed check leaves only previously committed catalog entries;
+// the next authorized run authenticates those entries before resuming.
+func BuildAnchorStageGuarded(root string, gate Preflight, resourceCheck func() error) (ProductionSeal, error) {
 	var out ProductionSeal
 	if gate.Mapping == nil || gate.Keys.Fingerprint == "" {
 		return out, ErrBuild
+	}
+	if resourceCheck != nil {
+		if err := resourceCheck(); err != nil {
+			return out, err
+		}
 	}
 	if _, err := os.Lstat(filepath.Join(root, "production-seal.json")); err == nil {
 		return VerifyProduction(root, gate)
@@ -86,8 +98,21 @@ func BuildAnchorStage(root string, gate Preflight) (ProductionSeal, error) {
 		return out, err
 	}
 	defer w.Close()
-	if _, err = discovery.WriteMovieAnchorBuckets(w, areas, joins, gate.Keys.Anchor, gate.Keys.Target, dealer, nil, nil); err != nil {
+	var resourceErr error
+	selected := func(uint32) bool {
+		if resourceErr != nil {
+			return false
+		}
+		if resourceCheck != nil {
+			resourceErr = resourceCheck()
+		}
+		return resourceErr == nil
+	}
+	if _, err = discovery.WriteMovieAnchorBuckets(w, areas, joins, gate.Keys.Anchor, gate.Keys.Target, dealer, selected, nil); err != nil {
 		return out, err
+	}
+	if resourceErr != nil {
+		return out, resourceErr
 	}
 	catalogDigest, err := w.Seal(gate.Layout.Metadata.AnchorBuckets)
 	if err != nil {
@@ -266,7 +291,7 @@ func OpenParty(root string, party uint8, expectedSealHash [32]byte) (*discovery.
 		side.Close()
 		return nil, ErrBuild
 	}
-	static, err := discovery.NewMovieStaticFromStore(party, store, payload, idx, side, prod.Binding)
+	static, err := discovery.NewMovieStaticFromStore(party, store, payload, idx, side, prod.Binding, expectedSealHash)
 	if err != nil {
 		side.Close()
 		return nil, err
