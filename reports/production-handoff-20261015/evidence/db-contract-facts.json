@@ -1,0 +1,234 @@
+{
+  "opened_read_only": true,
+  "memory_limit": "512MB",
+  "threads": 1,
+  "count_source": "Existing validation/delivery acceptance for full 41M anchor; no anchor full scan",
+  "columns": {
+    "MOVIECAST": [
+      {
+        "name": "tconst",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "actorId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "directorId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "aliasTitle",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "actorName",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "directorName",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      }
+    ],
+    "MOVIECAST_OBJECTS": [
+      {
+        "name": "tconst",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "actorId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "directorId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "aliasTitle",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "actorName",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "directorName",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "objectId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      }
+    ],
+    "MOVIE": [
+      {
+        "name": "tconst",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "primaryTitle",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "originalTitle",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      }
+    ],
+    "PERSON": [
+      {
+        "name": "nconst",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "primaryName",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "primaryProfession",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      }
+    ],
+    "MOVIECAST_SOURCE": [
+      {
+        "name": "objectId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "tconst",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "actorOrdering",
+        "type": "BIGINT",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "directorId",
+        "type": "VARCHAR",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      },
+      {
+        "name": "aliasOrdering",
+        "type": "BIGINT",
+        "nullable": "YES",
+        "key": null,
+        "default": null,
+        "extra": null
+      }
+    ]
+  },
+  "views": {
+    "MOVIECAST": "CREATE VIEW MOVIECAST AS SELECT tconst, actorId, directorId, aliasTitle, actorName, directorName FROM MOVIECAST_OBJECTS;",
+    "MOVIECAST_OBJECTS": "CREATE VIEW MOVIECAST_OBJECTS AS SELECT * FROM read_parquet('/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data/MOVIECAST/*.parquet');",
+    "MOVIE": "CREATE VIEW MOVIE AS SELECT * FROM read_parquet('/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data/MOVIE.parquet');",
+    "PERSON": "CREATE VIEW PERSON AS SELECT * FROM read_parquet('/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data/PERSON.parquet');",
+    "MOVIECAST_SOURCE": "CREATE VIEW MOVIECAST_SOURCE AS SELECT * FROM read_parquet('/home/tenggn/projects/clean_pmeq/imdb_final_dataset/provenance/MOVIECAST_SOURCE/*.parquet');"
+  },
+  "counts_from_acceptance": {
+    "MOVIECAST": 41286264,
+    "MOVIE": 759363,
+    "PERSON": 15731120
+  },
+  "target_uniqueness_readonly_check": {
+    "rows": 759363,
+    "distinct_tconst": 759363
+  },
+  "target_tconst_numeric_suffix_readonly_diagnostic": {
+    "noncanonical_pattern_count": 0,
+    "not_uint64_count": 0,
+    "distinct_numeric_suffixes": 759363,
+    "min_suffix": 9,
+    "max_suffix": 48922505
+  },
+  "numeric_suffix_diagnostic_is_not_production_encoding_decision": true
+}

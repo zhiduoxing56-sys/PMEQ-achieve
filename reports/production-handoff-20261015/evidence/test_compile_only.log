@@ -1,0 +1,43 @@
+ok  	pmeq/internal/aggregation	0.001s
+ok  	pmeq/internal/anchorfilter	0.001s
+ok  	pmeq/internal/anchorindex	0.001s
+ok  	pmeq/internal/anchorquery	0.001s
+ok  	pmeq/internal/candidatequery	0.001s
+# pmeq/internal/discovery [pmeq/internal/discovery.test]
+internal/discovery/diagnostics_test.go:25:108: b.HitB2A undefined (type AnchorBlock has no field or method HitB2A)
+internal/discovery/diagnostics_test.go:25:153: b.Incidence undefined (type AnchorBlock has no field or method Incidence)
+internal/discovery/diagnostics_test.go:25:208: b.ReservedDenseProducts undefined (type AnchorBlock has no field or method ReservedDenseProducts)
+internal/discovery/diagnostics_test.go:25:250: b.ObjectThreshold undefined (type AnchorBlock has no field or method ObjectThreshold)
+internal/discovery/diagnostics_test.go:31:72: b.HitB2A undefined (type AnchorBlock has no field or method HitB2A)
+internal/discovery/diagnostics_test.go:31:82: b.Incidence undefined (type AnchorBlock has no field or method Incidence)
+internal/discovery/diagnostics_test.go:31:95: b.ObjectThreshold undefined (type AnchorBlock has no field or method ObjectThreshold)
+internal/discovery/diagnostics_test.go:41:17: operations.DenseProducts undefined (type AnchorOperations has no field or method DenseProducts)
+internal/discovery/diagnostics_test.go:41:47: s.Operations.DenseProducts undefined (type AnchorOperations has no field or method DenseProducts)
+internal/discovery/diagnostics_test.go:41:17: too many errors
+FAIL	pmeq/internal/discovery [build failed]
+ok  	pmeq/internal/domain	0.001s
+ok  	pmeq/internal/dpf128	0.001s
+ok  	pmeq/internal/dpf128/codec	0.001s
+ok  	pmeq/internal/dpf128/gen	0.001s
+ok  	pmeq/internal/dpf128/internal/core	0.001s
+ok  	pmeq/internal/f2beaver	0.000s
+ok  	pmeq/internal/incidence	0.001s
+ok  	pmeq/internal/indexbuild	0.001s
+ok  	pmeq/internal/material	0.001s
+ok  	pmeq/internal/offlinegeneration	0.000s
+ok  	pmeq/internal/preprocess	0.000s
+ok  	pmeq/internal/qgram	0.000s
+ok  	pmeq/internal/reconstruct	0.001s
+ok  	pmeq/internal/ring64beaver	0.000s
+ok  	pmeq/internal/scmpnative	0.001s
+ok  	pmeq/internal/share	0.001s
+ok  	pmeq/internal/targetaggregation	0.000s
+ok  	pmeq/internal/targetaggregation/gen	0.000s
+ok  	pmeq/internal/targetartifact	0.000s
+ok  	pmeq/internal/targetcrypto	0.001s
+ok  	pmeq/internal/targetpe	0.001s
+ok  	pmeq/internal/targetposition	0.001s
+ok  	pmeq/internal/targetquery	0.001s
+ok  	pmeq/internal/targetrouting	0.001s
+ok  	pmeq/internal/zeroagg	0.000s
+FAIL

@@ -1,0 +1,45 @@
+{
+  "snapshot_commit": "5241fc1ab9cb58674736ae8bbc8866a84abacff0",
+  "necessary_source_changes": [
+    {
+      "path": "imdb_final_dataset/requirements.txt",
+      "category": "dependency_configuration",
+      "local_exists": true,
+      "snapshot_exists": false,
+      "local_sha256": "afa5bd1cbd0d0be1318c3e8992b31f1deae587e80425877fc7dee2fee0d1572f",
+      "local_bytes": 14,
+      "workspace_head_contains_file": false,
+      "risk_if_reset_to_workspace_head": "would_remove_current_file",
+      "status": "local_only",
+      "overwrite_risk": "Snapshot checkout can omit this untracked/new source"
+    }
+  ],
+  "production_source_supplement_required": true,
+  "all_source_changes": [
+    {
+      "path": "imdb_final_dataset/requirements.txt",
+      "category": "dependency_configuration",
+      "local_exists": true,
+      "snapshot_exists": false,
+      "local_sha256": "afa5bd1cbd0d0be1318c3e8992b31f1deae587e80425877fc7dee2fee0d1572f",
+      "local_bytes": 14,
+      "workspace_head_contains_file": false,
+      "risk_if_reset_to_workspace_head": "would_remove_current_file",
+      "status": "local_only",
+      "overwrite_risk": "Snapshot checkout can omit this untracked/new source"
+    },
+    {
+      "path": "tools/整理_paper_evaluation_20260922.py",
+      "category": "historical_or_diagnostic_tool_not_production_entry",
+      "local_exists": true,
+      "snapshot_exists": false,
+      "local_sha256": "3c6a8ce036fe4d7e8e80e5e02388e0af1dbc3f7ad23218f58a0e4a626a7ffa42",
+      "local_bytes": 55087,
+      "workspace_head_contains_file": false,
+      "risk_if_reset_to_workspace_head": "would_remove_current_file",
+      "status": "local_only",
+      "overwrite_risk": "Snapshot checkout can omit this untracked/new source"
+    }
+  ],
+  "not_authorized": "No target-zero worktree merge or historical source restore"
+}

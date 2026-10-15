@@ -1,0 +1,20 @@
+# pmeq/internal/discovery [pmeq/internal/discovery.test]
+internal/discovery/diagnostics_test.go:25:108: b.HitB2A undefined (type AnchorBlock has no field or method HitB2A)
+internal/discovery/diagnostics_test.go:25:153: b.Incidence undefined (type AnchorBlock has no field or method Incidence)
+internal/discovery/diagnostics_test.go:25:208: b.ReservedDenseProducts undefined (type AnchorBlock has no field or method ReservedDenseProducts)
+internal/discovery/diagnostics_test.go:25:250: b.ObjectThreshold undefined (type AnchorBlock has no field or method ObjectThreshold)
+internal/discovery/diagnostics_test.go:31:72: b.HitB2A undefined (type AnchorBlock has no field or method HitB2A)
+internal/discovery/diagnostics_test.go:31:82: b.Incidence undefined (type AnchorBlock has no field or method Incidence)
+internal/discovery/diagnostics_test.go:31:95: b.ObjectThreshold undefined (type AnchorBlock has no field or method ObjectThreshold)
+internal/discovery/diagnostics_test.go:41:17: operations.DenseProducts undefined (type AnchorOperations has no field or method DenseProducts)
+internal/discovery/diagnostics_test.go:41:47: s.Operations.DenseProducts undefined (type AnchorOperations has no field or method DenseProducts)
+internal/discovery/diagnostics_test.go:42:17: operations.IncidenceChunks undefined (type AnchorOperations has no field or method IncidenceChunks)
+internal/discovery/diagnostics_test.go:42:49: s.Operations.IncidenceChunks undefined (type AnchorOperations has no field or method IncidenceChunks)
+internal/discovery/diagnostics_test.go:47:10: b.Incidence undefined (type AnchorBlock has no field or method Incidence)
+internal/discovery/domain_test.go:155:61: unknown field Incidence in struct literal of type AnchorStatic
+internal/discovery/token_signature_experiment_test.go:150:18: u.f undefined (type *UserPacket has no field or method f)
+internal/discovery/token_signature_final_validation_test.go:42:18: u.f undefined (type *UserPacket has no field or method f)
+internal/discovery/token_signature_final_validation_test.go:87:53: d.f undefined (type cloudToken has no field or method f)
+internal/discovery/token_signature_final_validation_test.go:92: d.f undefined (type cloudToken has no field or method f)
+FAIL	pmeq/internal/discovery [build failed]
+FAIL
