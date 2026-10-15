@@ -385,6 +385,15 @@ func (s *MovieAnchorStore) BucketCount() int {
 	return len(s.catalog.Buckets)
 }
 
+// Entries returns public catalog metadata for party-local export. The caller
+// still needs the trusted catalog digest and each file's authenticated hash.
+func (s *MovieAnchorStore) Entries() []AnchorArtifact {
+	if s == nil {
+		return nil
+	}
+	return append([]AnchorArtifact(nil), s.catalog.Buckets...)
+}
+
 func (s *MovieAnchorStore) Load(bucket uint32) (AnchorStatic, error) {
 	m, ok := s.Meta(bucket)
 	if !ok {
