@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"os"
 
 	"pmeq/internal/domain"
 	"pmeq/internal/imdbprod"
@@ -55,6 +56,8 @@ type PartySidecar struct {
 	party    uint8
 	buckets  []bucket
 	bits     uint8
+	file     *os.File
+	offsets  []int64
 }
 
 // LoadSidecar reads only the caller's hash-bound sidecar. It checks every

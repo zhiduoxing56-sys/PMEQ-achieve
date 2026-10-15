@@ -152,7 +152,7 @@ func (m *Mapping) DigestHex() (string, error) {
 		return "", ErrContract
 	}
 	h := sha256.New()
-	h.Write([]byte(Version))
+	h.Write([]byte(SampleVersion))
 	h.Write([]byte{0})
 	h.Write([]byte(AnchorSequenceSHA256))
 	h.Write([]byte{0})
@@ -204,7 +204,7 @@ func LoadFrozen(dir string) (*Mapping, FreezeManifest, error) {
 	if err != nil {
 		return nil, fm, err
 	}
-	if json.Unmarshal(content, &fm) != nil || fm.Version != Version || fm.Seed != SampleSeed || fm.AnchorCount != AnchorObjects || fm.TargetCount != TargetObjects || fm.AnchorConnectedMovies != 8895 || fm.AnchorSequenceSHA256 != AnchorSequenceSHA256 || fm.TargetSequenceSHA256 != TargetSequenceSHA256 || fm.SourceManifestSHA256 != SourceManifestSHA256 || fm.MotherDatabaseSHA256 != MotherDatabaseSHA256 || fm.Files["identity_map.jsonl"].SHA256 != IdentityMapSHA256 || fm.Files["target_map.jsonl"].SHA256 != TargetMapSHA256 {
+	if json.Unmarshal(content, &fm) != nil || fm.Version != SampleVersion || fm.Seed != SampleSeed || fm.AnchorCount != AnchorObjects || fm.TargetCount != TargetObjects || fm.AnchorConnectedMovies != 8895 || fm.AnchorSequenceSHA256 != AnchorSequenceSHA256 || fm.TargetSequenceSHA256 != TargetSequenceSHA256 || fm.SourceManifestSHA256 != SourceManifestSHA256 || fm.MotherDatabaseSHA256 != MotherDatabaseSHA256 || fm.Files["identity_map.jsonl"].SHA256 != IdentityMapSHA256 || fm.Files["target_map.jsonl"].SHA256 != TargetMapSHA256 {
 		return nil, fm, ErrContract
 	}
 	files := map[string][]byte{}
@@ -244,7 +244,7 @@ type Binding struct {
 }
 
 func (fm FreezeManifest) Bind(indexID, layoutID [16]byte, keyFingerprint string) (Binding, error) {
-	if indexID == [16]byte{} || layoutID == [16]byte{} || fm.Version != Version || fm.AnchorSequenceSHA256 != AnchorSequenceSHA256 || fm.TargetSequenceSHA256 != TargetSequenceSHA256 || fm.SourceManifestSHA256 != SourceManifestSHA256 || fm.MotherDatabaseSHA256 != MotherDatabaseSHA256 || fm.Files["identity_map.jsonl"].SHA256 != IdentityMapSHA256 || fm.Files["target_map.jsonl"].SHA256 != TargetMapSHA256 {
+	if indexID == [16]byte{} || layoutID == [16]byte{} || fm.Version != SampleVersion || fm.AnchorSequenceSHA256 != AnchorSequenceSHA256 || fm.TargetSequenceSHA256 != TargetSequenceSHA256 || fm.SourceManifestSHA256 != SourceManifestSHA256 || fm.MotherDatabaseSHA256 != MotherDatabaseSHA256 || fm.Files["identity_map.jsonl"].SHA256 != IdentityMapSHA256 || fm.Files["target_map.jsonl"].SHA256 != TargetMapSHA256 {
 		return Binding{}, ErrContract
 	}
 	digest, e := Production().DigestHex()

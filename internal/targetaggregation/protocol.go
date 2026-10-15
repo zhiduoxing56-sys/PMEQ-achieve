@@ -248,6 +248,28 @@ func validate(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe
 // only framed masked differences. The online graph has no dealer/raw DB call.
 func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.TargetGroupMatches, p Packet, t ThresholdToken, backend anchorfilter.SCMPBackend, exchange Exchange) (CandidatePairShares, Metrics, error) {
 	var out CandidatePairShares
+	if side != nil && side.file != nil {
+		view := *side
+		view.buckets = make([]bucket, len(side.buckets))
+		loaded := make(map[uint32]bool)
+		for _, route := range h.Routes {
+			if loaded[route.BucketID] {
+				continue
+			}
+			b, err := side.loadBucket(route.BucketID)
+			if err != nil {
+				return out, Metrics{}, err
+			}
+			view.buckets[route.BucketID] = b
+			loaded[route.BucketID] = true
+		}
+		defer func() {
+			for id := range loaded {
+				view.buckets[id] = bucket{}
+			}
+		}()
+		side = &view
+	}
 	binding, e := validate(side, h, g, p, t)
 	if e != nil || backend == nil || exchange == nil {
 		return out, Metrics{}, ErrBinding

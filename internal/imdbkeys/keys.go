@@ -57,7 +57,7 @@ func Load(path string) (Pair, error) {
 		return out, err
 	}
 	var body fileBody
-	if json.Unmarshal(raw, &body) != nil || body.Version != imdbprod.Version || body.CreatedUTC == "" {
+	if json.Unmarshal(raw, &body) != nil || body.Version != imdbprod.SampleVersion || body.CreatedUTC == "" {
 		return out, ErrKeyFile
 	}
 	a, e := hex.DecodeString(body.AnchorHex)

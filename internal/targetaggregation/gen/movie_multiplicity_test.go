@@ -10,18 +10,16 @@ import (
 	"strings"
 	"testing"
 
-	"pmeq/internal/anchorindex"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/targetaggregation"
 	"pmeq/internal/targetcrypto"
 )
 
 func TestMovieMultiplicityAndD26Coordinates(t *testing.T) {
-	ak, _ := anchorindex.NewKey([32]byte{1})
 	tk, _ := targetcrypto.NewMasterKey([32]byte{2})
 	for _, repetitions := range []int{4, 5} {
 		aliases := []indexbuild.AreaAliasRecord{{ID: 1, Area: 99, Name: strings.Repeat("a", repetitions+3)}}
-		meta, a, b, stats, err := indexbuild.Build(nil, aliases, ak, tk, 16, 16)
+		meta, a, b, stats, err := indexbuild.BuildMovieTarget(aliases, tk)
 		if err != nil {
 			t.Fatal(err)
 		}

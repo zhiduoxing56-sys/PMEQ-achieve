@@ -109,6 +109,27 @@ func NewMovieAnchorWriter(root string, binding imdbprod.Binding) (*MovieAnchorWr
 		return nil, ErrBinding
 	}
 	w.catalog = old
+	// A resume must authenticate every committed bucket before skipping it.
+	// A changed or missing file cannot silently survive into the final catalog.
+	for _, entry := range old.Buckets {
+		for party := uint8(0); party < 2; party++ {
+			f, e := os.Open(movieAnchorPath(root, party, entry.Bucket, entry.SHA256[party]))
+			if e != nil {
+				return nil, e
+			}
+			loaded, readErr := ReadAnchorStatic(f, old.IndexID, old.LayoutID, party, old.N, entry)
+			closeErr := f.Close()
+			if loaded.Stage1 != nil {
+				loaded.Stage1.Discard()
+			}
+			if readErr != nil {
+				return nil, readErr
+			}
+			if closeErr != nil {
+				return nil, closeErr
+			}
+		}
+	}
 	good = true
 	return w, nil
 }
@@ -355,6 +376,13 @@ func (s *MovieAnchorStore) Meta(bucket uint32) (AnchorArtifact, bool) {
 	}
 	m, ok := s.byID[bucket]
 	return m, ok
+}
+
+func (s *MovieAnchorStore) BucketCount() int {
+	if s == nil {
+		return 0
+	}
+	return len(s.catalog.Buckets)
 }
 
 func (s *MovieAnchorStore) Load(bucket uint32) (AnchorStatic, error) {

@@ -17,7 +17,7 @@ func TestPrivateKeyLoadingAndBinding(t *testing.T) {
 	var a, b [32]byte
 	a[0] = 1
 	b[0] = 2
-	raw, err := json.Marshal(fileBody{Version: imdbprod.Version, CreatedUTC: "2026-10-15T00:00:00Z", AnchorHex: "0100000000000000000000000000000000000000000000000000000000000000", TargetHex: "0200000000000000000000000000000000000000000000000000000000000000"})
+	raw, err := json.Marshal(fileBody{Version: imdbprod.SampleVersion, CreatedUTC: "2026-10-15T00:00:00Z", AnchorHex: "0100000000000000000000000000000000000000000000000000000000000000", TargetHex: "0200000000000000000000000000000000000000000000000000000000000000"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestPrivateKeyLoadingAndBinding(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fm := imdbprod.FreezeManifest{Version: imdbprod.Version, AnchorSequenceSHA256: imdbprod.AnchorSequenceSHA256, TargetSequenceSHA256: imdbprod.TargetSequenceSHA256, SourceManifestSHA256: imdbprod.SourceManifestSHA256, MotherDatabaseSHA256: imdbprod.MotherDatabaseSHA256, Files: map[string]imdbprod.FileStamp{"identity_map.jsonl": {SHA256: imdbprod.IdentityMapSHA256}, "target_map.jsonl": {SHA256: imdbprod.TargetMapSHA256}}}
+	fm := imdbprod.FreezeManifest{Version: imdbprod.SampleVersion, AnchorSequenceSHA256: imdbprod.AnchorSequenceSHA256, TargetSequenceSHA256: imdbprod.TargetSequenceSHA256, SourceManifestSHA256: imdbprod.SourceManifestSHA256, MotherDatabaseSHA256: imdbprod.MotherDatabaseSHA256, Files: map[string]imdbprod.FileStamp{"identity_map.jsonl": {SHA256: imdbprod.IdentityMapSHA256}, "target_map.jsonl": {SHA256: imdbprod.TargetMapSHA256}}}
 	binding, err := pair.Bind(fm, [16]byte{1}, [16]byte{2})
 	if err != nil {
 		t.Fatal(err)

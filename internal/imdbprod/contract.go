@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	Version              = "IMDB-100K-10K-20261015-v1"
+	SampleVersion        = "IMDB-100K-10K-20261015-v1"
+	Version              = "IMDB-100K-10K-20261015-v2"
 	SampleSeed           = 20261015
 	AnchorObjects        = 100000
 	TargetObjects        = 10000
@@ -24,8 +25,8 @@ const (
 	PositionBin          = 10
 	PositionMax          = 270
 	TargetMultiplicity   = 4
-	TargetBucketGroups   = 11
-	TargetBucketSlots    = 44
+	TargetBucketGroups   = 12
+	TargetBucketSlots    = 48
 	TargetGroupCapacity  = CandidateCapacity * TargetBucketSlots
 	AnchorSequenceSHA256 = "7a31b5cc73af844a2a9fec83d964fd7e7927d4aee597047b10c2c241eede4fb7"
 	TargetSequenceSHA256 = "b9f050071281497cdc123321be8aa498af77dc30e8ff494d43574f47e3d0b488"

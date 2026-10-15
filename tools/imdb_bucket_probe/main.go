@@ -59,7 +59,7 @@ func must(err error) {
 
 func main() {
 	keys := flag.String("keys", ".private/imdb-production-keypair.json", "local private key file")
-	layoutFile := flag.String("layout", ".private/imdb-keyed-layout-v2.json", "local keyed layout")
+	layoutFile := flag.String("layout", ".private/imdb-keyed-layout-v3.json", "local keyed layout")
 	root := flag.String("root", ".private/imdb-bucket-probe-v1", "new private probe directory")
 	flag.Parse()
 	if filepath.Clean(filepath.Dir(*root)) != ".private" {

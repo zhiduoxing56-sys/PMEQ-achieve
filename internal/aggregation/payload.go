@@ -76,6 +76,37 @@ func GeneratePayloadWithJoins(ids, joins []uint64, kt targetcrypto.MasterKey, ta
 	return d, a, b, nil
 }
 
+// RestoreDealerLayoutFromPayload is trusted-owner recovery from two sealed PL01
+// files. The reconstructed full identities remain inside the DO; neither cloud
+// is given this map. It lets an interrupted bucket build resume with exactly
+// the original global permutation and layout ID.
+func RestoreDealerLayoutFromPayload(ids []uint64, a, b PartyPayload) (*DealerLayout, error) {
+	if a.LayoutID == [16]byte{} || a.LayoutID != b.LayoutID || len(a.Slots) != len(ids) || len(b.Slots) != len(ids) {
+		return nil, ErrShape
+	}
+	want := make(map[uint64]bool, len(ids))
+	for _, id := range ids {
+		if want[id] {
+			return nil, ErrShape
+		}
+		want[id] = true
+	}
+	ordered := make([]uint64, len(ids))
+	seen := make(map[uint64]bool, len(ids))
+	for j := range a.Slots {
+		id := uint64(a.Slots[j].RecordIDShare.Value() + b.Slots[j].RecordIDShare.Value())
+		if !want[id] {
+			return nil, ErrShape
+		}
+		if seen[id] {
+			return nil, ErrShape
+		}
+		seen[id] = true
+		ordered[j] = id
+	}
+	return RestoreDealerLayout(a.LayoutID, ordered)
+}
+
 // Alignment embeds the existing DO incidence coordinates, then completes pi
 // randomly, including unused rows and the appended public-zero coordinates.
 func (d *DealerLayout) Alignment(bucket uint32, local incidence.DealerLayout, slots []incidence.Posting) (*Stage0, *Stage1, error) {
