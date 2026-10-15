@@ -1,5 +1,6 @@
-// Package imdbowner contains trusted, fixed-shape IMDb outsourcing entrypoints.
-// It is never linked into a cloud role.
+// Package imdbowner contains fixed-shape IMDb owner construction and sealed
+// role loading. A cloud calls OpenParty with public manifests and only its own
+// party files; owner keys are never included in an exported cloud package.
 package imdbowner
 
 import (
