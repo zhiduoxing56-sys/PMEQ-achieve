@@ -83,7 +83,17 @@ type Static struct {
 	target         *targetpe.PartyIndex
 	sidecar        *targetaggregation.PartySidecar
 	movieBinding   [32]byte
+	productionSeal [32]byte
 	keyFingerprint string
+}
+
+// TargetManifestDigestForTicket is public lineage metadata for the trusted
+// ticket issuer and user. It contains no target share or master key.
+func (s *Static) TargetManifestDigestForTicket() [32]byte {
+	if s == nil || s.target == nil {
+		return [32]byte{}
+	}
+	return s.target.ManifestDigest()
 }
 
 // Close releases the lazy target matrix file after a cloud stops accepting
@@ -166,8 +176,8 @@ func NewMovieStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggrega
 
 // NewMovieStaticFromStore is the production cloud constructor. The trusted
 // expected catalog digest must come from the DO's sealed publication manifest.
-func NewMovieStaticFromStore(party uint8, store *MovieAnchorStore, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar, binding imdbprod.Binding) (*Static, error) {
-	if store == nil || store.party != party || store.catalog.IndexID != binding.IndexID || store.catalog.LayoutID != binding.LayoutID || store.catalog.N != imdbprod.AnchorObjects || payload.LayoutID != binding.LayoutID {
+func NewMovieStaticFromStore(party uint8, store *MovieAnchorStore, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar, binding imdbprod.Binding, sealHash [32]byte) (*Static, error) {
+	if store == nil || store.party != party || store.catalog.IndexID != binding.IndexID || store.catalog.LayoutID != binding.LayoutID || store.catalog.N != imdbprod.AnchorObjects || payload.LayoutID != binding.LayoutID || sealHash == [32]byte{} {
 		return nil, ErrBinding
 	}
 	s, err := NewMovieStatic(party, nil, payload, target, sidecar, binding)
@@ -175,6 +185,7 @@ func NewMovieStaticFromStore(party uint8, store *MovieAnchorStore, payload aggre
 		return nil, err
 	}
 	s.anchorStore = store
+	s.productionSeal = sealHash
 	return s, nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"pmeq/internal/f2beaver"
@@ -23,6 +24,7 @@ type zeroReference struct {
 	Binding      ZeroBinding
 	Root         string
 	OwnStaticSHA [32]byte
+	OwnPacketSHA [32]byte
 }
 type PersistenceCost struct {
 	Ticket                     string
@@ -90,7 +92,7 @@ func PersistReservation(root, banks string, u *UserPacket, a, b *PartyPacket, sa
 		d, t := own0.D, own0.T
 		index := sa.target.Manifest().IndexID
 		spec := zeroagg.Spec{Version: 1, Purpose: zeroagg.Purpose, IndexID: hex.EncodeToString(index[:]), LayoutID: hex.EncodeToString(sa.payload.LayoutID[:]), StaticID: own0.LabelID, Bucket: fmt.Sprint(x.bucket), T: t, D: d}
-		roots := [2]string{filepath.Join(banks, spec.LayoutID, spec.Bucket, "cs0"), filepath.Join(banks, spec.LayoutID, spec.Bucket, "cs1")}
+		roots := [2]string{filepath.Join(banks, "cs0", "zero", spec.LayoutID, spec.Bucket), filepath.Join(banks, "cs1", "zero", spec.LayoutID, spec.Bucket)}
 		s, n, e := zeroagg.EnsureStaticOwn(roots[0], spec, 0, own0.Labels)
 		if e != nil {
 			return cost, e
@@ -123,7 +125,11 @@ func PersistReservation(root, banks string, u *UserPacket, a, b *PartyPacket, sa
 			if se != nil {
 				return cost, se
 			}
-			ap.zeroRef = &zeroReference{Binding: binding, Root: roots[j], OwnStaticSHA: sha256.Sum256(staticRaw)}
+			packetSHA, se := hashMaterialFile(filepath.Join(roots[j], "packets", id+".json"))
+			if se != nil {
+				return cost, se
+			}
+			ap.zeroRef = &zeroReference{Binding: binding, Root: roots[j], OwnStaticSHA: sha256.Sum256(staticRaw), OwnPacketSHA: packetSHA}
 			if j == 0 {
 				a.persistentRefs = append(a.persistentRefs, *ap.zeroRef)
 			} else {
@@ -208,6 +214,10 @@ func loadPersistentQuery(u *UserPacket, packets [2]*PartyPacket, statics [2]*Sta
 			if e != nil {
 				return cost, e
 			}
+			packetSHA, e := hashMaterialFile(filepath.Join(ref.Root, "packets", ref.Binding.ID+".json"))
+			if e != nil || packetSHA != ref.OwnPacketSHA {
+				return cost, ErrBinding
+			}
 			staticRaw, e := os.ReadFile(filepath.Join(ref.Root, "static.json"))
 			if e != nil {
 				return cost, e
@@ -241,6 +251,21 @@ func loadPersistentQuery(u *UserPacket, packets [2]*PartyPacket, statics [2]*Sta
 		}
 	}
 	return cost, nil
+}
+
+func hashMaterialFile(path string) ([32]byte, error) {
+	var out [32]byte
+	f, e := os.Open(path)
+	if e != nil {
+		return out, e
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, e = io.Copy(h, f); e != nil {
+		return out, e
+	}
+	copy(out[:], h.Sum(nil))
+	return out, nil
 }
 func EnableZeroInterruption(p *PartyPacket) { p.interruptZero = true }
 
