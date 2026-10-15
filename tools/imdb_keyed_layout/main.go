@@ -34,7 +34,7 @@ type envelope struct {
 func main() {
 	keys := flag.String("keys", ".private/imdb-production-keypair.json", "private DO key file")
 	sample := flag.String("sample", "imdb_production_20261015", "frozen sample directory")
-	output := flag.String("output", ".private/imdb-keyed-layout-v2.json", "private output file, created exclusively")
+	output := flag.String("output", ".private/imdb-keyed-layout-v3.json", "private output file, created exclusively")
 	flag.Parse()
 	if filepath.Clean(filepath.Dir(*output)) != ".private" {
 		panic("output must remain in the ignored local .private directory")
@@ -111,7 +111,7 @@ func main() {
 	if closeErr != nil {
 		panic(closeErr)
 	}
-	fmt.Printf("keyed layout complete: anchor buckets=%d target buckets=%d max target groups=%d slots=%d within fixed 11/44=%t elapsed=%.3fs\n", len(a), len(t), result.MaxTargetGroups, result.MaxTargetSlots, result.TargetWithinFixedBudget, result.ElapsedSeconds)
+	fmt.Printf("keyed layout complete: anchor buckets=%d target buckets=%d max target groups=%d slots=%d within fixed %d/%d=%t elapsed=%.3fs\n", len(a), len(t), result.MaxTargetGroups, result.MaxTargetSlots, imdbprod.TargetBucketGroups, imdbprod.TargetBucketSlots, result.TargetWithinFixedBudget, result.ElapsedSeconds)
 	if !result.TargetWithinFixedBudget {
 		os.Exit(3)
 	}

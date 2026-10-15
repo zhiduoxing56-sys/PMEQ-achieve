@@ -69,3 +69,21 @@ func TestMovieIDCanonicalDomain(t *testing.T) {
 		t.Fatal(id, err)
 	}
 }
+
+func TestMovieV2BucketCapacityAndOldBindingRejection(t *testing.T) {
+	if TargetBucketGroups != 12 || TargetBucketSlots != 48 ||
+		TargetGroupCapacity != 480000 || TargetSignatures*TargetGroupCapacity != 1920000 {
+		t.Fatal("public target envelope mismatch")
+	}
+	p := Production()
+	p.TargetBucketGroups = 11
+	p.TargetBucketSlots = 44
+	if err := p.Validate(); err == nil {
+		t.Fatal("old capacity contract accepted")
+	}
+	fingerprint := KeyFingerprint([32]byte{1}, [32]byte{2})
+	b := Binding{Version: SampleVersion, KeyFingerprint: fingerprint}
+	if _, err := b.Digest(); err == nil {
+		t.Fatal("old sample-version binding accepted as production v2")
+	}
+}

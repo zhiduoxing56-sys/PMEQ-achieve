@@ -236,6 +236,43 @@ func TestMovieAnchorCatalogRejectsLegacyVersion(t *testing.T) {
 	}
 }
 
+func TestMovieAnchorWriterRejectsCorruptCommittedBucketOnResume(t *testing.T) {
+	binding := movieTestBinding(t)
+	root := t.TempDir()
+	w, err := NewMovieAnchorWriter(root, binding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, b, _ := movieTestPair(t, 17, binding.LayoutID, imdbprod.AnchorObjects)
+	if err = w.PutPair(17, a, b); err != nil {
+		t.Fatal(err)
+	}
+	if err = w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(root, "catalog.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var catalog movieAnchorCatalog
+	if err = json.Unmarshal(raw, &catalog); err != nil {
+		t.Fatal(err)
+	}
+	path := movieAnchorPath(root, 1, 17, catalog.Buckets[0].SHA256[1])
+	file, err := os.OpenFile(path, os.O_RDWR, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = file.WriteAt([]byte{0xff}, 60); err != nil {
+		t.Fatal(err)
+	}
+	file.Close()
+	if writer, err := NewMovieAnchorWriter(root, binding); err == nil {
+		writer.Close()
+		t.Fatal("corrupted committed bucket skipped on resume")
+	}
+}
+
 func TestMovieAnchorWriterResumesAfterUncommittedPartyFile(t *testing.T) {
 	binding := movieTestBinding(t)
 	root := t.TempDir()

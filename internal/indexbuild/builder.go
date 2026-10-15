@@ -189,6 +189,13 @@ func BuildMovie(areas []AreaRecord, joins []uint64, movies []AreaAliasRecord, kB
 	return buildProjectionWithMode(areas, movies, joins, kB, kT, 16, 16, true)
 }
 
+// BuildMovieTarget constructs the movie-domain target PSMJ without materializing
+// any anchor index or permutation state. The trusted owner checks the actual
+// keyed bucket layout against the movie contract before calling it.
+func BuildMovieTarget(movies []AreaAliasRecord, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjectionWithMode(nil, movies, nil, anchorindex.Key{}, kT, 16, 16, true)
+}
+
 // VisitMovieAnchorBuckets shares exactly one keyed movie anchor bucket at a
 // time. The logical q-gram map remains DO-local, while padded party buckets
 // and all subsequent permutation scratch die after visit returns. A filter

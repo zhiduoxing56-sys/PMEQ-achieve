@@ -116,7 +116,7 @@ func TestAnchorIndexExportedAPIInventory(t *testing.T) {
 			}
 		}
 	}
-	want := []string{"func:Encode", "func:GenerateKey", "func:NewKey", "type:Key", "type:Value"}
+	want := []string{"func:Encode", "func:EncodeMovie", "func:GenerateKey", "func:NewKey", "type:Key", "type:Value"}
 	sort.Strings(got)
 	sort.Strings(want)
 	if !reflect.DeepEqual(got, want) {

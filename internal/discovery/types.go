@@ -86,6 +86,15 @@ type Static struct {
 	keyFingerprint string
 }
 
+// Close releases the lazy target matrix file after a cloud stops accepting
+// queries. In-flight queries must finish before the owner calls Close.
+func (s *Static) Close() error {
+	if s == nil || s.sidecar == nil {
+		return nil
+	}
+	return s.sidecar.Close()
+}
+
 // anchorFor returns an invocation-owned bucket. Store-backed statics never
 // insert the decoded sigma into the long-lived Static map.
 func (s *Static) anchorFor(id uint32) (AnchorStatic, error) {

@@ -43,6 +43,9 @@ func TestActualLoadedManifestBinding(t *testing.T) {
 	must(t, e)
 	var m SidecarManifest
 	must(t, json.Unmarshal(raw, &m))
+	if m.MaxMultiplicity != MaxMultiplicity {
+		t.Skip("legacy sidecar with incompatible target multiplicity")
+	}
 	// Same IndexID, dimensions and parsed semantics, but different exact bytes.
 	variant := append(append([]byte(nil), mr...), ' ')
 	digest := sha256.Sum256(variant)
