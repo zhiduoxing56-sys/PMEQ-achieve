@@ -1,0 +1,144 @@
+{
+  "read_only": true,
+  "delete_performed": false,
+  "entries": [
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/2dd8bad25cfc426e58e504f232644078",
+      "bytes": 4840690049,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/2dd8bad25cfc426e58e504f232644078/user/2dd8bad25cfc426e58e504f232644078.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/2dd8bad25cfc426e58e504f232644078/cs0/2dd8bad25cfc426e58e504f232644078.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/2dd8bad25cfc426e58e504f232644078/cs1/2dd8bad25cfc426e58e504f232644078.consumed"
+      ],
+      "complete_reports": [],
+      "ticket_seal_sha256": "d70d91c917c1e38d76fbe914a1d55594d0fe11a8ed4931b3539c6ab67107a91a",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": false
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/4bdd92d0ca7532421f2892abf76c6447",
+      "bytes": 4848639475,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/4bdd92d0ca7532421f2892abf76c6447/user/4bdd92d0ca7532421f2892abf76c6447.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/4bdd92d0ca7532421f2892abf76c6447/cs0/4bdd92d0ca7532421f2892abf76c6447.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/4bdd92d0ca7532421f2892abf76c6447/cs1/4bdd92d0ca7532421f2892abf76c6447.consumed"
+      ],
+      "complete_reports": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-e2e-results/4bdd92d0ca7532421f2892abf76c6447/complete.json"
+      ],
+      "ticket_seal_sha256": "9af3cf7a9fb028a4140f6157129642e16ec9de48f4504c29c7801a1f988ed54f",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": true
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/bc4e7b1ec1abc02e0f15e582936ab14c",
+      "bytes": 4840690053,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/bc4e7b1ec1abc02e0f15e582936ab14c/user/bc4e7b1ec1abc02e0f15e582936ab14c.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/bc4e7b1ec1abc02e0f15e582936ab14c/cs0/bc4e7b1ec1abc02e0f15e582936ab14c.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-tickets/bc4e7b1ec1abc02e0f15e582936ab14c/cs1/bc4e7b1ec1abc02e0f15e582936ab14c.consumed"
+      ],
+      "complete_reports": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-v2-e2e-results/bc4e7b1ec1abc02e0f15e582936ab14c/complete.json"
+      ],
+      "ticket_seal_sha256": "a3a5d53008fceb3ef81c8bbd3c6e931b459e50c2f9d17aedbe2630b02ed725e3",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": true
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-matrix-tickets/dba1d123d766e8c2c71b6c42cf2a3005",
+      "bytes": 4840690051,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-matrix-tickets/dba1d123d766e8c2c71b6c42cf2a3005/user/dba1d123d766e8c2c71b6c42cf2a3005.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-matrix-tickets/dba1d123d766e8c2c71b6c42cf2a3005/cs0/dba1d123d766e8c2c71b6c42cf2a3005.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-matrix-tickets/dba1d123d766e8c2c71b6c42cf2a3005/cs1/dba1d123d766e8c2c71b6c42cf2a3005.consumed"
+      ],
+      "complete_reports": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-matrix-results/dba1d123d766e8c2c71b6c42cf2a3005/complete.json"
+      ],
+      "ticket_seal_sha256": "569d497a6a60aeb8a6c3ce6ea2bb373812a4582ad1196e2bb513a12613f5680b",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": true
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-zero-poly-tickets/d2840e2abdae34846fd2277a92f47aad",
+      "bytes": 4453250137,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-zero-poly-tickets/d2840e2abdae34846fd2277a92f47aad/user/d2840e2abdae34846fd2277a92f47aad.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-zero-poly-tickets/d2840e2abdae34846fd2277a92f47aad/cs0/d2840e2abdae34846fd2277a92f47aad.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-zero-poly-tickets/d2840e2abdae34846fd2277a92f47aad/cs1/d2840e2abdae34846fd2277a92f47aad.consumed"
+      ],
+      "complete_reports": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-small-zero-poly-results/d2840e2abdae34846fd2277a92f47aad/complete.json"
+      ],
+      "ticket_seal_sha256": "2c585f8a8a8946fa5d655a7164a39150144e764403ac85783889243cca690789",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": true
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-matrix-tickets/2359aeef882b36a2d7bdace76cba2be2",
+      "bytes": 4848639477,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-matrix-tickets/2359aeef882b36a2d7bdace76cba2be2/user/2359aeef882b36a2d7bdace76cba2be2.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-matrix-tickets/2359aeef882b36a2d7bdace76cba2be2/cs0/2359aeef882b36a2d7bdace76cba2be2.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-matrix-tickets/2359aeef882b36a2d7bdace76cba2be2/cs1/2359aeef882b36a2d7bdace76cba2be2.consumed"
+      ],
+      "complete_reports": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-matrix-results/2359aeef882b36a2d7bdace76cba2be2/complete.json"
+      ],
+      "ticket_seal_sha256": "2ba05c84521823f8f05dcbb985a2a7bb39be52fae0a804f21f063bf6adec5932",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": true
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-zero-poly-tickets/fc3056ccb94903d2e1c50a5b82b8d42d",
+      "bytes": 4461199551,
+      "state": "consumed",
+      "consumed_markers": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-zero-poly-tickets/fc3056ccb94903d2e1c50a5b82b8d42d/user/fc3056ccb94903d2e1c50a5b82b8d42d.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-zero-poly-tickets/fc3056ccb94903d2e1c50a5b82b8d42d/cs0/fc3056ccb94903d2e1c50a5b82b8d42d.consumed",
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-zero-poly-tickets/fc3056ccb94903d2e1c50a5b82b8d42d/cs1/fc3056ccb94903d2e1c50a5b82b8d42d.consumed"
+      ],
+      "complete_reports": [
+        "/home/tenggn/projects/clean_pmeq/.private/imdb-shadow-tail-zero-poly-results/fc3056ccb94903d2e1c50a5b82b8d42d/complete.json"
+      ],
+      "ticket_seal_sha256": "a2ec81a7943f0f48ffa0f557b61a205cf0c26a9b8ec57fdc246acd236f98d354",
+      "trusted_receipt_present": true,
+      "role_manifest_count": 3,
+      "material_file_count": 3,
+      "independent_backup_verified": false,
+      "hash_evidence_verified": true,
+      "cleanup_candidate": true
+    }
+  ]
+}

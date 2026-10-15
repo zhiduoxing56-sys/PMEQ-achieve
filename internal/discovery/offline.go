@@ -37,14 +37,23 @@ func (c *counter) Eval(p uint8, k anchorfilter.SCMPKeyShare, x, y uint32) (share
 // Bucket classes and Target K/S/G capacities are public offline pool choices.
 // No query string, threshold, Hit, Keep or oracle result is accepted here.
 func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetaggregation.Shape, backend anchorfilter.SCMPBackend) (u *UserPacket, p0, p1 *PartyPacket, cost OfflineBytes, err error) {
-	return provision(a, b, buckets, capacities, shape, backend, false)
+	return provision(a, b, buckets, capacities, shape, backend, false, false, [16]byte{})
 }
 
 func ProvisionTargetZero(a, b *Static, buckets []uint32, capacities []int, shape targetaggregation.Shape, backend anchorfilter.SCMPBackend) (u *UserPacket, p0, p1 *PartyPacket, cost OfflineBytes, err error) {
-	return provision(a, b, buckets, capacities, shape, backend, true)
+	return provision(a, b, buckets, capacities, shape, backend, true, false, [16]byte{})
 }
 
-func provision(a, b *Static, buckets []uint32, capacities []int, shape targetaggregation.Shape, backend anchorfilter.SCMPBackend, targetZero bool) (u *UserPacket, p0, p1 *PartyPacket, cost OfflineBytes, err error) {
+// ProvisionInventory issues the v3 one-use session and all unchanged PMEQ
+// material. The independent SCMP bank has already been generated offline.
+func ProvisionInventory(a, b *Static, buckets []uint32, capacities []int, shape targetaggregation.Shape, backend anchorfilter.SCMPBackend, targetZero bool, bankID [16]byte) (u *UserPacket, p0, p1 *PartyPacket, cost OfflineBytes, err error) {
+	if bankID == [16]byte{} {
+		return nil, nil, nil, cost, ErrBinding
+	}
+	return provision(a, b, buckets, capacities, shape, backend, targetZero, true, bankID)
+}
+
+func provision(a, b *Static, buckets []uint32, capacities []int, shape targetaggregation.Shape, backend anchorfilter.SCMPBackend, targetZero, inventoryV3 bool, bankID [16]byte) (u *UserPacket, p0, p1 *PartyPacket, cost OfflineBytes, err error) {
 	defer caught(&err)
 	if a == nil || b == nil || a.party != 0 || b.party != 1 || a.target == nil || b.target == nil || a.target.Lineage() != b.target.Lineage() || a.target.ManifestDigest() != b.target.ManifestDigest() || len(buckets) < 1 || len(buckets) > 14 || len(capacities) != shape.R || backend == nil {
 		return nil, nil, nil, cost, ErrBinding
@@ -75,6 +84,8 @@ func provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	check(err)
 	p0 = &PartyPacket{g: &guard{}, id: u.id, party: 0, movieBinding: a.movieBinding}
 	p1 = &PartyPacket{g: &guard{}, id: u.id, party: 1, movieBinding: a.movieBinding}
+	u.inventoryV3, p0.inventoryV3, p1.inventoryV3 = inventoryV3, inventoryV3, inventoryV3
+	u.bankID, p0.bankID, p1.bankID = bankID, bankID, bankID
 	cb := &counter{b: backend}
 	for _, id := range buckets {
 		// Bucket presence is public. An empty bucket contributes the zero
@@ -153,7 +164,13 @@ func provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	check(err)
 	cost.TargetPE = uint64(12240 * targetpe.Words(shape.G))
 	var pos targetposition.OfflineBytes
-	if movie {
+	if inventoryV3 {
+		bin, max := uint8(7), uint32(62)
+		if movie {
+			bin, max = imdbprod.PositionBin, imdbprod.PositionMax
+		}
+		u.target, p0.position, p1.position, pos, err = targetposition.PreprocessInventoryWithDomain(a.target.Lineage(), capacities, bin, max)
+	} else if movie {
 		u.target, p0.position, p1.position, pos, err = targetposition.PreprocessWithDomain(a.target.Lineage(), capacities, imdbprod.PositionBin, imdbprod.PositionMax, backend)
 	} else {
 		u.target, p0.position, p1.position, pos, err = targetposition.Preprocess(a.target.Lineage(), capacities, backend)

@@ -3,6 +3,7 @@
 package targetposition
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"pmeq/internal/anchorfilter"
@@ -39,6 +40,8 @@ type TargetPostingHits struct {
 type material struct {
 	prep          anchorfilter.PartyPreprocessing
 	first, second f2beaver.PartyBatch
+	etaShare      [2]uint32
+	capacity      int
 }
 type packetState struct {
 	sync.Mutex
@@ -51,7 +54,58 @@ type Packet struct {
 	party       uint8
 	maxPosition uint32
 	bin         uint8
+	inventory   bool
 }
+
+func (p Packet) Bin() uint8          { return p.bin }
+func (p Packet) MaxPosition() uint32 { return p.maxPosition }
+
+// PreprocessInventoryWithDomain creates only the one-use query session and
+// position AND triples. SCMP keys and rho live in scmpstock, independently of
+// this ticket and before any future query is chosen.
+func PreprocessInventoryWithDomain(l targetpe.AlignmentLineage, capacities []int, bin uint8, maxPosition uint32) ([]anchorfilter.UserPreprocessing, Packet, Packet, OfflineBytes, error) {
+	var cost OfflineBytes
+	derived, e := anchorfilter.DeriveBin(maxPosition)
+	if e != nil || derived != bin || (bin != 7 && bin != 10) {
+		return nil, Packet{}, Packet{}, cost, ErrBinding
+	}
+	users := make([]anchorfilter.UserPreprocessing, len(capacities))
+	a := Packet{state: &packetState{}, lineage: l, party: 0, maxPosition: maxPosition, bin: bin, inventory: true}
+	b := Packet{state: &packetState{}, lineage: l, party: 1, maxPosition: maxPosition, bin: bin, inventory: true}
+	m := (uint32(1) << bin) - 1
+	for i, n := range capacities {
+		if n < 0 {
+			return nil, Packet{}, Packet{}, cost, ErrBinding
+		}
+		u, _, _, e := anchorfilter.Preprocess(0, bin, nil)
+		if e != nil {
+			return nil, Packet{}, Packet{}, cost, e
+		}
+		users[i] = u
+		var own [2][2]uint32
+		for side, v := range [2]uint32{u.EtaL, u.EtaR} {
+			var raw [4]byte
+			if _, e = rand.Read(raw[:]); e != nil {
+				return nil, Packet{}, Packet{}, cost, e
+			}
+			own[0][side] = binary.LittleEndian.Uint32(raw[:]) & m
+			own[1][side] = (v - own[0][side]) & m
+		}
+		x0, x1, e := f2beaver.Preprocess(n)
+		if e != nil {
+			return nil, Packet{}, Packet{}, cost, e
+		}
+		y0, y1, e := f2beaver.Preprocess(n)
+		if e != nil {
+			return nil, Packet{}, Packet{}, cost, e
+		}
+		a.state.materials = append(a.state.materials, material{prep: anchorfilter.PartyPreprocessing{PID: u.PID, Bin: bin}, first: x0, second: y0, etaShare: own[0], capacity: n})
+		b.state.materials = append(b.state.materials, material{prep: anchorfilter.PartyPreprocessing{PID: u.PID, Bin: bin}, first: x1, second: y1, etaShare: own[1], capacity: n})
+		cost.Beaver += uint64(6 * n)
+	}
+	return users, a, b, cost, nil
+}
+
 type OfflineBytes struct{ SCMP, Beaver uint64 } // one party, serialized field widths
 
 // Preprocess is OFFLINE Q_pool allocation, before initial QueryToken generation.
@@ -86,8 +140,8 @@ func PreprocessWithDomain(l targetpe.AlignmentLineage, capacities []int, bin uin
 		if e != nil {
 			return nil, a, b, bytes, e
 		}
-		a.state.materials = append(a.state.materials, material{x, x0, y0})
-		b.state.materials = append(b.state.materials, material{y, x1, y1})
+		a.state.materials = append(a.state.materials, material{prep: x, first: x0, second: y0, capacity: n})
+		b.state.materials = append(b.state.materials, material{prep: y, first: x1, second: y1, capacity: n})
 		for j := 0; j < n; j++ {
 			bytes.SCMP += uint64(len(x.Lower[j].Opaque()) + len(x.Upper[j].Opaque()) + 2 + 8)
 		}
@@ -101,21 +155,30 @@ type Metrics struct {
 	SCMPBytes, ANDBytes, FramingBytes                                uint64
 }
 type Session struct {
-	idx                        *targetpe.PartyIndex
-	backend                    anchorfilter.SCMPBackend
-	token                      targetrouting.QueryToken
-	in                         targetpe.TargetGroupMatches
-	materials                  []material
-	cursors                    []int
-	out                        TargetPostingHits
-	binding                    [32]byte
-	ri, local, stage, n, off   int
-	pending, done              bool
-	own                        []byte
-	pos, valid, match, product []share.BitShare
-	metrics                    Metrics
-	bin                        uint8
-	maxPosition                uint32
+	idx                           *targetpe.PartyIndex
+	backend                       anchorfilter.SCMPBackend
+	token                         targetrouting.QueryToken
+	in                            targetpe.TargetGroupMatches
+	materials                     []material
+	cursors                       []int
+	out                           TargetPostingHits
+	binding                       [32]byte
+	ri, local, stage, n, off      int
+	pending, done                 bool
+	own                           []byte
+	pos, valid, match, product    []share.BitShare
+	metrics                       Metrics
+	bin                           uint8
+	maxPosition                   uint32
+	converted                     [][][2]uint32
+	inventoryLocal, inventoryWait time.Duration
+}
+
+func (s *Session) InventoryCorrectionTiming() (local, wait time.Duration) {
+	if s == nil {
+		return 0, 0
+	}
+	return s.inventoryLocal, s.inventoryWait
 }
 
 func Begin(idx *targetpe.PartyIndex, in targetpe.TargetGroupMatches, tok targetrouting.QueryToken, p Packet, backend anchorfilter.SCMPBackend) (*Session, error) {
@@ -304,7 +367,23 @@ func (s *Session) Accept(b []byte) error {
 		timed := &timedBackend{backend: s.backend}
 		start = time.Now()
 		var err error
-		s.pos, err = anchorfilter.EvalPosition(s.idx.Party(), anchorfilter.PartyQuery{PID: q.PID, Ltilde: q.Ltilde, RplusTilde: q.RplusTilde}, sub, opened, timed)
+		if s.converted == nil {
+			s.pos, err = anchorfilter.EvalPosition(s.idx.Party(), anchorfilter.PartyQuery{PID: q.PID, Ltilde: q.Ltilde, RplusTilde: q.RplusTilde}, sub, opened, timed)
+		} else {
+			s.pos = make([]share.BitShare, s.n)
+			for i := 0; i < s.n; i++ {
+				one := sub
+				one.Lower = one.Lower[i : i+1]
+				one.Upper = one.Upper[i : i+1]
+				tok := s.converted[h][s.off+i]
+				v, e := anchorfilter.EvalPosition(s.idx.Party(), anchorfilter.PartyQuery{PID: q.PID, Ltilde: tok[0], RplusTilde: tok[1]}, one, anchorfilter.OpenedPositions{PL: opened.PL[i : i+1], PR: opened.PR[i : i+1]}, timed)
+				if e != nil {
+					err = e
+					break
+				}
+				s.pos[i] = v[0]
+			}
+		}
 		elapsed := time.Since(start)
 		s.metrics.Comparison += timed.elapsed
 		s.metrics.Correction += elapsed - timed.elapsed

@@ -1,0 +1,12 @@
+{
+  "v3_pairs": 3,
+  "v2_pairs": 3,
+  "oracle_pairs": 3,
+  "v3_duplicate_pairs": 0,
+  "v3_missing": 0,
+  "v3_extra": 0,
+  "v2_missing": 0,
+  "v2_extra": 0,
+  "v3_equal_v2": true,
+  "v3_equal_oracle": true
+}

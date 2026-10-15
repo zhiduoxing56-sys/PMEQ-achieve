@@ -74,7 +74,7 @@ func newDomainFixture(t *testing.T, n int, present bool) domainFixture {
 	return newDomainFixtureWithBits(t, n, present, 16)
 }
 
-func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int) domainFixture {
+func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int, extraAliases ...indexbuild.AreaAliasRecord) domainFixture {
 	t.Helper()
 	f := domainFixture{q: Query{Anchor: "abcd", Target: "efgh"}}
 	if !present {
@@ -93,6 +93,7 @@ func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int) domai
 	}
 	areas[0].Name = "abcd"
 	aliases := []indexbuild.AreaAliasRecord{{ID: 900, Name: "x", Area: ids[0]}, {ID: 901, Name: "efgh", Area: ids[0]}}
+	aliases = append(aliases, extraAliases...)
 	_, a0, a1, _, e := indexbuild.Build(areas, nil, f.keys.Anchor, f.keys.Target, bits, bits)
 	domainMust(t, e)
 	meta, t0, t1, stats, e := indexbuild.BuildFinalTargetWithBits(aliases, f.keys.Target, bits)

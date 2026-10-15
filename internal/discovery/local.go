@@ -29,10 +29,11 @@ type Metrics struct {
 	ZeroRounds       [2]int
 	ExchangeRounds   [2]uint32
 	// AnchorParts uses the party with the larger complete Anchor duration.
-	AnchorParts       AnchorBreakdown
-	AnchorPartyParts  [2]AnchorBreakdown
-	AnchorDiagnostics [2]AnchorDiagnostics
-	ServerPhaseBytes  [2][8]uint64
+	AnchorParts                                                      AnchorBreakdown
+	AnchorPartyParts                                                 [2]AnchorBreakdown
+	AnchorDiagnostics                                                [2]AnchorDiagnostics
+	ServerPhaseBytes                                                 [2][8]uint64
+	StockClaim, StockRead, StockCorrectionLocal, StockCorrectionWait [2]time.Duration
 
 	Token, Anchor, Compaction, Routing, TargetPE, TargetPosition, TargetAggregation, GlobalPermutation, OutputEncoding, Recovery, Cloud, LocalE2E time.Duration
 	UserToCloud, CloudToUser                                                                                                                      [2]uint64
@@ -60,6 +61,9 @@ func RunCloudLocal(ctx context.Context, q Query, keys UserKeys, u *UserPacket, s
 	for party := 0; party < 2; party++ {
 		s, p := statics[party], packets[party]
 		if s.target == nil || s.sidecar == nil || len(s.payload.Slots) != s.target.Lineage().N || s.party != uint8(party) || p.party != uint8(party) || p.g == nil || u.g == nil || p.id != u.id || u.layout != s.payload.LayoutID || s.movieBinding != p.movieBinding || s.movieBinding != u.movieBinding {
+			return wires, binding, m, ErrBinding
+		}
+		if p.inventoryV3 != u.inventoryV3 || p.bankID != u.bankID || (p.inventoryV3 && (p.stock == nil || p.stock.Manifest.BankID != u.bankID || p.stock.Role != uint8(party))) {
 			return wires, binding, m, ErrBinding
 		}
 	}
@@ -163,6 +167,10 @@ func RunCloudLocal(ctx context.Context, q Query, keys UserKeys, u *UserPacket, s
 		m.AnchorPartyParts[r.party] = r.metrics.Anchor
 		m.AnchorDiagnostics[r.party] = r.metrics.Diagnostics
 		m.ServerPhaseBytes[r.party] = r.metrics.PhaseBytes
+		m.StockClaim[r.party] = r.metrics.StockClaim
+		m.StockRead[r.party] = r.metrics.StockRead
+		m.StockCorrectionLocal[r.party] = r.metrics.StockCorrectionLocal
+		m.StockCorrectionWait[r.party] = r.metrics.StockCorrectionWait
 		if r.metrics.Stages[0] > m.AnchorParts.Total() {
 			m.AnchorParts = r.metrics.Anchor
 		}

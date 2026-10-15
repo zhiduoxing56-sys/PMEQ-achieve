@@ -11,11 +11,13 @@ import (
 	"path/filepath"
 	"pmeq/internal/imdbprod"
 	"pmeq/internal/material"
+	"pmeq/internal/scmpstock"
 	"strings"
 	"time"
 )
 
 const ticketStoreVersion = "IMDB-OFFLINE-TICKET-v1"
+const ticketStoreVersionV3 = "PMEQ-INVENTORY-SESSION-v3"
 
 type TicketRoleManifest struct {
 	Version, Role, Ticket, BindingSHA256, IndexSealSHA256            string
@@ -24,10 +26,12 @@ type TicketRoleManifest struct {
 	CandidateCapacity, TargetRoutes, TargetSlots, TargetGroups, Uses int
 	MaterialSHA256                                                   string
 	MaterialBytes                                                    int64
+	BankID                                                           string
 }
 
 type TicketSeal struct {
 	Version, Ticket, BindingSHA256, IndexSealSHA256 string
+	BankID                                          string
 	RoleManifestSHA256                              [3]string // user, cs0, cs1
 }
 
@@ -48,7 +52,11 @@ func roleName(i int) string {
 
 func ticketManifest(role string, u *UserPacket, s *Static, indexSeal, binding [32]byte) TicketRoleManifest {
 	target := s.target.ManifestDigest()
-	return TicketRoleManifest{Version: ticketStoreVersion, Role: role, Ticket: hex.EncodeToString(u.id[:]), BindingSHA256: hex.EncodeToString(binding[:]), IndexSealSHA256: hex.EncodeToString(indexSeal[:]),
+	version, bank := ticketStoreVersion, ""
+	if u.inventoryV3 {
+		version, bank = ticketStoreVersionV3, hex.EncodeToString(u.bankID[:])
+	}
+	return TicketRoleManifest{Version: version, BankID: bank, Role: role, Ticket: hex.EncodeToString(u.id[:]), BindingSHA256: hex.EncodeToString(binding[:]), IndexSealSHA256: hex.EncodeToString(indexSeal[:]),
 		LayoutID: hex.EncodeToString(u.layout[:]), KeyFingerprint: u.keyFingerprint, TargetManifestSHA256: hex.EncodeToString(target[:]), Buckets: append([]uint32(nil), u.buckets...),
 		CandidateCapacity: imdbprod.CandidateCapacity, TargetRoutes: imdbprod.CandidateCapacity * imdbprod.TargetSignatures,
 		TargetSlots: imdbprod.CandidateCapacity * imdbprod.TargetSignatures * imdbprod.TargetBucketSlots, TargetGroups: imdbprod.TargetGroupCapacity, Uses: 1}
@@ -66,10 +74,21 @@ func PersistFullTicket(root string, indexSeal [32]byte, u *UserPacket, a, b *Par
 	if sa.target.ManifestDigest() != sb.target.ManifestDigest() || sa.payload.LayoutID != sb.payload.LayoutID || u.layout != sa.payload.LayoutID {
 		return seal, digest, cost, ErrBinding
 	}
+	if u.inventoryV3 != a.inventoryV3 || u.inventoryV3 != b.inventoryV3 || u.bankID != a.bankID || u.bankID != b.bankID || (u.inventoryV3 && u.bankID == [16]byte{}) {
+		return seal, digest, cost, ErrBinding
+	}
 	ticket := hex.EncodeToString(u.id[:])
 	ticketDir := filepath.Join(root, ticket)
 	if err = os.MkdirAll(root, 0700); err != nil {
 		return
+	}
+	var remaining *uint64
+	if u.inventoryV3 {
+		budget := uint64(3 << 30)
+		if err = scmpstock.CheckBudget(root, budget); err != nil {
+			return
+		}
+		remaining = &budget
 	}
 	if info, e := os.Lstat(root); e != nil || !info.IsDir() || info.Mode().Perm() != 0700 {
 		err = ErrBinding
@@ -80,8 +99,23 @@ func PersistFullTicket(root string, indexSeal [32]byte, u *UserPacket, a, b *Par
 	if err != nil {
 		return
 	}
+	if remaining != nil {
+		zeroBytes := cost.Zero.MaterialBytes + cost.Zero.StaticBytes
+		if zeroBytes < 0 || uint64(zeroBytes) > *remaining {
+			err = scmpstock.ErrShortage
+			return
+		}
+		*remaining -= uint64(zeroBytes)
+		if err = scmpstock.CheckBudget(root, *remaining); err != nil {
+			return
+		}
+	}
 	cost.Ticket = ticket
-	seal = TicketSeal{Version: ticketStoreVersion, Ticket: ticket, BindingSHA256: hex.EncodeToString(u.movieBinding[:]), IndexSealSHA256: hex.EncodeToString(indexSeal[:])}
+	version, bank := ticketStoreVersion, ""
+	if u.inventoryV3 {
+		version, bank = ticketStoreVersionV3, hex.EncodeToString(u.bankID[:])
+	}
+	seal = TicketSeal{Version: version, BankID: bank, Ticket: ticket, BindingSHA256: hex.EncodeToString(u.movieBinding[:]), IndexSealSHA256: hex.EncodeToString(indexSeal[:])}
 	for i := 0; i < 3; i++ {
 		role := roleName(i)
 		roleDir := filepath.Join(ticketDir, role)
@@ -95,7 +129,7 @@ func PersistFullTicket(root string, indexSeal [32]byte, u *UserPacket, a, b *Par
 		} else {
 			save = func(e *material.StreamEncoder) { b.writeOwn(e, sb) }
 		}
-		m.MaterialBytes, m.MaterialSHA256, err = writeMaterialFile(roleDir, save)
+		m.MaterialBytes, m.MaterialSHA256, err = writeMaterialFile(roleDir, save, remaining)
 		if err != nil {
 			return
 		}
@@ -141,7 +175,11 @@ func syncDirectory(path string) error {
 	return f.Sync()
 }
 
-func writeMaterialFile(dir string, save func(*material.StreamEncoder)) (int64, string, error) {
+func writeMaterialFile(dir string, save func(*material.StreamEncoder), budget ...*uint64) (int64, string, error) {
+	var remaining *uint64
+	if len(budget) > 0 {
+		remaining = budget[0]
+	}
 	path := filepath.Join(dir, "material.bin")
 	if _, e := os.Lstat(path); e == nil {
 		return 0, "", ErrBinding
@@ -158,7 +196,11 @@ func writeMaterialFile(dir string, save func(*material.StreamEncoder)) (int64, s
 		return 0, "", e
 	}
 	h := sha256.New()
-	w := bufio.NewWriterSize(io.MultiWriter(f, h), 1<<20)
+	var body io.Writer = io.MultiWriter(f, h)
+	if remaining != nil {
+		body = &budgetedTicketWriter{writer: body, dir: dir, remaining: remaining}
+	}
+	w := bufio.NewWriterSize(body, 1<<20)
 	enc := &material.StreamEncoder{W: w}
 	save(enc)
 	if enc.Err == nil {
@@ -187,6 +229,32 @@ func writeMaterialFile(dir string, save func(*material.StreamEncoder)) (int64, s
 	return info.Size(), hex.EncodeToString(h.Sum(nil)), nil
 }
 
+// The v3 ticket stream rechecks the Windows C reserve while it writes. The
+// remaining value covers all subsequent role files, so another disk writer
+// cannot silently consume the promised safety margin during a long ticket.
+type budgetedTicketWriter struct {
+	writer    io.Writer
+	dir       string
+	remaining *uint64
+	since     uint64
+}
+
+func (b *budgetedTicketWriter) Write(p []byte) (int, error) {
+	if uint64(len(p)) > *b.remaining {
+		return 0, scmpstock.ErrShortage
+	}
+	if b.since == 0 || b.since >= 32<<20 {
+		if err := scmpstock.CheckBudget(b.dir, *b.remaining); err != nil {
+			return 0, err
+		}
+		b.since = 0
+	}
+	n, err := b.writer.Write(p)
+	*b.remaining -= uint64(n)
+	b.since += uint64(n)
+	return n, err
+}
+
 func ReadTicketSeal(ticketDir string, expected [32]byte) (TicketSeal, error) {
 	var seal TicketSeal
 	if expected == [32]byte{} {
@@ -196,7 +264,7 @@ func ReadTicketSeal(ticketDir string, expected [32]byte) (TicketSeal, error) {
 	if e != nil {
 		return seal, e
 	}
-	if sha256.Sum256(raw) != expected || json.Unmarshal(raw, &seal) != nil || seal.Version != ticketStoreVersion || seal.Ticket != filepath.Base(ticketDir) || len(seal.Ticket) != 32 {
+	if sha256.Sum256(raw) != expected || json.Unmarshal(raw, &seal) != nil || (seal.Version != ticketStoreVersion && seal.Version != ticketStoreVersionV3) || seal.Ticket != filepath.Base(ticketDir) || len(seal.Ticket) != 32 || (seal.Version == ticketStoreVersionV3 && len(seal.BankID) != 32) {
 		return TicketSeal{}, ErrBinding
 	}
 	for _, v := range seal.RoleManifestSHA256 {
@@ -208,6 +276,9 @@ func ReadTicketSeal(ticketDir string, expected [32]byte) (TicketSeal, error) {
 }
 
 func readRoleManifest(dir string, expected [32]byte, role string, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, targetDigest [32]byte) (TicketRoleManifest, error) {
+	return readRoleManifestVersion(dir, expected, role, binding, indexSeal, ticket, targetDigest, ticketStoreVersion, "")
+}
+func readRoleManifestVersion(dir string, expected [32]byte, role string, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, targetDigest [32]byte, version, bank string) (TicketRoleManifest, error) {
 	var m TicketRoleManifest
 	bind, e := binding.Digest()
 	if e != nil || expected == [32]byte{} || indexSeal == [32]byte{} || targetDigest == [32]byte{} {
@@ -226,7 +297,7 @@ func readRoleManifest(dir string, expected [32]byte, role string, binding imdbpr
 	if e != nil {
 		return m, e
 	}
-	if sha256.Sum256(raw) != expected || json.Unmarshal(raw, &m) != nil || m.Version != ticketStoreVersion || m.Role != role || m.Ticket != hex.EncodeToString(ticket[:]) || m.BindingSHA256 != hex.EncodeToString(bind[:]) || m.IndexSealSHA256 != hex.EncodeToString(indexSeal[:]) || m.LayoutID != hex.EncodeToString(binding.LayoutID[:]) || m.KeyFingerprint != binding.KeyFingerprint || m.TargetManifestSHA256 != hex.EncodeToString(targetDigest[:]) || len(m.Buckets) != imdbprod.AnchorSignatures || m.CandidateCapacity != imdbprod.CandidateCapacity || m.TargetRoutes != imdbprod.CandidateCapacity*imdbprod.TargetSignatures || m.TargetSlots != imdbprod.CandidateCapacity*imdbprod.TargetSignatures*imdbprod.TargetBucketSlots || m.TargetGroups != imdbprod.TargetGroupCapacity || m.Uses != 1 || m.MaterialBytes < 64 || len(m.MaterialSHA256) != 64 {
+	if sha256.Sum256(raw) != expected || json.Unmarshal(raw, &m) != nil || m.Version != version || m.BankID != bank || m.Role != role || m.Ticket != hex.EncodeToString(ticket[:]) || m.BindingSHA256 != hex.EncodeToString(bind[:]) || m.IndexSealSHA256 != hex.EncodeToString(indexSeal[:]) || m.LayoutID != hex.EncodeToString(binding.LayoutID[:]) || m.KeyFingerprint != binding.KeyFingerprint || m.TargetManifestSHA256 != hex.EncodeToString(targetDigest[:]) || len(m.Buckets) != imdbprod.AnchorSignatures || m.CandidateCapacity != imdbprod.CandidateCapacity || m.TargetRoutes != imdbprod.CandidateCapacity*imdbprod.TargetSignatures || m.TargetSlots != imdbprod.CandidateCapacity*imdbprod.TargetSignatures*imdbprod.TargetBucketSlots || m.TargetGroups != imdbprod.TargetGroupCapacity || m.Uses != 1 || m.MaterialBytes < 64 || len(m.MaterialSHA256) != 64 {
 		return TicketRoleManifest{}, ErrBinding
 	}
 	for _, bucket := range m.Buckets {
@@ -266,7 +337,17 @@ func readMaterialFile(dir string, m TicketRoleManifest, load func(*material.Stre
 }
 
 func OpenUserTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, targetDigest [32]byte) (*UserPacket, error) {
-	m, e := readRoleManifest(dir, manifestSHA, "user", binding, indexSeal, ticket, targetDigest)
+	return openUserTicket(dir, manifestSHA, binding, indexSeal, ticket, targetDigest, false, [16]byte{})
+}
+func OpenInventoryUserTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, targetDigest [32]byte, bankID [16]byte) (*UserPacket, error) {
+	return openUserTicket(dir, manifestSHA, binding, indexSeal, ticket, targetDigest, true, bankID)
+}
+func openUserTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, targetDigest [32]byte, inventoryV3 bool, bankID [16]byte) (*UserPacket, error) {
+	version, bank := ticketStoreVersion, ""
+	if inventoryV3 {
+		version, bank = ticketStoreVersionV3, hex.EncodeToString(bankID[:])
+	}
+	m, e := readRoleManifestVersion(dir, manifestSHA, "user", binding, indexSeal, ticket, targetDigest, version, bank)
 	if e != nil {
 		return nil, e
 	}
@@ -274,7 +355,7 @@ func OpenUserTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, 
 	var u *UserPacket
 	e = readMaterialFile(dir, m, func(d *material.StreamDecoder) error {
 		var err error
-		u, err = readUserOwn(d, ticket, bind, binding.LayoutID, binding.KeyFingerprint, dir, m.Buckets)
+		u, err = readUserOwn(d, ticket, bind, binding.LayoutID, binding.KeyFingerprint, dir, m.Buckets, inventoryV3, bankID)
 		return err
 	})
 	if e != nil {
@@ -284,11 +365,21 @@ func OpenUserTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, 
 }
 
 func OpenPartyTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, s *Static) (*PartyPacket, error) {
+	return openPartyTicket(dir, manifestSHA, binding, indexSeal, ticket, s, false, [16]byte{})
+}
+func OpenInventoryPartyTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, s *Static, bankID [16]byte) (*PartyPacket, error) {
+	return openPartyTicket(dir, manifestSHA, binding, indexSeal, ticket, s, true, bankID)
+}
+func openPartyTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding, indexSeal [32]byte, ticket [16]byte, s *Static, inventoryV3 bool, bankID [16]byte) (*PartyPacket, error) {
 	if s == nil || s.party > 1 || s.target == nil || s.movieBinding == [32]byte{} || s.productionSeal != indexSeal {
 		return nil, ErrBinding
 	}
 	role := fmt.Sprintf("cs%d", s.party)
-	m, e := readRoleManifest(dir, manifestSHA, role, binding, indexSeal, ticket, s.target.ManifestDigest())
+	version, bank := ticketStoreVersion, ""
+	if inventoryV3 {
+		version, bank = ticketStoreVersionV3, hex.EncodeToString(bankID[:])
+	}
+	m, e := readRoleManifestVersion(dir, manifestSHA, role, binding, indexSeal, ticket, s.target.ManifestDigest(), version, bank)
 	if e != nil {
 		return nil, e
 	}
@@ -299,7 +390,7 @@ func OpenPartyTicket(dir string, manifestSHA [32]byte, binding imdbprod.Binding,
 	var p *PartyPacket
 	e = readMaterialFile(dir, m, func(d *material.StreamDecoder) error {
 		var err error
-		p, err = readPartyOwn(d, ticket, bind, dir, m.Buckets, s)
+		p, err = readPartyOwn(d, ticket, bind, dir, m.Buckets, s, inventoryV3, bankID)
 		return err
 	})
 	if e != nil {
@@ -317,7 +408,7 @@ func TicketRoleDigest(seal TicketSeal, role string) ([32]byte, error) {
 			break
 		}
 	}
-	if i < 0 || seal.Version != ticketStoreVersion {
+	if i < 0 || (seal.Version != ticketStoreVersion && seal.Version != ticketStoreVersionV3) {
 		return out, ErrBinding
 	}
 	b, e := hex.DecodeString(seal.RoleManifestSHA256[i])

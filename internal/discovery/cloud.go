@@ -11,6 +11,7 @@ import (
 	"pmeq/internal/domain"
 	"pmeq/internal/f2beaver"
 	"pmeq/internal/incidence"
+	"pmeq/internal/scmpstock"
 	"pmeq/internal/share"
 	"pmeq/internal/targetaggregation"
 	"pmeq/internal/targetpe"
@@ -126,24 +127,32 @@ func (s *endpoint) and(x, y []share.BitShare, p f2beaver.PartyBatch) []share.Bit
 }
 
 type cloudMetrics struct {
-	ZeroFFT, ZeroMul            time.Duration
-	ZeroGates                   uint64
-	ZeroRounds                  int
-	Trace                       []FrameAudit
-	Rounds                      uint32
-	Anchor                      AnchorBreakdown
-	Diagnostics                 AnchorDiagnostics
-	PhaseBytes                  [8]uint64
-	Stages                      [8]time.Duration
-	Sent                        uint64
-	K, M, Routes, Groups, Slots int
+	ZeroFFT, ZeroMul                          time.Duration
+	ZeroGates                                 uint64
+	ZeroRounds                                int
+	Trace                                     []FrameAudit
+	Rounds                                    uint32
+	Anchor                                    AnchorBreakdown
+	Diagnostics                               AnchorDiagnostics
+	PhaseBytes                                [8]uint64
+	StockClaim, StockRead                     time.Duration
+	StockCorrectionLocal, StockCorrectionWait time.Duration
+	Stages                                    [8]time.Duration
+	Sent                                      uint64
+	K, M, Routes, Groups, Slots               int
 }
 
 func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPBackend, wire func([]byte) ([]byte, error)) (output []byte, metrics cloudMetrics, err error) {
 	var active *endpoint
+	claimedStock, finishedStock := false, false
 	defer func() {
 		if err != nil && active != nil {
 			err = fmt.Errorf("cloud phase %d: %w", active.phase, err)
+		}
+	}()
+	defer func() {
+		if claimedStock && !finishedStock && p != nil && p.stock != nil {
+			_ = p.stock.Finish(p.id, false)
 		}
 	}()
 	defer caught(&err)
@@ -389,7 +398,36 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 	metrics.Stages[3] = time.Since(started)
 	s.phase = 4
 	started = time.Now()
-	position, e := targetposition.Begin(st.target, gm, t.target, p.position, backend)
+	var position *targetposition.Session
+	if p.inventoryV3 {
+		if p.stock == nil || p.stock.Manifest.BankID != p.bankID {
+			check(ErrBinding)
+		}
+		counts, plan, pe := targetposition.InventoryPlan(st.target, gm, t.target, p.position)
+		check(pe)
+		demand := 0
+		for _, n := range counts {
+			demand += n
+		}
+		claimStart := time.Now()
+		startUnit, ce := p.stock.Claim(p.id, t.target.QueryID, plan, demand)
+		check(ce)
+		metrics.StockClaim = time.Since(claimStart)
+		claimedStock = true
+		readStart := time.Now()
+		units := make([]scmpstock.Unit, demand)
+		for i := range units {
+			units[i], ce = p.stock.ReadUnit(startUnit + i)
+			check(ce)
+		}
+		metrics.StockRead = time.Since(readStart)
+		position, e = targetposition.BeginInventory(st.target, gm, t.target, p.position, backend, units, plan, func(b []byte) ([]byte, error) { return s.sendKind("target-position-mask-correction", b), nil })
+		if e == nil {
+			metrics.StockCorrectionLocal, metrics.StockCorrectionWait = position.InventoryCorrectionTiming()
+		}
+	} else {
+		position, e = targetposition.Begin(st.target, gm, t.target, p.position, backend)
+	}
 	check(e)
 	for !position.Done() {
 		m, e := position.Next()
@@ -422,6 +460,10 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 	}
 	check(e)
 	metrics.Stages[7] = time.Since(started)
+	if claimedStock {
+		check(p.stock.Finish(p.id, true))
+		finishedStock = true
+	}
 	metrics.Sent = s.sent
 	return
 }

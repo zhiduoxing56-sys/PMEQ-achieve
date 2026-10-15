@@ -25,8 +25,15 @@ func (u *UserPacket) writeOwn(e *material.StreamEncoder) {
 		e.Err = ErrBinding
 		return
 	}
-	e.U8(1)
+	if u.inventoryV3 {
+		e.U8(3)
+	} else {
+		e.U8(1)
+	}
 	e.Bytes(u.id[:])
+	if u.inventoryV3 {
+		e.Bytes(u.bankID[:])
+	}
 	e.Bytes(u.layout[:])
 	e.Bytes(u.movieBinding[:])
 	e.Bytes(u.compaction[:])
@@ -44,12 +51,20 @@ func (u *UserPacket) writeOwn(e *material.StreamEncoder) {
 	u.agg.WriteOwn(e)
 }
 
-func readUserOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, layout [16]byte, fingerprint string, roleDir string, buckets []uint32) (*UserPacket, error) {
-	if d.U8() != 1 {
+func readUserOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, layout [16]byte, fingerprint string, roleDir string, buckets []uint32, inventoryV3 bool, bankID [16]byte) (*UserPacket, error) {
+	version := d.U8()
+	if (inventoryV3 && version != 3) || (!inventoryV3 && version != 1) {
 		return nil, ErrBinding
 	}
-	u := &UserPacket{g: &guard{ledger: roleDir, id: ticket}, buckets: append([]uint32(nil), buckets...), movieBinding: binding, keyFingerprint: fingerprint}
+	u := &UserPacket{g: &guard{ledger: roleDir, id: ticket}, buckets: append([]uint32(nil), buckets...), movieBinding: binding, keyFingerprint: fingerprint, inventoryV3: inventoryV3, bankID: bankID}
 	d.Bytes(u.id[:])
+	if inventoryV3 {
+		var own [16]byte
+		d.Bytes(own[:])
+		if own != bankID || bankID == [16]byte{} {
+			return nil, ErrBinding
+		}
+	}
 	d.Bytes(u.layout[:])
 	var ownBinding [32]byte
 	d.Bytes(ownBinding[:])
@@ -96,9 +111,16 @@ func (p *PartyPacket) writeOwn(e *material.StreamEncoder, s *Static) {
 		e.Err = ErrBinding
 		return
 	}
-	e.U8(1)
+	if p.inventoryV3 {
+		e.U8(3)
+	} else {
+		e.U8(1)
+	}
 	e.U8(p.party)
 	e.Bytes(p.id[:])
+	if p.inventoryV3 {
+		e.Bytes(p.bankID[:])
+	}
 	e.Bytes(p.movieBinding[:])
 	e.U32(uint32(p.capacity))
 	e.U32(uint32(len(p.anchor)))
@@ -140,18 +162,30 @@ func (p *PartyPacket) writeOwn(e *material.StreamEncoder, s *Static) {
 		p.c1.WriteOwn(e)
 	}
 	p.pe.WriteOwn(e)
-	p.position.WriteOwn(e)
+	if p.inventoryV3 {
+		p.position.WriteInventoryOwn(e)
+	} else {
+		p.position.WriteOwn(e)
+	}
 	p.agg.WriteOwn(e)
 }
 
-func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, roleDir string, buckets []uint32, s *Static) (*PartyPacket, error) {
-	if s == nil || s.party > 1 || d.U8() != 1 || d.U8() != s.party {
+func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, roleDir string, buckets []uint32, s *Static, inventoryV3 bool, bankID [16]byte) (*PartyPacket, error) {
+	version := d.U8()
+	if s == nil || s.party > 1 || (inventoryV3 && version != 3) || (!inventoryV3 && version != 1) || d.U8() != s.party {
 		return nil, ErrBinding
 	}
-	p := &PartyPacket{g: &guard{ledger: roleDir, id: ticket}, party: s.party, id: ticket, movieBinding: binding, capacity: imdbprod.CandidateCapacity}
+	p := &PartyPacket{g: &guard{ledger: roleDir, id: ticket}, party: s.party, id: ticket, movieBinding: binding, capacity: imdbprod.CandidateCapacity, inventoryV3: inventoryV3, bankID: bankID}
 	var ownID [16]byte
 	var ownBinding [32]byte
 	d.Bytes(ownID[:])
+	if inventoryV3 {
+		var ownBank [16]byte
+		d.Bytes(ownBank[:])
+		if ownBank != bankID || bankID == [16]byte{} {
+			return nil, ErrBinding
+		}
+	}
 	d.Bytes(ownBinding[:])
 	if d.U32() != uint32(p.capacity) || d.U32() != uint32(len(buckets)) || d.Err != nil || ownID != ticket || ownBinding != binding || s.movieBinding != binding {
 		return nil, ErrBinding
@@ -238,7 +272,11 @@ func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, 
 		return nil, err
 	}
 	capacities := []int{imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity}
-	p.position, err = targetposition.ReadPacketOwn(d, s.party, s.target.Lineage(), capacities, imdbprod.PositionBin, imdbprod.PositionMax)
+	if inventoryV3 {
+		p.position, err = targetposition.ReadInventoryOwn(d, s.party, s.target.Lineage(), capacities, imdbprod.PositionBin, imdbprod.PositionMax)
+	} else {
+		p.position, err = targetposition.ReadPacketOwn(d, s.party, s.target.Lineage(), capacities, imdbprod.PositionBin, imdbprod.PositionMax)
+	}
 	if err != nil {
 		return nil, err
 	}

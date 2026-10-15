@@ -14,6 +14,7 @@ import (
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/material"
+	"pmeq/internal/scmpstock"
 	"pmeq/internal/targetaggregation"
 	"pmeq/internal/targetcrypto"
 	"pmeq/internal/targetpe"
@@ -94,6 +95,35 @@ func (s *Static) TargetManifestDigestForTicket() [32]byte {
 		return [32]byte{}
 	}
 	return s.target.ManifestDigest()
+}
+
+// PublicAnchorSlotUpperBound caps the number of candidates that can survive
+// any query requiring at least one anchor hit. Each candidate must originate
+// in one of these public padded bucket slots. Repeated buckets may overcount.
+// Callers must use the full public candidate capacity when zero hits qualify.
+func (s *Static) PublicAnchorSlotUpperBound(buckets []uint32, candidateCapacity int) (int, error) {
+	if s == nil || candidateCapacity < 0 || len(buckets) == 0 {
+		return 0, ErrBinding
+	}
+	upper := 0
+	for _, id := range buckets {
+		var n int
+		if s.anchorStore != nil {
+			if meta, ok := s.anchorStore.Meta(id); ok {
+				n = meta.T
+			}
+		} else if a, ok := s.anchor[id]; ok {
+			n = a.T
+		}
+		if n < 0 {
+			return 0, ErrBinding
+		}
+		if n >= candidateCapacity-upper {
+			return candidateCapacity, nil
+		}
+		upper += n
+	}
+	return upper, nil
 }
 
 // Experiment-only target labels live outside the sealed production index.
@@ -278,6 +308,9 @@ type PartyPacket struct {
 	movieBinding   [32]byte
 	interruptZero  bool
 	persistentRefs []zeroReference
+	inventoryV3    bool
+	bankID         [16]byte
+	stock          *scmpstock.Pool
 }
 type UserPacket struct {
 	g                      *guard
@@ -289,6 +322,8 @@ type UserPacket struct {
 	agg                    *targetaggregation.UserMaterial
 	movieBinding           [32]byte
 	keyFingerprint         string
+	inventoryV3            bool
+	bankID                 [16]byte
 }
 type cloudToken struct {
 	packet       [16]byte

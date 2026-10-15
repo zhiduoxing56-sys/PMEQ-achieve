@@ -154,3 +154,32 @@ func TestTicketRoleFileIntegrityAndRestartBurn(t *testing.T) {
 		t.Fatal("missing role material accepted")
 	}
 }
+
+func TestV3BudgetedTicketStreamRejectsBeforeOversizeWrite(t *testing.T) {
+	makeRole := func() string {
+		dir := filepath.Join(t.TempDir(), "cs0")
+		if e := os.Mkdir(dir, 0700); e != nil {
+			t.Fatal(e)
+		}
+		return dir
+	}
+	write := func(dir string, remaining *uint64) (int64, error) {
+		n, _, e := writeMaterialFile(dir, func(enc *material.StreamEncoder) {
+			enc.Blob(bytes.Repeat([]byte{0x5a}, 4096))
+		}, remaining)
+		return n, e
+	}
+	budget := uint64(5000)
+	n, e := write(makeRole(), &budget)
+	if e != nil || n != 4100 || budget != 900 {
+		t.Fatal("budgeted stream accounting", n, budget, e)
+	}
+	budget = 4099
+	dir := makeRole()
+	if _, e = write(dir, &budget); e == nil {
+		t.Fatal("oversize ticket accepted")
+	}
+	if _, e = os.Stat(filepath.Join(dir, "material.bin")); !os.IsNotExist(e) {
+		t.Fatal("partial material published", e)
+	}
+}

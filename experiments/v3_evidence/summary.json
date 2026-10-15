@@ -1,0 +1,213 @@
+{
+  "stock": {
+    "bank_id": "ee6ba5b1b13955e37ae3de32f06b3a67",
+    "initial_slots": 1920000,
+    "record_bytes_per_role": 770,
+    "total_stock_bytes": 2956802206,
+    "claimed_or_burned_slots": 26936,
+    "unbound_slots": 1893064,
+    "worst_case_replenishment_slots": 26936,
+    "admissions": 4
+  },
+  "cases": {
+    "matrix_first": {
+      "ticket": "d6fc203b8ea19238312a43a7ebd7c448",
+      "ticket_bytes": 1945330349,
+      "user_material_bytes": 440,
+      "cs0_material_bytes": 972498117,
+      "cs1_material_bytes": 972498165,
+      "guaranteed_slots": 1920000,
+      "claimed_slots": 180,
+      "start_slot": 0,
+      "both_roles_claimed": [
+        true,
+        true
+      ],
+      "both_roles_finished": [
+        true,
+        true
+      ],
+      "closed": true,
+      "burned_failure": false,
+      "candidate_pairs": 3,
+      "pairs_sha256": "3684e51138ec38f8cd8bc6b14e39d8812e08153d14f1a72698de27901c01c167",
+      "K": 3,
+      "routes": 12,
+      "groups": 45,
+      "slots": 180,
+      "cloud_ns": 174280458,
+      "target_position_ns": 10748380,
+      "target_aggregation_ns": 3611968,
+      "stock_claim_ns_by_role": null,
+      "stock_read_ns_by_role": null,
+      "correction_local_ns_by_role": null,
+      "correction_wait_ns_by_role": null,
+      "correction_new_intercloud_bytes": 3108,
+      "correction_new_rounds": 1,
+      "server_bytes": 10088292,
+      "peak_go_heap_bytes": 2401638552,
+      "process_until_result_ns": 47573722572,
+      "index_verify_ns": 37219590590,
+      "ticket_load_ns": 2263304486
+    },
+    "zero_first": {
+      "ticket": "5fbf27364c1703fcd148e32f974ace21",
+      "ticket_bytes": 1557890421,
+      "user_material_bytes": 440,
+      "cs0_material_bytes": 778778157,
+      "cs1_material_bytes": 778778205,
+      "guaranteed_slots": 135936,
+      "claimed_slots": 180,
+      "start_slot": 180,
+      "both_roles_claimed": [
+        true,
+        true
+      ],
+      "both_roles_finished": [
+        true,
+        true
+      ],
+      "closed": true,
+      "burned_failure": false,
+      "candidate_pairs": 3,
+      "pairs_sha256": "c61766116ab6bc67dc390a39ee3bc9be577ef9bcbbd4cc5f6095661062746a03",
+      "K": 3,
+      "routes": 12,
+      "groups": 45,
+      "slots": 180,
+      "cloud_ns": 169595818,
+      "target_position_ns": 9902206,
+      "target_aggregation_ns": 20979115,
+      "stock_claim_ns_by_role": [
+        5448273,
+        8531712
+      ],
+      "stock_read_ns_by_role": [
+        198426,
+        165233
+      ],
+      "correction_local_ns_by_role": [
+        116031,
+        148022
+      ],
+      "correction_wait_ns_by_role": [
+        3178099,
+        15211
+      ],
+      "correction_new_intercloud_bytes": 3108,
+      "correction_new_rounds": 1,
+      "server_bytes": 10125568,
+      "peak_go_heap_bytes": 1917011584,
+      "process_until_result_ns": 49999347888,
+      "index_verify_ns": 37203826182,
+      "ticket_load_ns": 2756395841
+    },
+    "zero_tail": {
+      "ticket": "c537df9f00a0a4d8be5b361e05e1a2a0",
+      "ticket_bytes": 1565839849,
+      "user_material_bytes": 440,
+      "cs0_material_bytes": 781573727,
+      "cs1_material_bytes": 781573775,
+      "guaranteed_slots": 846336,
+      "claimed_slots": 13288,
+      "start_slot": 360,
+      "both_roles_claimed": [
+        true,
+        true
+      ],
+      "both_roles_finished": [
+        true,
+        true
+      ],
+      "closed": true,
+      "burned_failure": false,
+      "candidate_pairs": 302,
+      "pairs_sha256": "cd61ad61b039435e4eaf7aedcac9df77fa4d5466f6530a03aa77c0471bf41d0c",
+      "K": 302,
+      "routes": 1208,
+      "groups": 3322,
+      "slots": 13288,
+      "cloud_ns": 699906099,
+      "target_position_ns": 120120739,
+      "target_aggregation_ns": 273823050,
+      "stock_claim_ns_by_role": [
+        4539297,
+        7463079
+      ],
+      "stock_read_ns_by_role": [
+        20435704,
+        20534840
+      ],
+      "correction_local_ns_by_role": [
+        9815900,
+        8622563
+      ],
+      "correction_wait_ns_by_role": [
+        2403607,
+        60478
+      ],
+      "correction_new_intercloud_bytes": 212836,
+      "correction_new_rounds": 1,
+      "server_bytes": 22653554,
+      "peak_go_heap_bytes": 2108113000,
+      "process_until_result_ns": 60127259383,
+      "index_verify_ns": 46538897416,
+      "ticket_load_ns": 2489144390
+    },
+    "matrix_tail": {
+      "ticket": "f1e0fa4da0a7b0a1759219ae2e7509f9",
+      "ticket_bytes": 1953279775,
+      "user_material_bytes": 440,
+      "cs0_material_bytes": 975293687,
+      "cs1_material_bytes": 975293735,
+      "guaranteed_slots": 846336,
+      "claimed_slots": 13288,
+      "start_slot": 13648,
+      "both_roles_claimed": [
+        true,
+        true
+      ],
+      "both_roles_finished": [
+        true,
+        true
+      ],
+      "closed": true,
+      "burned_failure": false,
+      "candidate_pairs": 302,
+      "pairs_sha256": "8b71602accefb78d456820f1a42d92e2e77c6ec21501db49f19f42cf9ba200bd",
+      "K": 302,
+      "routes": 1208,
+      "groups": 3322,
+      "slots": 13288,
+      "cloud_ns": 570760551,
+      "target_position_ns": 148770155,
+      "target_aggregation_ns": 87924180,
+      "stock_claim_ns_by_role": [
+        5722583,
+        9065951
+      ],
+      "stock_read_ns_by_role": [
+        24030940,
+        24807838
+      ],
+      "correction_local_ns_by_role": [
+        11091497,
+        9569964
+      ],
+      "correction_wait_ns_by_role": [
+        2848292,
+        68614
+      ],
+      "correction_new_intercloud_bytes": 212836,
+      "correction_new_rounds": 1,
+      "server_bytes": 19943098,
+      "peak_go_heap_bytes": 2611387632,
+      "process_until_result_ns": 51080671603,
+      "index_verify_ns": 39842374154,
+      "ticket_load_ns": 2473712794
+    }
+  },
+  "v3_zero_label_bytes": 6734615,
+  "windows_c_free_bytes_at_collection": 34785792000,
+  "wsl_output_free_bytes_at_collection": 825381990400
+}
