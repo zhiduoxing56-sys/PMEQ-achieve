@@ -24,6 +24,9 @@ const (
 	PositionBin          = 10
 	PositionMax          = 270
 	TargetMultiplicity   = 4
+	TargetBucketGroups   = 11
+	TargetBucketSlots    = 44
+	TargetGroupCapacity  = CandidateCapacity * TargetBucketSlots
 	AnchorSequenceSHA256 = "7a31b5cc73af844a2a9fec83d964fd7e7927d4aee597047b10c2c241eede4fb7"
 	TargetSequenceSHA256 = "b9f050071281497cdc123321be8aa498af77dc30e8ff494d43574f47e3d0b488"
 	MotherDatabaseSHA256 = "e790ed19ba571ae1143efcc13239e0c6e0c290637c5aa02ef04a4e475820ba76"
@@ -50,6 +53,8 @@ type Public struct {
 	PositionBin          uint8  `json:"position_bin"`
 	PositionMax          uint32 `json:"position_max"`
 	TargetMultiplicity   int    `json:"target_multiplicity"`
+	TargetBucketGroups   int    `json:"target_bucket_groups"`
+	TargetBucketSlots    int    `json:"target_bucket_slots"`
 	AnchorTable          string `json:"anchor_table"`
 	AnchorObject         string `json:"anchor_object"`
 	AnchorSearch         string `json:"anchor_search"`
@@ -65,7 +70,7 @@ type Public struct {
 func Production() Public {
 	return Public{Version, AnchorObjects, TargetObjects, CandidateCapacity, Q,
 		AnchorSignatures, TargetSignatures, BucketBits, TargetDimension, PositionBin,
-		PositionMax, TargetMultiplicity, "MOVIECAST", "objectId", "aliasTitle", "tconst",
+		PositionMax, TargetMultiplicity, TargetBucketGroups, TargetBucketSlots, "MOVIECAST", "objectId", "aliasTitle", "tconst",
 		"MOVIE", "tconst", "primaryTitle", "tconst", AnchorSequenceSHA256, TargetSequenceSHA256}
 }
 
@@ -90,6 +95,16 @@ func (p Public) Digest() ([32]byte, error) {
 func (p Public) DigestHex() (string, error) {
 	h, err := p.Digest()
 	return hex.EncodeToString(h[:]), err
+}
+
+// KeyFingerprint is a public, stable identity for the two 256-bit production
+// keys. It reveals neither key and is independent of the key file's formatting.
+func KeyFingerprint(anchor, target [32]byte) string {
+	h := sha256.New()
+	h.Write([]byte("PMEQ-IMDB-KEYPAIR-v1"))
+	h.Write(anchor[:])
+	h.Write(target[:])
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // CheckCandidates is called before reserving or allocating shape-dependent

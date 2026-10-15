@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"math/big"
 	"pmeq/internal/incidence"
@@ -93,8 +94,40 @@ type Stage1 struct {
 	sigma    []uint32
 }
 
+// digest binds an offline CS1 mask to the exact bucket permutation without
+// retaining another 400 KB sigma in every reserved query packet.
+func (s *Stage1) digest() [32]byte {
+	h := sha256.New()
+	h.Write([]byte("PMEQ-SIGMA-v1"))
+	h.Write(s.LayoutID[:])
+	var b [4096]byte
+	binary.LittleEndian.PutUint32(b[:4], s.BucketID)
+	binary.LittleEndian.PutUint64(b[4:12], uint64(len(s.sigma)))
+	h.Write(b[:12])
+	for at := 0; at < len(s.sigma); {
+		n := min(len(b)/4, len(s.sigma)-at)
+		for i := 0; i < n; i++ {
+			binary.LittleEndian.PutUint32(b[4*i:], s.sigma[at+i])
+		}
+		h.Write(b[:4*n])
+		at += n
+	}
+	var out [32]byte
+	copy(out[:], h.Sum(nil))
+	return out
+}
+
 // GlobalRecords returns the public domain length without exposing sigma.
 func (s *Stage1) GlobalRecords() int { return len(s.sigma) }
+
+// Discard is called by the trusted owner after a bucket is durably sealed.
+// Cloud callers discard only after their final use of the loaded state.
+func (s *Stage1) Discard() {
+	if s != nil {
+		clear(s.sigma)
+		s.sigma = nil
+	}
+}
 
 // SplitPermutation is DO-only. pi is never retained in either party object.
 func SplitPermutation(id [16]byte, bucket uint32, pi []uint32) (*Stage0, *Stage1, error) {
@@ -113,6 +146,7 @@ func SplitPermutation(id [16]byte, bucket uint32, pi []uint32) (*Stage0, *Stage1
 	for i, j := range rho {
 		sigma[int(j)] = pi[i]
 	}
+	clear(rho)
 	return &Stage0{id, bucket, seed}, &Stage1{id, bucket, sigma}, nil
 }
 
@@ -139,7 +173,7 @@ type PermPrep0 struct {
 type PermPrep1 struct {
 	a1, b1, c2 []incidence.Z128
 	use        *material.UseGuard
-	stage      *Stage1
+	stage      [32]byte
 }
 
 // PreprocessPermutation reuses the old masked-scatter equations with fresh
@@ -176,7 +210,9 @@ func PreprocessPermutation(p *Stage0, q *Stage1) (*PermPrep0, *PermPrep1, error)
 		j := int(coordinate)
 		b2[j] = a2[i].Sub(c2[j])
 	}
-	return &PermPrep0{c1: c1, a2: a2, b2: b2, use: material.NewUseGuard(), stage: p}, &PermPrep1{a1: a1, b1: b1, c2: c2, use: material.NewUseGuard(), stage: q}, nil
+	clear(rho)
+	clear(b)
+	return &PermPrep0{c1: c1, a2: a2, b2: b2, use: material.NewUseGuard(), stage: p}, &PermPrep1{a1: a1, b1: b1, c2: c2, use: material.NewUseGuard(), stage: q.digest()}, nil
 }
 
 // Message1 travels CS1 -> CS0. Local inputs beyond D are public zero shares.
@@ -235,7 +271,7 @@ func (s *Stage1) Finish(p *PermPrep1, d2 []incidence.Z128) ([]incidence.Share, e
 		return nil, ErrShape
 	}
 	n := len(s.sigma)
-	if p == nil || p.stage != s || len(d2) != n || len(p.b1) != n || !p.use.Claim(1) {
+	if p == nil || p.stage != s.digest() || len(d2) != n || len(p.b1) != n || !p.use.Claim(1) {
 		return nil, ErrShape
 	}
 	out := make([]incidence.Share, n)

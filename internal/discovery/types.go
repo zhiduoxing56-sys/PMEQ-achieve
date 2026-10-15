@@ -9,6 +9,7 @@ import (
 	"pmeq/internal/anchorfilter"
 	"pmeq/internal/anchorindex"
 	"pmeq/internal/f2beaver"
+	"pmeq/internal/imdbkeys"
 	"pmeq/internal/imdbprod"
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
@@ -47,6 +48,16 @@ type UserKeys struct {
 	Target targetcrypto.MasterKey
 }
 
+// LoadMovieUserKeys is for the authorized DO/query-user process only. A cloud
+// receives the binding digest, never this returned pair.
+func LoadMovieUserKeys(path string) (UserKeys, string, error) {
+	p, err := imdbkeys.Load(path)
+	if err != nil {
+		return UserKeys{}, "", err
+	}
+	return UserKeys{Anchor: p.Anchor, Target: p.Target}, p.Fingerprint, nil
+}
+
 // AnchorStatic is a single party's offline authenticated bucket extension.
 // Exactly one of Stage0/Stage1 is nonnil, according to party identity.
 type AnchorStatic struct {
@@ -65,12 +76,30 @@ func validAnchorLabels(a AnchorStatic) bool {
 }
 
 type Static struct {
-	party        uint8
-	anchor       map[uint32]AnchorStatic
-	payload      aggregation.PartyPayload
-	target       *targetpe.PartyIndex
-	sidecar      *targetaggregation.PartySidecar
-	movieBinding [32]byte
+	party          uint8
+	anchor         map[uint32]AnchorStatic
+	anchorStore    *MovieAnchorStore
+	payload        aggregation.PartyPayload
+	target         *targetpe.PartyIndex
+	sidecar        *targetaggregation.PartySidecar
+	movieBinding   [32]byte
+	keyFingerprint string
+}
+
+// anchorFor returns an invocation-owned bucket. Store-backed statics never
+// insert the decoded sigma into the long-lived Static map.
+func (s *Static) anchorFor(id uint32) (AnchorStatic, error) {
+	if s == nil {
+		return AnchorStatic{}, ErrBinding
+	}
+	if s.anchorStore != nil {
+		return s.anchorStore.Load(id)
+	}
+	a, ok := s.anchor[id]
+	if !ok {
+		return AnchorStatic{}, ErrBinding
+	}
+	return a, nil
 }
 
 func NewStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar) (*Static, error) {
@@ -110,18 +139,33 @@ func NewMovieStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggrega
 	// A different keyed layout is rejected before allocating a query batch.
 	for bucket := uint32(0); bucket < 1<<imdbprod.BucketBits; bucket++ {
 		groups := target.PositionGroups(bucket)
-		if len(groups) > 11 {
+		if len(groups) > imdbprod.TargetBucketGroups {
 			return nil, ErrBinding
 		}
 		slots := 0
 		for _, group := range groups {
 			slots += int(group.PadWidth)
 		}
-		if slots > 44 {
+		if slots > imdbprod.TargetBucketSlots {
 			return nil, ErrBinding
 		}
 	}
 	s.movieBinding = digest
+	s.keyFingerprint = binding.KeyFingerprint
+	return s, nil
+}
+
+// NewMovieStaticFromStore is the production cloud constructor. The trusted
+// expected catalog digest must come from the DO's sealed publication manifest.
+func NewMovieStaticFromStore(party uint8, store *MovieAnchorStore, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar, binding imdbprod.Binding) (*Static, error) {
+	if store == nil || store.party != party || store.catalog.IndexID != binding.IndexID || store.catalog.LayoutID != binding.LayoutID || store.catalog.N != imdbprod.AnchorObjects || payload.LayoutID != binding.LayoutID {
+		return nil, ErrBinding
+	}
+	s, err := NewMovieStatic(party, nil, payload, target, sidecar, binding)
+	if err != nil {
+		return nil, err
+	}
+	s.anchorStore = store
 	return s, nil
 }
 
@@ -155,6 +199,7 @@ type anchorPacket struct {
 	zero     *zeroagg.Party
 	zeroRef  *zeroReference
 	bucket   uint32
+	empty    bool
 	position anchorfilter.PartyPreprocessing
 	and      [2]f2beaver.PartyBatch
 	z        *incidence.PartyTriples
@@ -187,6 +232,7 @@ type UserPacket struct {
 	target                 []anchorfilter.UserPreprocessing
 	agg                    *targetaggregation.UserMaterial
 	movieBinding           [32]byte
+	keyFingerprint         string
 }
 type cloudToken struct {
 	packet       [16]byte

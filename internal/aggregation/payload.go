@@ -121,7 +121,11 @@ func (d *DealerLayout) Alignment(bucket uint32, local incidence.DealerLayout, sl
 			off++
 		}
 	}
-	return SplitPermutation(d.LayoutID, bucket, pi)
+	s0, s1, err := SplitPermutation(d.LayoutID, bucket, pi)
+	clear(pi)
+	clear(tail)
+	clear(free)
+	return s0, s1, err
 }
 
 type CandidateInput struct {

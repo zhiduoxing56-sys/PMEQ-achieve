@@ -130,6 +130,9 @@ func generate(q Query, k UserKeys, u *UserPacket, m targetrouting.Manifest) (out
 	defer caught(&err)
 	movie := u.movieBinding != [32]byte{}
 	if movie {
+		if imdbprod.KeyFingerprint([32]byte(k.Anchor), [32]byte(k.Target)) != u.keyFingerprint {
+			return out, ErrBinding
+		}
 		check(imdbprod.Production().CheckQuery(q.Anchor, q.Target, q.TauAnchor, q.TauTarget))
 	} else {
 		check(Validate(q))

@@ -20,7 +20,7 @@ type Result struct {
 // then rejects foreign IDs or a pair whose two independently encoded tconsts
 // differ. No plaintext search result is used to alter the cloud decision.
 func Recover(mapping *imdbprod.Mapping, freeze imdbprod.FreezeManifest, production imdbprod.Binding, wire candidatequery.Binding, left, right []byte) (Result, error) {
-	want, err := freeze.Bind(production.IndexID, production.LayoutID)
+	want, err := freeze.Bind(production.IndexID, production.LayoutID, production.KeyFingerprint)
 	if err != nil || want != production || mapping == nil || wire.Manifest.IndexID != production.IndexID || wire.LayoutID != production.LayoutID || wire.Manifest.TargetBucketBits != imdbprod.BucketBits || wire.Manifest.Q != imdbprod.Q {
 		return Result{}, imdbprod.ErrContract
 	}
