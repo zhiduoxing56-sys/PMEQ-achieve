@@ -1,0 +1,238 @@
+{
+  "origin": "Original audit tool output retained in conversation; summary only, not original full metadata files",
+  "repositories": [
+    {
+      "path": "/home/tenggn/projects/PMEQ_FREEZE_20260831_E2E100_20260831T194200+0800/repository_snapshot",
+      "head": "1ce9c680dfb9a95feea0ba9e27927058c10a2d59",
+      "branch": "main",
+      "tracked": 261,
+      "status": 428,
+      "ignored": 132
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq",
+      "head": "49cc443a33d11e2ea3466dd39f1797b5de2a287e",
+      "branch": "master",
+      "tracked": 266,
+      "status": 78172,
+      "ignored": 4619
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq-target-zero-poly-agg",
+      "head": "3b9d42ea7073399a9d54e392d5c3948473ff945f",
+      "branch": "experiment/target-zero-poly-agg",
+      "tracked": 335,
+      "status": 16,
+      "ignored": 9162
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq-zero-poly-agg-poc",
+      "head": "4c57c9a6e85d271a2287143bbbd6c1cc82d0f8fc",
+      "branch": "spike/zero-poly-agg-poc",
+      "tracked": 598,
+      "status": 7,
+      "ignored": 13187
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq-zero-poly-integration",
+      "head": "3d9689ab6a8ff23a3d293bab172fc49b4ed80b9a",
+      "branch": "integration/zero-poly-agg",
+      "tracked": 264,
+      "status": 15,
+      "ignored": 3775
+    },
+    {
+      "path": "/home/tenggn/projects/new-pmeq/dmpf_agg_proto/upstream-dmpf",
+      "tracked": 31,
+      "status": 1468,
+      "ignored": 0
+    },
+    {
+      "path": "/home/tenggn/projects/pmeq-crypto-interface-test",
+      "head": "e6352acbd09d65d4c47c51533515e66faa7d8307",
+      "branch": "freeze/packed-e2e100-20260901",
+      "tracked": 454,
+      "status": 497,
+      "ignored": 1571
+    },
+    {
+      "path": "/tmp/pmeq-github-publish-h59y27uj",
+      "head": "5241fc1ab9cb58674736ae8bbc8866a84abacff0",
+      "branch": "main",
+      "tracked": 348,
+      "status": 0,
+      "ignored": 0
+    },
+    {
+      "path": "/tmp/pmeq-imdb-publish-20261015-repo",
+      "head": "5241fc1ab9cb58674736ae8bbc8866a84abacff0",
+      "branch": "main",
+      "tracked": 348,
+      "status": 0,
+      "ignored": 0
+    }
+  ],
+  "data_locations": [
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/raw",
+      "exists": true,
+      "files": 5,
+      "logical_bytes": 1927695392,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data",
+      "exists": true,
+      "files": 35,
+      "logical_bytes": 1090819464,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/provenance",
+      "exists": true,
+      "files": 43,
+      "logical_bytes": 181686756,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks",
+      "exists": true,
+      "files": 21,
+      "logical_bytes": 28111054,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014",
+      "exists": true,
+      "files": 67,
+      "logical_bytes": 9204099,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_plain_workload_precheck_20261014",
+      "exists": true,
+      "files": 142,
+      "logical_bytes": 144485084,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014",
+      "exists": true,
+      "files": 75,
+      "logical_bytes": 8137191,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/artifacts/phase7b",
+      "exists": true,
+      "files": 8,
+      "logical_bytes": 68501042,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/artifacts/phase10b",
+      "exists": true,
+      "files": 4,
+      "logical_bytes": 200603350,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/artifacts/phase8",
+      "exists": true,
+      "files": 1,
+      "logical_bytes": 636,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/artifacts/zb-full-20260930-99b2f4b",
+      "exists": true,
+      "files": 16,
+      "logical_bytes": 467222654,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq/results/cloud16-20261012",
+      "exists": false,
+      "files": null,
+      "logical_bytes": null,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/new-pmeq/data",
+      "exists": true,
+      "files": 93,
+      "logical_bytes": 23075846446,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/pmeq-crypto-interface-test/results_local",
+      "exists": true,
+      "files": 1497,
+      "logical_bytes": 9084743504,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/pmeq-crypto-interface-test/mp-spdz/Player-Data",
+      "exists": true,
+      "files": 6,
+      "logical_bytes": 1820568,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/pmeq-crypto-interface-test/mp-spdz/Persistence",
+      "exists": true,
+      "files": 6,
+      "logical_bytes": 640458,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq-zero-poly-integration/verification/integration/private",
+      "exists": true,
+      "files": 317,
+      "logical_bytes": 103171735,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/private",
+      "exists": true,
+      "files": 3914,
+      "logical_bytes": 3567610944,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/clean_pmeq-zero-poly-agg-poc/verification/zero-poly-agg-poc/final-integration-gate/private",
+      "exists": true,
+      "files": 173,
+      "logical_bytes": 39360640,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/PMEQ_ARCHIVE_20260831_20260831T210000+0800/historical-datasets",
+      "exists": true,
+      "files": 66,
+      "logical_bytes": 94066790,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/home/tenggn/projects/PMEQ_ARCHIVE_20260831_20260831T210000+0800/local-large-artifacts",
+      "exists": true,
+      "files": 33,
+      "logical_bytes": 117459297,
+      "disk": "WSL /dev/sdd ext4"
+    },
+    {
+      "root": "/mnt/d/论文实现/pmeq-crypto-interface-test",
+      "exists": true,
+      "files": 3360,
+      "logical_bytes": 341732290,
+      "disk": "D: 9p"
+    },
+    {
+      "root": "/mnt/f/PMEQ-recovery/20261011-49cc443a",
+      "exists": true,
+      "files": 4,
+      "logical_bytes": 5850669,
+      "disk": "F: 9p"
+    }
+  ]
+}

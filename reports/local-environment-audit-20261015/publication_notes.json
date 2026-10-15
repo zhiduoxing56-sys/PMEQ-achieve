@@ -1,0 +1,26 @@
+{
+  "original_audit_date": "2026-10-15",
+  "publication_date": "2026-10-15",
+  "recovery": "From saved report generator code and selected original tool output summaries; not a fresh audit",
+  "original_tmp_directory_missing": true,
+  "all_original_raw_evidence_recovered": false,
+  "missing_original_evidence": [
+    "repositories.json",
+    "data_locations.json (full)",
+    "data_files_metadata.json",
+    "github_local_comparison.json (full)",
+    "legacy_dependencies.csv",
+    "core_version_comparison.csv",
+    "source_fingerprints_before.json",
+    "source_fingerprints_after.json",
+    "source_stability.json",
+    "imdb_catalog_readonly.json",
+    "old_source_path_presence.json",
+    "report_delivery_checks.json",
+    "audit_delivery_manifest.json"
+  ],
+  "session_logs_uploaded": false,
+  "secret_payloads_uploaded": false,
+  "source_database_or_protocol_changed": false,
+  "report_source_revision": "5241fc1ab9cb58674736ae8bbc8866a84abacff0"
+}

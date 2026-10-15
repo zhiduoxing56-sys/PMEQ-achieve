@@ -1,0 +1,115 @@
+发布与恢复说明（2026-10-15）：
+原审计时间为2026-10-15凌晨。原交付保存在/tmp；本次上传时该目录已不存在。
+本文件从会话保留的原报告生成脚本和原工具输出摘要恢复，保留原审计时的结论，不是新一轮审计，也不保证与丢失原件逐字节相同。
+仓库与数据目录动态摘要来自原工具输出；缺失的完整逐文件JSON/CSV、733文件SHA清单没有伪造或冒充原附件上传。
+正文中的“本轮”指原只读审计，所列/tmp证据路径和运行状态是原审计时的状态。实际本次上传文件见README.md和delivery_manifest.json。
+
+需要提供给 ChatGPT 的最小文件清单
+日期：2026-10-15
+
+本轮只生成清单，没有复制、打包或上传源码/数据。列表 SHA-256 只针对这些小型源码、公开样本和报告；没有读取秘密载荷。
+
+A. 优先提供已有 GitHub 源码链接并固定提交
+https://github.com/zhiduoxing56-sys/PMEQ-achieve/tree/5241fc1ab9cb58674736ae8bbc8866a84abacff0
+这是当前主目录源码快照，345个文件与本地一致；无需重复上传整个主库。原主目录master HEAD并不是实际新版。
+ChatGPT应重点读取：go.mod/go.sum；CURRENT_SPEC.md、PRODUCTION_CHAIN.md、SECURITY_INVARIANTS.md；internal/zeroagg、material、discovery、anchorindex、anchorfilter、indexbuild、targetcrypto、targetquery、targetposition、targetaggregation、candidatequery、qgram、scmpnative；tools/build_phase6_native.sh、phase6_scmp_bridge.cpp、scmp_key_codec.h。依赖的其他internal文件应从同一提交读取，不混用旧版本。
+如果ChatGPT无法直接读取仓库，以上源码包应由用户提供源码文本；不附 native二进制、缓存、数据和密钥。
+
+B. 本地补充文件（必需及可选逐项标记）
+1. [必需] /tmp/pmeq-local-environment-audit-20261015/PMEQ本地工程环境与迁移前置审计报告.txt
+   用途：审计与版本边界；注：此为原清单恢复，不是本次存在性或SHA校验。
+2. [必需] /tmp/pmeq-local-environment-audit-20261015/core_version_comparison.csv
+   用途：审计与版本边界；注：此为原清单恢复，不是本次存在性或SHA校验。
+3. [必需] /tmp/pmeq-local-environment-audit-20261015/github_local_comparison.json
+   用途：审计与版本边界；注：此为原清单恢复，不是本次存在性或SHA校验。
+4. [必需] /tmp/pmeq-local-environment-audit-20261015/source_stability.json
+   用途：审计与版本边界；注：此为原清单恢复，不是本次存在性或SHA校验。
+5. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/zeroagg/kernel.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+6. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/zero_labels.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+7. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/packet.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+8. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/protocol.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+9. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/sidecar.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+10. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/offline.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+11. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/types.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+12. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/cloud.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+13. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/local.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+14. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/target_process_default.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+15. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/target_process_experiment.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+16. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/experiment_process.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+17. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/experiment_operator.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+18. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/zero_native_test.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+19. [必需] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/discovery/target_zero_native_test.go
+   用途：目标零点新实现供体；与当前主目录比较，不能直接覆盖；注：此为原清单恢复，不是本次存在性或SHA校验。
+20. [可选参考] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/REPORT.zh-CN.md
+   用途：目标历史实现/验收边界及实验精确ED接口参考；注：此为原清单恢复，不是本次存在性或SHA校验。
+21. [可选参考] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/summary/acceptance.json
+   用途：目标历史实现/验收边界及实验精确ED接口参考；注：此为原清单恢复，不是本次存在性或SHA校验。
+22. [可选参考] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/cloud-worker/main.go
+   用途：目标历史实现/验收边界及实验精确ED接口参考；注：此为原清单恢复，不是本次存在性或SHA校验。
+23. [可选参考] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/operator/main.go
+   用途：目标历史实现/验收边界及实验精确ED接口参考；注：此为原清单恢复，不是本次存在性或SHA校验。
+24. [可选参考] /home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/user_ed.py
+   用途：目标历史实现/验收边界及实验精确ED接口参考；注：此为原清单恢复，不是本次存在性或SHA校验。
+25. [必需] /home/tenggn/projects/clean_pmeq/imdb_final_dataset/README.txt
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+26. [必需] /home/tenggn/projects/clean_pmeq/imdb_final_dataset/reports/中文字段说明.txt
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+27. [必需] /home/tenggn/projects/clean_pmeq/imdb_final_dataset/provenance/source_manifest.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+28. [必需] /home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks/delivery_acceptance.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+29. [必需] /home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks/validation.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+30. [必需] /home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014/samples/n1000/MOVIECAST.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+31. [必需] /home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014/samples/n1000/MOVIE.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+32. [必需] /home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014/samples/n1000/sample_manifest.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+33. [必需] /home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014/samples/n1000/queries.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+34. [必需] /home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014/samples/n1000/plaintext_answers.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+35. [必需] /home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014/checks/final_status.json
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+36. [必需] /home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014/checks/minimal_source_changes.patch
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+37. [必需] /home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014/reports/position_parameters.csv
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+38. [必需] /home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014/logs/current_chain_test_compile.log
+   用途：真实schema/小样本基准/现有参数适配证据；注：此为原清单恢复，不是本次存在性或SHA校验。
+39. [可选参考] /home/tenggn/projects/clean_pmeq/docs/paper/latest.json
+   用途：磁盘论文版本对照，尚需确认是否为导师批准的最终数学定义；注：此为原清单恢复，不是本次存在性或SHA校验。
+40. [可选参考] /home/tenggn/projects/clean_pmeq/docs/paper/PMEQ_latest_20261011.tex
+   用途：磁盘论文版本对照，尚需确认是否为导师批准的最终数学定义；注：此为原清单恢复，不是本次存在性或SHA校验。
+
+C. 必须补充的人工版本信息
+导师当前批准的新算子数学定义和精确查询结果恢复规则。磁盘10月11日论文只是待核实的对照，不能自动认定最终数学版本。
+
+D. 按问题再提供，不在第一批最小清单中
+/tmp/pmeq-local-environment-audit-20261015/legacy_dependencies.csv：需要逐项消除旧字段/固定参数时提供。
+/tmp/pmeq-local-environment-audit-20261015/repositories.json：需要逐文件处理Git dirty/ignored时提供，文件较大含大量路径。
+/tmp/pmeq-local-environment-audit-20261015/data_locations.json：需要讨论磁盘/运行态时提供，通常无需全部逐文件metadata。
+锚侧供体磁盘已删的 internal/tpchdb/build.go 可以只读 git show 3d9689ab6a8ff23a3d293bab172fc49b4ed80b9a:internal/tpchdb/build.go 作为 ShareCoordinates/布局逻辑参考；它不是新电影数据适配器，本轮未恢复。
+
+E. 不提供给ChatGPT的运行秘密或大型载荷
+不提供master keys、secret shares、private/里的party packets、Beaver材料、密钥种子、bank/ticket/consumed内容、HE secret keys、mp-spdz秘密运行状态或用户凭证。
+无需提供全量raw.gz、DuckDB、全部Parquet分片、GoSDK/.venv/缓存、旧密码索引和大型TPC-H状态；本地保留，供未来获得授权的实际执行。
+不要将旧索引性能、旧TPCH报告视为当前IMDb新算子性能；可选历史报告只证明当时供体实现的边界。
+
+唯一正式工作目录建议：/home/tenggn/projects/clean_pmeq
+正式IMDb仍保留在其 imdb_final_dataset/；三个工作树仅作为明确版本的逻辑供体/历史证据。此建议未触发任何迁移、合并、删除或推送。

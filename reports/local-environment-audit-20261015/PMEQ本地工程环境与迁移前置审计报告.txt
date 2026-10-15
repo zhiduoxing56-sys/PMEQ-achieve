@@ -1,0 +1,422 @@
+发布与恢复说明（2026-10-15）：
+原审计时间为2026-10-15凌晨。原交付保存在/tmp；本次上传时该目录已不存在。
+本文件从会话保留的原报告生成脚本和原工具输出摘要恢复，保留原审计时的结论，不是新一轮审计，也不保证与丢失原件逐字节相同。
+仓库与数据目录动态摘要来自原工具输出；缺失的完整逐文件JSON/CSV、733文件SHA清单没有伪造或冒充原附件上传。
+正文中的“本轮”指原只读审计，所列/tmp证据路径和运行状态是原审计时的状态。实际本次上传文件见README.md和delivery_manifest.json。
+
+PMEQ本地工程环境与迁移前置审计报告
+审计日期：2026-10-15（Asia/Shanghai）
+审计性质：只读调查。唯一新增内容位于 /tmp/pmeq-local-environment-audit-20261015/。
+范围：当前主工作区、共享 Git 工作树、历史 PMEQ 工程、IMDb 正式数据与基准、音乐原始数据、D/F 盘相关目录、本地依赖及既有 GitHub 源码镜像。
+
+一、审计结论与当前生产线状态
+
+建议唯一正式工作目录：/home/tenggn/projects/clean_pmeq。
+原因：该目录拥有当前锚侧新算子和持久化预处理实现、最新本地位置参数适配、正式 IMDb 数据库以及完整明文基准；另外三个 clean_pmeq-* 目录是共享同一个 Git 对象库的工作树，分别承担算子原型、锚侧集成和目标侧实验。没有一个其他目录同时具备上述全部内容。本轮没有合并、迁移、恢复、删除或修改它们。
+
+当前生产线属于“数据与明文已准备、密码集成尚未闭环”状态：
+1. IMDb 全量三表和来源追溯材料实际存在。既有验收记录给出的数量：MOVIECAST 41,286,264；MOVIE 759,363；PERSON 15,731,120。本轮只读取元数据和既有检查记录，没有重新全量计数或派生。
+2. 固定主查询：ED(MOVIECAST.aliasTitle,Qδ)≤τδ，ED(MOVIE.primaryTitle,Qγ)≤τγ，且两表 tconst 相同。已保存的明文答案与独立编辑距离验证均存在。
+3. 锚侧新零点多项式聚合已接入主目录 discovery；目标侧当前主目录仍调用旧矩阵聚合。目标侧新实现位于 clean_pmeq-target-zero-poly-agg 工作树，尚非主目录默认调用链。
+4. 已有 q 显式字符片段和原生 Bin10 参数适配的单元测试记录；主链的字段域、q、位置范围、预处理和 token 尚未同步完成。不能把局部参数测试通过解释为 IMDb 密码端到端通过。
+5. 正式 IMDb 密码索引没有完成；q=3/4/5/6 真实密码外包成本全部未测得，CSV 留空并标注阻塞。没有可用于宣布正式性能的四组秘密外包数据。
+6. GitHub 已上传的是当前源码独立快照，包含主目录新锚侧算子和参数适配；不包含正式数据、密钥状态、依赖运行环境及完整实验结果。目标侧实验分支未整体上传到这个快照。
+7. 按用户最新确认，目前仅本 Codex 会话在工作，其他会话没有在工作。主目录及三个工作树 733 个核心文本源文件在审计前后无变动。历史冲突记录与当前并发状态分开处理。
+
+不能现在直接启动正式 IMDb 密码建库。需要先解决：目标侧新算子新建路径、IMDb 字段/对象编号映射、q 与位置参数全链配置、持久化格式绑定、过时测试编译和最终精确编辑距离结果接口。以上为源码审查所得，不是本轮运行实验所得。
+
+二、调查方法、只读边界与证据
+
+执行了目录及文件元数据检查、Git rev-parse/branch/worktree/status/ls-files、核心源文件 SHA-256、已有 GitHub 镜像逐文件对比、源码引用检索、DuckDB 只读 catalog/DESCRIBE、磁盘挂载检查及有限进程信息检查。Git 设置 GIT_OPTIONAL_LOCKS=0。没有执行索引、密码算子、查询、测试、编译、依赖安装、下载大型数据、完整数据库扫描、源码归档解压或密钥载荷读取。
+
+源码仓库发现采用选定项目根和最大五层目录检索，排除缓存、依赖、密钥和大型数据目录；数据清单只统计指定数据根，不能宣称已遍历机器的每一个文件。E 盘未发现本次调用链的明确数据引用；不能断言 E 盘不存在其他研究文件。压缩的历史源码包只读取外围说明和清单，未展开。磁盘空间为调查当时瞬时值。
+
+证据附件：
+- repositories.json：各仓库提交、分支、工作树、逐项 tracked/status/ignored 清单；远程只记录名称，避免 URL 内凭证外泄。
+- github_local_comparison.json：GitHub 快照全部 348 个受控文件的比较。
+- data_locations.json / data_files_metadata.json：目录用途判断所依赖的 9,886 个文件的路径、大小和格式；没有读取秘密共享载荷。
+- imdb_catalog_readonly.json：正式数据库真实视图和字段定义。
+- legacy_dependencies.csv：933 个源文件中 1,036 个命中，提供绝对路径、行号、函数、角色、类别及原文。
+- core_version_comparison.csv：主目录与三个工作树关键源文件的 SHA-256。
+- source_fingerprints_before.json / source_fingerprints_after.json / source_stability.json：733 个核心源码的前后比较。
+- old_source_path_presence.json：既有 TPC-H 构建源码缺失的实际路径检查。
+这些是定位证据，不是新的性能、协议安全或全量数据验收测试。
+
+三、仓库、分支、工作树与 GitHub 差异
+
+目录：/home/tenggn/projects/PMEQ_FREEZE_20260831_E2E100_20260831T194200+0800/repository_snapshot
+  HEAD：1ce9c680dfb9a95feea0ba9e27927058c10a2d59
+  分支：main
+  tracked=261；status条目=428；ignored文件=132
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/home/tenggn/projects/clean_pmeq
+  HEAD：49cc443a33d11e2ea3466dd39f1797b5de2a287e
+  分支：master
+  tracked=266；status条目=78172；ignored文件=4619
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/home/tenggn/projects/clean_pmeq-target-zero-poly-agg
+  HEAD：3b9d42ea7073399a9d54e392d5c3948473ff945f
+  分支：experiment/target-zero-poly-agg
+  tracked=335；status条目=16；ignored文件=9162
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/home/tenggn/projects/clean_pmeq-zero-poly-agg-poc
+  HEAD：4c57c9a6e85d271a2287143bbbd6c1cc82d0f8fc
+  分支：spike/zero-poly-agg-poc
+  tracked=598；status条目=7；ignored文件=13187
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/home/tenggn/projects/clean_pmeq-zero-poly-integration
+  HEAD：3d9689ab6a8ff23a3d293bab172fc49b4ed80b9a
+  分支：integration/zero-poly-agg
+  tracked=264；status条目=15；ignored文件=3775
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/home/tenggn/projects/new-pmeq/dmpf_agg_proto/upstream-dmpf
+  HEAD：原摘要未保留完整提交，待核实
+  分支：原摘要未保留分支，待核实
+  tracked=31；status条目=1468；ignored文件=0
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/home/tenggn/projects/pmeq-crypto-interface-test
+  HEAD：e6352acbd09d65d4c47c51533515e66faa7d8307
+  分支：freeze/packed-e2e100-20260901
+  tracked=454；status条目=497；ignored文件=1571
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/tmp/pmeq-github-publish-h59y27uj
+  HEAD：5241fc1ab9cb58674736ae8bbc8866a84abacff0
+  分支：main
+  tracked=348；status条目=0；ignored文件=0
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+目录：/tmp/pmeq-imdb-publish-20261015-repo
+  HEAD：5241fc1ab9cb58674736ae8bbc8866a84abacff0
+  分支：main
+  tracked=348；status条目=0；ignored文件=0
+  说明：这里恢复的是原工具输出摘要，不包含丢失的逐文件status清单。
+
+3.1 主目录不是干净提交
+master 的 HEAD 49cc443a33d11e2ea3466dd39f1797b5de2a287e 不能代表磁盘实际最新版。当前有 60 个已跟踪文件修改、78,112 个未跟踪文件，另有 4,619 个被忽略文件；没有已暂存修改。未跟踪数量包含 SDK、数据和运行目录，并非 78,112 个源文件修改。
+关键未跟踪源码包括 internal/zeroagg、internal/material、discovery 的新 artifact/persistent/reservation/diagnostics 实现、qgram 和参数测试等。GitHub 独立源码快照包含其中的选定源码，不能因为原仓库 ls-files 不含它们就认定它们没上传。
+本地 .gitignore 与远端不同：本地排除规则较少，正式数据和部分私密状态处于未跟踪而非被忽略状态。未来发布不能直接 git add .；需要单独核对允许发布清单。本轮未暂存、提交、推送或修改忽略规则。
+
+3.2 工作树与已删除文件
+三个 clean_pmeq-* 工作树通过 .git 文件共享 /home/tenggn/projects/clean_pmeq/.git 的对象库和分支引用，各自有索引和磁盘修改。
+- integration/zero-poly-agg：15 个 tracked 文件已删除。
+- experiment/target-zero-poly-agg：16 个 tracked 文件已删除。
+- spike/zero-poly-agg-poc：7 个 tracked 文件已删除。
+前两者删除项主要为 cmd/tpchaux16、cmd/tpchbuild、cmd/tpchcomplete、cmd/tpchquery 的 main.go，internal/indexbuild/tpch.go/tpch_test.go 和 internal/tpchdb 的构建、加载、查询、标签及资源代码；目标分支还缺 target_zero.go。完整清单在 repositories.json。它们的 Git 对象仍存在，磁盘文件不存在；本轮只读 Git 历史，没有 checkout 或恢复。
+共享 worktree 注册表还包含 /tmp/pmeq-zb-routing-20260930，分支 migration/zb-routing-20260930，提交 99b2f4bf73e38ca2ee5d52641071202fb8b42de4；路径已不存在，Git 标为 prunable。未执行 prune。
+另有 freeze/xor-20260930 分支 ac2b9f3。它不是当前源码快照，不应以该分支历史实验代替新算子验收。
+
+3.3 GitHub 实际状态
+仓库：https://github.com/zhiduoxing56-sys/PMEQ-achieve
+远端 main：5241fc1ab9cb58674736ae8bbc8866a84abacff0，提交说明 Archive current PMEQ source snapshot。
+本轮只读元数据确认 pushed_at=2026-10-14T15:47:32Z，default_branch=main，private=false，即目前是公开仓库。远端 README 对私有仓库的文字说明与实际可见性不一致，本轮未修改。
+使用之前已经存在的 /tmp/pmeq-imdb-publish-20261015-repo 镜像进行逐文件比较：348 个 tracked 文件中 345 个与主目录一致；1 个不同为 .gitignore；2 个仅远端有，为 README.md、SOURCE_SNAPSHOT.json。没有把独立快照提交与本地主目录 master 的 HEAD 混为同一历史。
+已在 GitHub：CURRENT_SPEC.md、PRODUCTION_CHAIN.md、SECURITY_INVARIANTS.md、MIGRATION_LOG.md；当前主目录 internal 核心模块（含 zeroagg/material/原生参数适配）；go.mod/go.sum；curated LLAMA 原生源码、构建桥；正式 IMDb 与明文/q 实验的构建脚本。详细 348 文件清单见附件。
+仅本地：正式数据库与五个原始数据文件、Parquet 分片、来源与验收结果、明文样本和正确答案、q 实验测量/日志/补丁及图表、所有两方秘密状态、一次性预处理库、SDK、模块缓存、原生编译产物；以及目标侧零点实验未迁入主目录的新增文件。
+先前准备的 /tmp/pmeq-imdb-publish-20261014/ 上传候选目录和 files_metadata/candidate_files 清单尚未成为已推送的结果提交。只读审计期间未继续该发布任务。
+
+四、各项目目录的实际角色与调用依据
+
+4.1 /home/tenggn/projects/clean_pmeq
+当前正式工作基底。依据：新锚侧 discovery 实际 import zeroagg，IMDb/q 脚本及读取路径均指向此目录；正式数据库位于其子目录。不是 master HEAD 的原始旧版，而是已修改并带新增源码的工作区。当前没有 cmd/ 生产命令目录；密码协议以 internal 包及测试/历史入口驱动，缺 IMDb 正式端到端命令。
+
+4.2 /home/tenggn/projects/clean_pmeq-zero-poly-integration
+锚侧新算子集成供体。其 zeroagg 八个核心非测试文件与主目录逐文件相同，主目录另有 imdb_parameter_test.go。discovery 持久化、参数和 diagnostics 并非全相同。Git 历史中的 internal/tpchdb/build.go 包含直接 ShareCoordinates / WriteAnchorStatic 的集成示例，但磁盘文件已删除。只可参考具体逻辑，不能全目录覆盖主目录。
+
+4.3 /home/tenggn/projects/clean_pmeq-target-zero-poly-agg
+目标侧零点多项式实验供体，含零点标签迁移、target aggregation 分流、离线入口及独立云/算子实验代码。core_version_comparison.csv 显示其 zeroagg/kernel.go 与主目录不同，涉及目标预留容量/预算；不能假定同名 kernel 是同一版。private/ 和 runtime/ 实验状态只支持历史样本，不是 IMDb 正式索引。
+
+4.4 /home/tenggn/projects/clean_pmeq-zero-poly-agg-poc
+算子早期 spike 与 final-integration-gate 验证材料。与主目录核心和封包存在差异，不是新生产默认。保留作算法出处/历史证据。
+
+4.5 /home/tenggn/projects/new-pmeq
+没有有效项目 Git 仓库；上一级 /home/tenggn/projects/.git 是历史残留空标记，不提供可用 HEAD。模块 pmeq-current、Go 1.27.1、ristretto255 v0.2.0/Lattigo v6.2.0，属于历史索引、BFV/BGV 和 Rust DMPF 原型。当前主目录没有把这个模块作为 Go 依赖，但多个 MusicBrainz 测试硬编码读取其 data/musicbrainz 的 area/area_alias；tools/phase8/export_reference.py 也保留 Rust 参考导出依赖。因此“旧代码不参与主导入”不等于“整个目录可删除”：原始音乐数据和历史参考仍被调用。
+其 dmpf_agg_proto/upstream-dmpf 是独立上游 Git repo，提交 ed044b903fdf6fd213b171eaa125e4eb52363903；不是当前主目录新零点算子的实现来源入口。
+
+4.6 /home/tenggn/projects/pmeq-crypto-interface-test
+旧 HE/packed-e2e100 工程，Go 1.24 / Lattigo v6.0.0；replace /tmp/lattigo-v6，而该路径当前不存在。大量秘密 HE/share 工件和 MP-SPDZ 状态在 results_local 与 mp-spdz。当前主目录新算子不需要这些 HE 运行态；仅有历史文档/参考用途。独立 Git，不能与 clean_pmeq 共用 dirty 状态理解。
+
+4.7 /home/tenggn/projects/PMEQ_FREEZE_20260831_E2E100_20260831T194200+0800/repository_snapshot
+独立拷贝的 Git 与只读冻结材料，原 BFV 方案和当时的 dirty 状态。冻结说明参数包含 q=4、Lmax=20、Rmax=3、Dmax=2、Mpos=16、tauMax=2、25列，明显不同于当前 IMDb 和零点聚合。不能凭名字 FREEZE 认为是本轮正式数学方案。
+
+4.8 /home/tenggn/projects/PMEQ_ARCHIVE_20260831_20260831T210000+0800
+非生产仓库；历史 MovieLens/IMDb/Lahman/MusicBrainz 探查、旧 schema/参数与局部密文工件。部分早期 IMDb 表不是最终 MOVIECAST 三连接三字符串定义。作为历史参考，不是正式数据来源目录。
+
+4.9 /home/tenggn/projects/PMEQ_SNAPSHOT_PRE_ANCHOR_AGG_20260915T190526+0800
+new-pmeq 尚无 Git 时保存的 pre-anchor 源码 tar 和清单，source.tar 为 25,077,760 字节、281 源文件；不含原始大数据/SDK/Rust target。未展开，不保证可直接运行，不用于覆盖当前代码。
+/home/tenggn/projects/clean_pmeq.BACKUP_20260917_102306 仅有 HANDOFF_FROM_WRONG_REPO.md 与 最新实现.txt，不是完整代码备份。
+
+4.10 /home/tenggn/projects/pmeq-retired-archive
+anchor-production-replacement-20261014 与 zero-poly-integration-20261014 是退休源码证据。重要例外：anchor 归档 MANIFEST 列出的部分 internal/tpchdb/cmd 源码现在也已不存在，不能把清单视为完整备份。仍在的 converter 导入旧 TPCH 代码并依赖旧数据库，不能当成全新 IMDb 构建器。
+
+4.11 /mnt/d/论文实现
+旧论文实现资料、交接/spec PDF、pmeq-crypto-interface-test 的 docs/logs/mp-spdz/results/scripts 副本；未发现其作为当前 Go 主库导入路径。/mnt/d/cryptography 的 Windows OpenSSL/rsa/demo 不是本 Linux CGo 的链接依赖。
+扫描到 openHiTLS、AutoSafe-V-Guard/ICSim、winter 等其他科研 repo；当前 PMEQ 调用链没有明确依赖，未合并、迁移、删除或扩展审计其业务。
+
+4.12 /tmp/pmeq-github-publish-h59y27uj、/tmp/pmeq-imdb-publish-20261015-repo
+Github 源码快照镜像，用于上传/核对，并非新的生产工作目录。其他 /tmp/pmeq-* 为既有 staging、清理清单或历史验证目录；目录名不足以证明它们仍运行，本轮以实际文件/调用关系分类。/tmp 内容不是长期可靠备份。
+
+五、数据库、索引、秘密状态与磁盘
+
+5.1 正式 IMDb 文件的实际关系
+/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data/imdb_final.duckdb 实际大小 686,305,280 字节，既有物理构建/审计表，也有外部 Parquet 视图。
+MOVIE -> data/MOVIE.parquet；PERSON -> data/PERSON.parquet；MOVIECAST_OBJECTS -> data/MOVIECAST/*.parquet（32分片）；MOVIECAST -> 从 OBJECTS 投影六个业务字段；MOVIECAST_SOURCE -> provenance/MOVIECAST_SOURCE/*.parquet。视图保存了绝对路径 /home/tenggn/projects/clean_pmeq/...。
+结论：复制单个 .duckdb 不能带走正式三表；迁移根路径后当前外部视图会失效。本轮没有复制或改写视图。将来迁移需同时保留 Parquet 和 provenance 并明确处理路径绑定。
+MOVIECAST：tconst、actorId、directorId、aliasTitle、actorName、directorName，六个 VARCHAR 业务字段。实际对象七列物理记录额外有 objectId，不作为业务连接/搜索字段。
+MOVIE：tconst、primaryTitle、originalTitle。PERSON：nconst、primaryName、primaryProfession。
+稳定来源对象标识格式：mc1|tconst|actorOrdering|directorId|aliasOrdering；不同来源的同名对象必须保留。电影编号只能做连接，不能代替 MOVIECAST 对象唯一标识。
+内部 ACTOR/ALIAS/DIRECTOR 等辅助表、MOVIE_COUNTS/FREQ 等不属于额外实验属性。
+
+原始官方文件来源：https://datasets.imdbws.com/；frozen_at=2026-10-14T11:19:11.970550Z。
+原文件实际更新批次：title.basics、name.basics、title.principals 为 2026-10-12；title.akas、title.crew 为 2026-10-13。不能写成同一天官方版本。
+raw/ 五文件复用既有下载，各自实际长度/SHA/来源在 provenance/source_manifest.json。原获取路径中的旧 feasibility/validation 目录已清理；当前 raw 文件存在。本轮没有重新下载或 gzip/SHA 全文件检查，只引用已完成验收和本次元数据。
+直接读取应以现有 .venv 的 duckdb 打开 database(read_only=True)，或直接 Parquet；对象ID使用 MOVIECAST_OBJECTS。此处说明读取方式，本轮未执行业务查询。
+
+5.2 数据目录元数据清单（逻辑字节；不代表唯一数据量或实际已占用块）
+
+/home/tenggn/projects/clean_pmeq/imdb_final_dataset/raw
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=5；逻辑字节=1927695392
+
+/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=35；逻辑字节=1090819464
+
+/home/tenggn/projects/clean_pmeq/imdb_final_dataset/provenance
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=43；逻辑字节=181686756
+
+/home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=21；逻辑字节=28111054
+
+/home/tenggn/projects/clean_pmeq/imdb_main_join_precheck_20261014
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=67；逻辑字节=9204099
+
+/home/tenggn/projects/clean_pmeq/imdb_plain_workload_precheck_20261014
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=142；逻辑字节=144485084
+
+/home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=75；逻辑字节=8137191
+
+/home/tenggn/projects/clean_pmeq/artifacts/phase7b
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=8；逻辑字节=68501042
+
+/home/tenggn/projects/clean_pmeq/artifacts/phase10b
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=4；逻辑字节=200603350
+
+/home/tenggn/projects/clean_pmeq/artifacts/phase8
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=1；逻辑字节=636
+
+/home/tenggn/projects/clean_pmeq/artifacts/zb-full-20260930-99b2f4b
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=16；逻辑字节=467222654
+
+/home/tenggn/projects/clean_pmeq/results/cloud16-20261012
+  存在=False；磁盘=WSL /dev/sdd ext4；文件=—；逻辑字节=—
+
+/home/tenggn/projects/new-pmeq/data
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=93；逻辑字节=23075846446
+
+/home/tenggn/projects/pmeq-crypto-interface-test/results_local
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=1497；逻辑字节=9084743504
+
+/home/tenggn/projects/pmeq-crypto-interface-test/mp-spdz/Player-Data
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=6；逻辑字节=1820568
+
+/home/tenggn/projects/pmeq-crypto-interface-test/mp-spdz/Persistence
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=6；逻辑字节=640458
+
+/home/tenggn/projects/clean_pmeq-zero-poly-integration/verification/integration/private
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=317；逻辑字节=103171735
+
+/home/tenggn/projects/clean_pmeq-target-zero-poly-agg/experiments/target-zero-poly/private
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=3914；逻辑字节=3567610944
+
+/home/tenggn/projects/clean_pmeq-zero-poly-agg-poc/verification/zero-poly-agg-poc/final-integration-gate/private
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=173；逻辑字节=39360640
+
+/home/tenggn/projects/PMEQ_ARCHIVE_20260831_20260831T210000+0800/historical-datasets
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=66；逻辑字节=94066790
+
+/home/tenggn/projects/PMEQ_ARCHIVE_20260831_20260831T210000+0800/local-large-artifacts
+  存在=True；磁盘=WSL /dev/sdd ext4；文件=33；逻辑字节=117459297
+
+/mnt/d/论文实现/pmeq-crypto-interface-test
+  存在=True；磁盘=D: 9p；文件=3360；逻辑字节=341732290
+
+/mnt/f/PMEQ-recovery/20261011-49cc443a
+  存在=True；磁盘=F: 9p；文件=4；逻辑字节=5850669
+
+上述选定目录共 9,886 个元数据条目、40,558,770,063 逻辑字节。排除了缓存/运行目录及其他项目，不是全机占用统计；有历史副本，不应当成唯一有效数据库规模。逐文件路径与大小见 data_files_metadata.json。
+
+5.3 数据源与使用者补充
+- 原始音乐：/home/tenggn/projects/new-pmeq/data/musicbrainz/20260905-002519/，MetaBrainz 官方 freeze 数据、tar.bz2/解包表/CSV。mbdump.tar.bz2=7,501,059,582 字节，另有 partial-corrupt=7,805,881,340 字节及 interrupted 文件；不能把不完整大文件当作独立有效数据库。当前测试读取 area_tables/mbdump/area=13,175,589 字节和 area_alias=6,575,223 字节。
+- 主目录 artifacts/phase7b 的 cs0/1.psmj.bin 各 29,204,994 字节；音乐字段域、q4、B16，manifest 310,331组/480,945真实项/1,317,260填充项。是旧密码索引，不是 IMDb 正式新索引。
+- artifacts/phase10b 的 cs0/1.aggregation.bin 各 100,301,133 字节，是 D26、最大多重性3的旧目标聚合辅助矩阵，未来不得复用到新算子。
+- artifacts/phase8 仅 alignment-lineage.json；artifacts/zb-full-20260930-99b2f4b 是旧音乐 XOR 路由迁移工件。
+- pmeq-crypto-interface-test/results_local 约 8.46GiB，含 public/relin/galois keys、secret sharing 和密文工件；mp-spdz/Player-Data 与 Persistence 为旧两方运行状态。这里只记元数据，不读取、上传或复制密钥内容。
+- integration/verification/integration/private、target/experiments/target-zero-poly/private、poc/final-integration-gate/private 包含 labelshares、bank/ticket/burn/used markers、party预处理。它们绑定历史 IndexID/Layout/Bucket/role，不能跨样本或覆盖正式新数据库。
+
+5.4 IMDb 明文基准与 q 试验的有效材料
+imdb_main_join_precheck_20261014：n1000/n5000/n10000 锚对象各档与 992/4916/9682 对应电影；每档 960 组查询、正确答案、16种双侧阈值组合、独立编辑距离核对及 cleanup-preservation 检查齐全。有效文件为 samples/*/queries.json、plaintext_answers.json、plaintext_result_pairs.*、checks/n*_independent_edit_distance.json、scripts/plaintext_query.py/sample_and_plaintext.py 和 reports。误生成旧索引/缓存已按之前清理报告删除；本轮没有再次清理或跑查询。
+imdb_plain_workload_precheck_20261014：既有 13 种配置、9,122 次合法执行，包含 1k/5k/10k、多个 q/B；public posting/bucket/group 文件是明文工作量材料，不是秘密索引。
+imdb_q_crypto_preexperiment_20261014：同一批 1,000 锚对象/992电影、r4、B65536、288固定查询来自3种子。4个 q 的 plain_indexes、1,152行工作量记录、精确答案、资源检查/源补丁/单元测试日志都存在。新 native/cache 不属于正式数据库。
+该目录的 final_status.json 明确：parameter_adaptation=PARTIAL，4个q的plain exact correctness=PASS，crypto E2E=NOT RUN/BLOCKED，successful_crypto_repetitions=0，scale5000_runs=false，default_q=4为暂定，formal_full_index_build_ready=false。任何人若称这批 CSV 是4种q实测密码外包结果，均与文件不符。
+
+5.5 已不存在的数据及恢复边界
+/mnt/f/PMEQ-tpch-100000-20261012-141526、/mnt/f/PMEQ-tpch-100000-incremental-20261012-162231、/home/tenggn/projects/clean_pmeq/results/cloud16-20261012 当前不存在。
+既有 verification/workspace-cleanup-20261014/cleanup-report.json 及 /tmp/pmeq-cleanup-deleted-external.json 记录之前授权清理的 99 个目标、15,715 文件、约145,042,038,784已分配字节，包含这些大目录和 TPCH 构建入口。该历史清理不是本轮操作。
+因此目标新算子的历史 GO 报告、worker日志引用的大TPCH状态不能今天直接重放。
+/mnt/f/PMEQ-recovery/20261011-49cc443a/ 的 source-baseline.tar.gz=5,482,544字节，manifest包含源码/native/Go modules/FFI/git bundle；明确排除了原始数据、索引、预处理、秘密状态、缓存及SDK。它是代码/依赖恢复材料，不能恢复被删的大数据库。
+/mnt/f/PMEQ-vhd-compact-20261012-105627 是磁盘维护时的资产元数据，不是当前数据备份。WSL /dev/sdd 对应的宿主 VHD 具体文件路径本轮无法确认。
+
+5.6 挂载与空间快照
+/dev/sdd ext4：总1,081,101,176,832；已用156,619,517,952；可用869,489,303,552字节。
+D: 9p：总537,112,555,520；已用407,238,492,160；可用129,874,063,360字节。
+E: 9p：总462,782,722,048；已用299,567,796,224；可用163,214,925,824字节。
+F: 9p：总537,403,584,512；已用326,828,711,936；可用210,574,872,576字节。
+/home 下 PMEQ 主工程/原始音乐/实验状态处于 WSL ext4；/mnt/d 和 /mnt/f 为 Windows 挂载，性能和路径语义不同。本轮没有测其速度，也没有估算十万条或全量秘密索引资源。
+
+六、新零点多项式算子及真实端到端调用链
+
+6.1 算子核心
+主目录 internal/zeroagg/{kernel.go,fft.go,labels.go,bank.go,seal.go,bit_amd64.go,bit_amd64.s,bit_other.go}。
+GF(2^16) 的约简多项式 X^16+X^12+X^3+X+1；实际加性 FFT、固定乘积树、Beaver 乘法和精确零检测。ShareCoordinates 生成对象局部标签共享；Prepare/银行预留供 Aggregate 消耗；seal/material ledger 负责绑定与一次性使用约束。重复来源对象必须有不同对象标签，算法对同对象多项命中做 OR 不能演变为删除不同来源对象。
+现有核心与 anchor-integration 的8文件一致；target 实验 kernel 不同，区别见 SHA 表，迁移前必须逐行审查容量和预算语义。
+non-amd64 bit_other.go 当前直接拒绝/恐慌路径，平台限制真实存在，不是通用纯Go实现。
+
+6.2 原始 IMDb → 明文全量文件（已完成）
+imdb_final_dataset/scripts/prepare_sources.py → build.py（titleType=movie、官方演员/导演/akas关联、全量展开）→ validate.py/verify_raw_independently.py → deliver.py/sample.py/read_tables.py。
+其输入/输出为官方TSV、DuckDB/Parquet，不涉及密码索引。正式三表与provenance/checks是后续迁移的不可缺少本地输入。
+
+6.3 DO 密码索引（尚缺 IMDb 正式适配）
+internal/indexbuild/builder.go:181 Build → buildLogicalProjection → shareAndPad。
+输入类型还是 AreaRecord、AreaAliasRecord；锚侧 internal/anchorindex/logical_key.go 的 BSMJ/area/name/id，目标 internal/targetcrypto/canonical.go 的 PSMJ/area_alias/name/area 域标签；连接编码使用 uint64。
+现有 BuildFinalTargetWithBits 等可构建旧目标基础秘密索引，但不能直接当作 IMDb 最新外包器。需要显式的 MOVIECAST/MOVIE projection、保留 provenance 的对象编号映射和字段域绑定。
+internal/discovery/anchor_artifact.go 的 WriteAnchorStatic/ReadAnchorStatic 采用 PMEQBS02，新锚侧 D/T、Labels/LabelID，已不使用旧锚矩阵。读写器实际绑定16位桶；writer槽47字节、reader AnchorBucket(z,16)，不能因其他 manifest 允许14–17位就宣称 BS02 全部 B 配置可持久化。
+目标主目录 internal/targetaggregation/gen/sidecar.go BuildWithCapacity 仍生成旧 sidecar/matrix；这是全新数据库新算子外包的主要缺口。
+
+6.4 离线预处理
+internal/discovery/offline.go:38 Provision：锚 SCMP/AND → zeroagg.Prepare(T,D) → object B2A/对齐/跨片计数/Keep；目标 PE/位置 → targetaggregation.Preprocess（主目录旧矩阵路径）。
+internal/discovery/reservation.go、persistent_zero.go、internal/zeroagg/bank.go/seal.go、internal/material/ledger.go/use.go 提供持久化窗口、票据/出现序号、消耗和 burn。
+离线材料绑定 IndexID/Layout/StaticID/bucket/T/D/role/occurrence，不可从其他样本借用、复制 consumed 文件重置或在线悄悄补充。旧 bank/private 文件只能做历史诊断，迁移后的新库必须新建相应材料；本轮没做。
+
+6.5 查询令牌
+internal/discovery/token.go:107 generate → QueryChunks → targetquery.GeneratePositionTokens（query.go:54）→ anchor MakeOccurrence/ConsumeBounds。
+当前主链默认4码点切片、位置≤62；token codec PMEQQU12，新 reader 不接受旧 QU11。仅有显式 qgram helper 可配置不等于全链四种q可配置；签名、哈希域、索引manifest、query position、离线比较参数和codec须共同绑定。
+
+6.6 两云执行
+internal/discovery/local.go:47 RunCloudLocal → cloud.go:142 runParty。
+实际本地双云模拟是两个 Go 执行方通过字节通道交换，不应当宣称为两台远程云实测。
+链路：Anchor DPF128 →秘密位置比较SCMP→两个F2 AND→zeroagg.Aggregate(x,Labels)→对象B2A→秘密alignment→跨片Count→Keep(r−tau)→secure compaction得到K→KHPRF候选路由K*r→target PE→target position→targetaggregation.Run（主目录 NewAggregator(side.matrix)）→D16置换/选取或D26结果→返回两方线。
+这条链只有锚聚合是新零点路径；目标主默认仍旧。不能在不检查 import/调用的情况下运行它以满足用户“不得用旧算子”限制。
+
+6.7 用户恢复与精确答案缺口
+internal/candidatequery/recovery.go:118 RecoverForDomain 恢复真实域的对象/连接候选。常量 CandidateCount=120071 仅为旧默认wrapper；动态 ForDomain 与 RunLocal 参数化已存在，不是整个当前系统统一的硬上限。
+字符片段/位置必要条件获得的候选对不自动等于双侧完整编辑距离答案。现有主密码入口没有把合法授权的对象ID→原始字符串读取、两侧最终完整 ED 检验和结果 provenance 接成 IMDb 正式闭环。已经保留的明文 plaintext_answers 是未来核对基准，而不是已接入的密码恢复步骤。
+不能把候选数K当最终命中数，不能通过用户端错误合并来源对象掩盖协议问题。是否将最终精确ED实现作为新方案规定阶段，需以当前批准的数学方案确认后接入。
+
+6.8 目标新算子供体的实际边界
+/home/tenggn/projects/clean_pmeq-target-zero-poly-agg/internal/targetaggregation/zero_labels.go:59 MigrateZeroLabels 和 :128 LoadZeroLabels。
+MigrateZeroLabels 从两方旧 sidecar 重构并验证局部 one-hot坐标，再 ShareCoordinates；LoadZeroLabels 先验证旧sidecar/matrix hash，随后可释放系数但仍依赖矩阵公开形状。这是从旧索引迁移实验，不是无旧矩阵的全新 IMDb DO 建库。
+packet.go 的 PreprocessZero、protocol.go 的零点分支、discovery/offline.go:42 ProvisionTargetZero 和 experiments/target-zero-poly/{cloud-worker,operator}/main.go 提供试验执行入口，未迁入主目录默认。
+该分支 target zeroCapacity D26=32/求值域64，D16/求值域32，实际容量需与新数据分桶的局部对象数匹配；不能默认为所有电影和桶足够。
+Git 历史 cmd/tpchquery 曾支持显式 -target-aggregation zero-poly，但默认仍 matrix；该cmd磁盘已删。该供体 experiments/target-zero-poly/user_ed.py 另有实验用精确编辑距离核验；这说明历史实验有外层核验材料，不代表主目录已具备 IMDb 用户恢复到精确答案的正式入口。最新历史报告成功不等于有 IMDb 新建入口。
+
+七、旧字段、固定参数、旧算子与编号依赖
+
+引用扫描类别计数：{'q固定或查询切片': 60, '固定位置或封包环': 88, '旧数据库和字段域': 505, '旧编号与公开容量': 66, '外部数据或运行依赖': 96, '旧矩阵专用或仍需复核': 221}
+
+逐项完整定位清单：legacy_dependencies.csv（绝对路径+行号+函数+角色+证据）。这是一份保守引用命中表，并非每个命中都必须删除；具体分类如下。
+
+7.1 当前生产库中的必须适配点
+- internal/indexbuild/builder.go、target_artifact.go：AreaRecord/AreaAliasRecord、Q=4、旧字段到索引payload编码。
+- internal/anchorindex/logical_key.go:14/19：anchorQ=4 与四Unicode码点校验，固定锚域名称。
+- internal/targetcrypto/canonical.go:26/33：targetQ=4、目标旧字段域、四码点校验。
+- internal/targetquery/query.go、internal/discovery/token.go：4码点切片、62上限与固定比较输入。
+- internal/discovery/offline.go：SCMP预处理仍指定7位；必须与宽位置token统一。
+- internal/discovery/anchor_artifact.go：BS02格式、bucket bits16、局部D/T/GF标签校验和静态ID绑定。
+- internal/targetaggregation/{sidecar.go,packet.go,protocol.go,gen/sidecar.go}：主生产目标仍matrix，D16/D26形状与最多3重复约束；不能继续用于新方案正式索引。
+- internal/candidatequery/recovery.go 的旧默认wrapper、internal/aggregation 默认域和 DTarget 分支：区分已存在 ForDomain 泛化与仍固定结果布局。
+- MOVIECAST.objectId 是来源复合字符串；旧 RecordID 是 Ring64 数值。需要全量确定性一一映射、可逆记录表、索引/取样版本绑定，不能只取 tconst 或把样本 rank 当全量永久ID。
+- tt/nm前缀字符串与旧 uint64BE连接编码必须统一定义。明文样本有取编号后缀/rank 的分析映射，不代表生产已实现完整typed adapter。
+
+7.2 容量与位置实际含义
+主锚 validAnchorLabels 对 T≤65536、D≤32768，均要求规定幂次且D≤全局N；不是可无限增大桶的实现。目标manifest9级padding tiers最大32768，具体可用量取决于实际group。GF16局部标签和uint16封包也约束容量，不应仅增加数据库总N。
+旧位置62来自7位带符号比较允许的安全正值域和被掩码位置差/区间约束，不只是字符串长度硬编码。
+既有 q 适配 position_parameters.csv（273/242 Unicode码点输入）记录0基位置：
+q3：锚270，目标239；q4：269/238；q5：268/237；q6：267/236。
+此前原生单元测试统一Bin10/Upos270，mask环1024，Bout1，单方native key368字节；该位置比较协议的锚侧最小测试安全Bin10、目标Bin9。这里引用已有参数分析/测试，不在本轮重算安全证明。
+主原生 scmpnative 当前支持Bin7或10、C ABI uint32和相应keycodec，但主 token/offline/targetposition 仍7位绑定。扩大 native 容量没有完成全链配置。Z128计数/B2A等其他7位域仍合理；不能全局把7/127替换成10/1023。
+
+7.3 当前测试与历史工具
+internal/discovery/*_native_test.go 等大量音乐数据集测试读取 new-pmeq 数据；不是 IMDb 正式建库入口。tools/run_*scalability、threshold/signature/bucket、phase7b/phase9 是之前统计工具，默认场景/结果不能当新算子IMDb性能。
+既有 imdb_q_crypto.../logs/current_chain_test_compile.log 显示部分测试仍引用已删除 HitB2A、Incidence、ReservedDenseProducts、ObjectThreshold 等 diagnostics，导致测试包编译阻塞。current_chain_build_after.log 是当时选定生产包成功构建记录；本轮未重跑，因此不能保证现在全项目 go test 通过。
+旧矩阵相关引用中，object B2A、Z128计数、alignment/PrepareLayout 可以仍为新链有效组件；不得因为名字 incidence/matrix 就删除整个包。需要只退休旧 OR/聚合系数路径，并保留协议其他有效阶段。
+旧HE/Rust原型、新算子poc、实验worker和当前生产库在CSV role栏已区分；自动分类仍可能有漏检，最终由调用链说明约束。无引用不构成可以删除的授权。
+
+八、本地依赖、编译产物与配置
+
+8.1 Go 主环境
+主 module=pmeq，Go1.27.1，ristretto255 v0.2.0、edwards25519 v1.1.0。当前默认 PATH 没有 go；已用SDK路径 /home/tenggn/projects/clean_pmeq/artifacts/n-domain-regression-pilot-runtime/go/bin/go。new-pmeq/.tools/go 也存在但不是当前q脚本选用的路径。
+GoSDK和模块缓存均仅本地、未上传；go.mod/go.sum已在GitHub。没有因此执行go mod download。
+
+8.2 原生秘密比较
+主 third_party/ezpc_fss 是经过修复固定的curated LLAMA源文件，tools/build_phase6_native.sh、phase6_scmp_bridge.cpp、scmp_key_codec.h 是实际构建桥，均在GitHub源码快照。
+工具链：g++13.3.0、C++17；需要AES/SSE2/SSE4.1/PCLMUL指令与Linux amd64；链接 stdc++、crypto、pthread，系统OpenSSL3.0.13。WindowsOpenSSL目录不参与Linux链接。
+不同native/libphase6scmp.a路径实际不等价：
+- artifacts/n-domain-regression-pilot-runtime/native/libphase6scmp.a：153,836字节，旧Bin7环境。
+- verification/anchor-replacement/cache/native/libphase6scmp.a：141,356字节，早先桥。
+- imdb_q_crypto_preexperiment_20261014/native/libphase6scmp.a：143,132字节，最新Bin10实验桥。
+同名archive不能互换；迁移后必须从选定源码构建匹配codec/参数的native。当前脚本默认 /tmp/phase6-native 不存在，可用 PMEQ_SCMP_BUILD 指定；旧 PMEQ_EXTERNAL_SCMP 被显式拒绝。本轮未编译。
+
+8.3 q 实验环境绑定
+imdb_q_crypto_preexperiment_20261014/scripts/run_go.sh 硬编码ROOT和GoSDK，GOCACHE指向该实验cache，GOMODCACHE指向 verification/anchor-replacement/cache/mod，TMPDIR指向实验tmp，CGO_LDFLAGS指向实验native，GOMAXPROCS=2/GOMEMLIMIT=4GiB。只上传该脚本不附环境并不会自动可运行。
+前次 logs/parameter_tests.log 通过的是局部 Bin10域比较/掩码边界/区间及新零点聚合测试；不是秘密端到端或正式性能。已有记录：73,984域比较、30掩码边界、72区间批次、256零点OR测试；本轮没有执行它们。
+
+8.4 Python/历史依赖
+正式数据 .venv 为Python3.12.3、duckdb1.5.6，imdb_final_dataset/requirements.txt 已保存依赖；venv本体不在GitHub。q与明文脚本依赖该本地环境及绝对路径。
+Rust cargo/rustc 未在本次默认PATH发现，.cargo存在不等于当前可直接执行；原Rust DMPF只用于历史/参考导出。
+pmeq-crypto-interface-test 的 Lattigo replace /tmp/lattigo-v6 缺失，旧 MP-SPDZ compiled/material 存在但不是当前主密码链依赖。不要把历史HE依赖一起搬入新的main module。
+
+8.5 论文/规范版本
+主 CURRENT_SPEC/PRODUCTION_CHAIN/SECURITY_INVARIANTS/MIGRATION_LOG 已在GitHub，记录多个阶段且可能包含旧域/旧路径，不能仅依据文档标题确定最新可执行默认。
+本地 docs/paper/PMEQ_latest_20261011.tex 和 latest.json 是目录manifest所指的最新磁盘论文，仍含TPC-H计划参数；未上传源码快照。不能确认它已经体现导师最新IMDb和算子数学决定，标为待核实。需要批准的新算子定义及域/标签约束，不能以旧论文默认替代用户最新要求。本轮没有改论文。
+
+九、会话、并发状态与未保存内容
+
+用户最新明确确认：只有本Codex CLI进程在工作，其他都没有在工作。这是本轮当前活动状态的依据。
+宿主只读进程观察看到多个驻留CLI/node进程以及daemon/code-mode host；cwd相同并不意味着在并行编辑。报告不将驻留进程认定为活跃开发，不读取其命令参数/环境凭据，也不擅自终止。
+733 个核心文本源文件在审计前后 SHA-256/元数据无变化、无缺失；未发现 .git 锁。此结论仅覆盖清单里的核心文件和观察窗口，不是全磁盘或编辑器内存监控。
+verification/anchor-replacement/workspace-conflict.json 记录历史迁移过程中10个意外修改/16个消失文件。该记录作为历史冲突证据保留，与用户确认“现在没有其他工作进程”并不冲突。
+.vscode-server workspaceStorage 有旧工作区目录，未见对应Backups目录。无法从磁盘排除Windows/其他编辑器内存中未保存代码；这是待核实项，本轮没有读取用户其他应用私有缓冲或凭据。
+
+十、迁移前置必需项与建议顺序（本轮未执行）
+
+1. 指定 clean_pmeq 作为唯一正式入口，记录实际文件快照而非仅master HEAD；将GitHub快照与target供体版本绑定，保留明确差异证据。
+2. 获取最终批准的零点算子/主查询精确结果定义，明确最终ED验证阶段、容量与域，不改数学语义。
+3. 实现全新无旧矩阵的目标DO标签/形状生成，接入ProvisionTargetZero与主runParty；核对target kernel预算差异，不能只搬protocol.go。
+4. 建IMDb typed projection与确定性来源对象ID映射，统一 tconst 编码；将字段域、全局域N、layout与provenance绑定。
+5. 一套参数从qgram/HMAC/manifest到token/SCMP native/offline/位置筛选/codec全链传递；区分Bin10位置域、Z128计数域、GF16对象标签域。
+6. 修正过时测试接口，在小规模同一批明文基准上验证真实秘密结果和源对象重复保留；资源安全后才测规定小规模外包。
+7. 再制定正式索引入口和环境复现说明；默认q4仍暂定，当前没有真实密码查询性能支持，不应跳到全量建库。
+本轮没有执行上述任一步实施动作；没有偷偷根据旧实现估算十万条资源。
+
+十一、待核实与审计限制
+
+- 导师最新批准的数学方案是否已写入磁盘paper/spec；需给出具体文档版本。
+- 目标侧实验kernel与主kernel差异是否全部符合当前算子预算；已有源码可审阅，未在本轮跑验证。
+- 新数据库全新目标label生成、通用q/宽位置全链参数、最终ED精确结果接口目前缺失，应实施后验收而非推断可用。
+- 全量IMDb长期移动时绝对Parquet路径处理方式，以及对象ID→Ring64生产映射格式尚未确定。
+- 本轮源扫描是限定路径/规则调查，自动CSV可能漏掉隐式依赖；源码包没有展开、私密载荷没有读取。
+- 新全量数据密码索引的资源开销没有实测或估算，本报告不补造数字。
+- 未保存的编辑器内存内容、本机Windows VHD物理路径不能确认。
+- 历史GO日志不能证明被删数据库与cmd当前仍可重跑；F盘recovery不含其数据。
+- GitHub现为公开；远端README的private文字不应当作为上传秘密或数据的依据。审计没有上传任何新文件。
+
+十二、交付与停止状态
+
+完整报告TXT/HTML、最小文件清单及JSON/CSV证据全保存在 /tmp/pmeq-local-environment-audit-20261015/。该目录为临时目录，用户可自行决定长期保存位置，本轮不代为移动或提交。
+没有修改/删除/移动/重新生成任何原有源码和数据；没有启动迁移、重构、清理、索引、实验、秘密乘法/FFT或数据库派生。调查完成即停止，等待下一步指令。

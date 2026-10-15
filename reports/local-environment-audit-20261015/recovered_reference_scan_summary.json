@@ -1,0 +1,13 @@
+{
+  "origin": "Original report generator and logged summary; full match CSV unavailable",
+  "files_scanned": 933,
+  "matches": 1036,
+  "by_category": {
+    "q固定或查询切片": 60,
+    "固定位置或封包环": 88,
+    "旧数据库和字段域": 505,
+    "旧编号与公开容量": 66,
+    "外部数据或运行依赖": 96,
+    "旧矩阵专用或仍需复核": 221
+  }
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "path": "PMEQ本地工程环境与迁移前置审计报告.html",
+    "bytes": 45137,
+    "sha256": "923e6e2b87a5547a83b2de2d4a6b0d2c5e32f7bdee5e62babbd8c8402a29aaa4"
+  },
+  {
+    "path": "PMEQ本地工程环境与迁移前置审计报告.txt",
+    "bytes": 44731,
+    "sha256": "58c0bd9f70832c81b33e29124d97439922021d8a3b205ea295717bb8c0adae1e"
+  },
+  {
+    "path": "README.md",
+    "bytes": 1594,
+    "sha256": "3b5cb138dd969602ef8453e9b4745204f6d3e1b567c23d96312e4d5194494ef5"
+  },
+  {
+    "path": "publication_notes.json",
+    "bytes": 957,
+    "sha256": "17edfd173b87890798d90086d4f7a291b631c33712775e679453a98b45bb2653"
+  },
+  {
+    "path": "recovered_reference_scan_summary.json",
+    "bytes": 382,
+    "sha256": "daf69dec7b303316258a6d9bf75d39b45b7bc563bb01232e6feaef9393d0e8eb"
+  },
+  {
+    "path": "recovered_repository_and_data_summaries.json",
+    "bytes": 6888,
+    "sha256": "ffb0bdf305182509bb40893e5f009502c34c57bb15dd0faf00ccc32d3251dd90"
+  },
+  {
+    "path": "recovery/original_minimum_list_generator.py",
+    "bytes": 6554,
+    "sha256": "416cc9a1caf107728cc888b4a371439d9401e467ef0b1188b45516db9f452a5b"
+  },
+  {
+    "path": "recovery/original_report_generator.py",
+    "bytes": 40295,
+    "sha256": "9c0969c1318273001f04ea319e0b5cd0a4f094c79f7c07f2af968f59ede076d9"
+  },
+  {
+    "path": "需要提供给ChatGPT的最小文件清单.txt",
+    "bytes": 13382,
+    "sha256": "0574017dea11fcf918a6db2d33d65942be0c429fbb9006a741f562579b2f9d3c"
+  }
+]
