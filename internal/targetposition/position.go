@@ -23,7 +23,7 @@ var ErrBinding = targetpe.ErrBinding
 type Group struct{ GroupOrdinal, PadWidth, SlotRelativeOffset int }
 type Route struct {
 	CandidateIndex, OccurrenceID uint32
-	BucketID                     uint16
+	BucketID                     uint32
 	SlotOffset, SlotCount        int
 	Groups                       []Group
 }
@@ -46,24 +46,34 @@ type packetState struct {
 	materials []material
 }
 type Packet struct {
-	state   *packetState
-	lineage targetpe.AlignmentLineage
-	party   uint8
+	state       *packetState
+	lineage     targetpe.AlignmentLineage
+	party       uint8
+	maxPosition uint32
+	bin         uint8
 }
 type OfflineBytes struct{ SCMP, Beaver uint64 } // one party, serialized field widths
 
 // Preprocess is OFFLINE Q_pool allocation, before initial QueryToken generation.
 // Each occurrence capacity can be a public upper bound; all unused keys burn.
 func Preprocess(l targetpe.AlignmentLineage, capacities []int, backend anchorfilter.SCMPBackend) ([]anchorfilter.UserPreprocessing, Packet, Packet, OfflineBytes, error) {
+	return PreprocessWithDomain(l, capacities, 7, 62, backend)
+}
+
+func PreprocessWithDomain(l targetpe.AlignmentLineage, capacities []int, bin uint8, maxPosition uint32, backend anchorfilter.SCMPBackend) ([]anchorfilter.UserPreprocessing, Packet, Packet, OfflineBytes, error) {
 	users := make([]anchorfilter.UserPreprocessing, len(capacities))
-	a := Packet{&packetState{}, l, 0}
-	b := Packet{&packetState{}, l, 1}
+	a := Packet{state: &packetState{}, lineage: l, party: 0, maxPosition: maxPosition, bin: bin}
+	b := Packet{state: &packetState{}, lineage: l, party: 1, maxPosition: maxPosition, bin: bin}
 	var bytes OfflineBytes
+	derived, e := anchorfilter.DeriveBin(maxPosition)
+	if e != nil || derived != bin {
+		return nil, a, b, bytes, ErrBinding
+	}
 	for i, n := range capacities {
 		if n < 0 {
 			return nil, a, b, bytes, ErrBinding
 		}
-		u, x, y, e := anchorfilter.Preprocess(n, 7, backend)
+		u, x, y, e := anchorfilter.Preprocess(n, bin, backend)
 		if e != nil {
 			return nil, a, b, bytes, e
 		}
@@ -104,6 +114,8 @@ type Session struct {
 	own                        []byte
 	pos, valid, match, product []share.BitShare
 	metrics                    Metrics
+	bin                        uint8
+	maxPosition                uint32
 }
 
 func Begin(idx *targetpe.PartyIndex, in targetpe.TargetGroupMatches, tok targetrouting.QueryToken, p Packet, backend anchorfilter.SCMPBackend) (*Session, error) {
@@ -116,7 +128,7 @@ func Begin(idx *targetpe.PartyIndex, in targetpe.TargetGroupMatches, tok targetr
 		return nil, ErrBinding
 	}
 	start := time.Now()
-	s := &Session{idx: idx, backend: backend, token: tok, in: in, cursors: make([]int, len(in.Occurrences))}
+	s := &Session{idx: idx, backend: backend, token: tok, in: in, cursors: make([]int, len(in.Occurrences)), bin: p.bin, maxPosition: p.maxPosition}
 	s.out = TargetPostingHits{Manifest: in.Manifest, LayoutID: in.LayoutID, CompactionID: in.CompactionID, QueryID: in.QueryID, K: in.K, Occurrences: append([]targetrouting.Occurrence(nil), in.Occurrences...), AnchorRecordIDShare: append([]share.Ring64Share(nil), in.AnchorRecordIDShare...)}
 	capacities := make([]int, len(in.Occurrences))
 	gcount, total := 0, 0
@@ -128,7 +140,7 @@ func Begin(idx *targetpe.PartyIndex, in targetpe.TargetGroupMatches, tok targetr
 	d := idx.StructureDigest()
 	hash.Write(d[:])
 	for h, o := range in.Occurrences {
-		if o.OccurrenceID != uint32(h) || o.Position != uint32(4*h) || o.Position > 62 || tok.Words[h].Occurrence != o || tok.Position[h].PID != p.state.materials[h].prep.PID || tok.Position[h].Ltilde > 127 || tok.Position[h].RplusTilde > 127 {
+		if o.OccurrenceID != uint32(h) || o.Position != uint32(4*h) || o.Position > p.maxPosition || tok.Words[h].Occurrence != o || tok.Position[h].PID != p.state.materials[h].prep.PID || p.state.materials[h].prep.Bin != p.bin || tok.Position[h].Ltilde >= uint32(1)<<p.bin || tok.Position[h].RplusTilde >= uint32(1)<<p.bin {
 			return nil, ErrBinding
 		}
 		hash.Write(tok.Position[h].PID[:])
@@ -189,7 +201,7 @@ func (s *Session) frame(payload []byte) []byte {
 	binary.LittleEndian.PutUint32(b[42:46], uint32(s.ri))
 	binary.LittleEndian.PutUint32(b[46:50], uint32(s.local))
 	binary.LittleEndian.PutUint32(b[50:54], uint32(s.n))
-	b[54] = 7
+	b[54] = s.bin
 	b[55] = 1
 	b[56] = 0
 	copy(b[HeaderBytes:], payload)
@@ -217,12 +229,13 @@ func (s *Session) Next() ([]byte, error) {
 			for x := lo; x < hi; x++ {
 				j := x - s.local
 				p, v := s.idx.PositionSlot(r.BucketID, g.GroupOrdinal, x-g.SlotRelativeOffset)
-				p7, e := anchorfilter.ReducePosition(p, 7)
+				p7, e := anchorfilter.ReducePosition(p, s.bin)
 				if e != nil {
 					return nil, e
 				}
-				binary.LittleEndian.PutUint32(payload[j*8:], (p7+m.prep.RhoL[s.off+j])&127)
-				binary.LittleEndian.PutUint32(payload[j*8+4:], (p7+m.prep.RhoR[s.off+j])&127)
+				mask := uint32(1)<<s.bin - 1
+				binary.LittleEndian.PutUint32(payload[j*8:], (p7+m.prep.RhoL[s.off+j])&mask)
+				binary.LittleEndian.PutUint32(payload[j*8+4:], (p7+m.prep.RhoR[s.off+j])&mask)
 				s.valid[j] = v
 				s.match[j] = s.in.MatchShares[s.in.Routes[s.ri].MatchOffset+g.GroupOrdinal]
 			}
@@ -262,7 +275,7 @@ func (s *Session) Next() ([]byte, error) {
 	return s.frame(payload), nil
 }
 func (s *Session) Accept(b []byte) error {
-	if !s.pending || len(b) != HeaderBytes+len(s.own) || string(b[:8]) != "PMEQTP09" || string(b[8:40]) != string(s.binding[:]) || b[40] != 1-s.idx.Party() || b[41] != byte(s.stage) || binary.LittleEndian.Uint32(b[42:46]) != uint32(s.ri) || binary.LittleEndian.Uint32(b[46:50]) != uint32(s.local) || binary.LittleEndian.Uint32(b[50:54]) != uint32(s.n) || b[54] != 7 || b[55] != 1 || b[56] != 0 {
+	if !s.pending || len(b) != HeaderBytes+len(s.own) || string(b[:8]) != "PMEQTP09" || string(b[8:40]) != string(s.binding[:]) || b[40] != 1-s.idx.Party() || b[41] != byte(s.stage) || binary.LittleEndian.Uint32(b[42:46]) != uint32(s.ri) || binary.LittleEndian.Uint32(b[46:50]) != uint32(s.local) || binary.LittleEndian.Uint32(b[50:54]) != uint32(s.n) || b[54] != s.bin || b[55] != 1 || b[56] != 0 {
 		return ErrBinding
 	}
 	r := s.out.Routes[s.ri]
@@ -274,11 +287,12 @@ func (s *Session) Accept(b []byte) error {
 		opened := anchorfilter.OpenedPositions{PL: make([]uint32, s.n), PR: make([]uint32, s.n)}
 		for i := 0; i < s.n; i++ {
 			x, y := binary.LittleEndian.Uint32(peer[8*i:]), binary.LittleEndian.Uint32(peer[8*i+4:])
-			if x > 127 || y > 127 {
+			mask := uint32(1)<<s.bin - 1
+			if x > mask || y > mask {
 				return ErrBinding
 			}
-			opened.PL[i] = (x + binary.LittleEndian.Uint32(s.own[8*i:])) & 127
-			opened.PR[i] = (y + binary.LittleEndian.Uint32(s.own[8*i+4:])) & 127
+			opened.PL[i] = (x + binary.LittleEndian.Uint32(s.own[8*i:])) & mask
+			opened.PR[i] = (y + binary.LittleEndian.Uint32(s.own[8*i+4:])) & mask
 		}
 		// Same PHASE4 primitive and rb convention; split timing records backend Eval
 		// separately from local output conversion without changing its mathematics.

@@ -13,10 +13,22 @@ import (
 	"sync"
 )
 
-type Shape struct{ K, R, S, G int }
+type Shape struct {
+	K, R, S, G int
+	D          int
+}
 
-func (s Shape) validate() error {
-	if s.K < 0 || s.K > 120071 || s.R < 1 || s.R > 16 || s.S < 0 || s.G < 0 || s.G > s.S || s.S > int(^uint(0)>>1)/128 || s.G > int(^uint(0)>>1)/(26*24) || (s.K == 0 && (s.S != 0 || s.G != 0)) {
+// Capacity keeps historical 26-slot packets usable. Queries may also select 16 slots.
+func (s Shape) Capacity() int {
+	if s.D == 0 {
+		return 26
+	}
+	return s.D
+}
+
+func (s Shape) validate(n int) error {
+	d := s.Capacity()
+	if (d != 16 && d != 26) || n < 0 || uint64(n) > uint64(^uint32(0)) || s.K < 0 || s.K > n || s.R < 1 || s.R > 16 || s.K > int(^uint(0)>>1)/d/s.R/48 || s.S < 0 || s.G < 0 || s.G > s.S || s.S > int(^uint(0)>>1)/128 || s.G > int(^uint(0)>>1)/(d*24) || (s.K == 0 && (s.S != 0 || s.G != 0)) {
 		return ErrBinding
 	}
 	return nil
@@ -91,8 +103,9 @@ func (c *countedBackend) Eval(p uint8, k anchorfilter.SCMPKeyShare, x, y uint32)
 // Packet copies share a single claim guard. No value, route bucket, ID, Hit or
 // GroupMatch is an input to preprocessing.
 func Preprocess(l targetpe.AlignmentLineage, s Shape, b anchorfilter.SCMPBackend) (*UserMaterial, Packet, Packet, OfflineBody, error) {
+	d := s.Capacity()
 	var cost OfflineBody
-	if s.validate() != nil || l.IndexID == [16]byte{} || l.LayoutID == [16]byte{} || l.N != 120071 || b == nil {
+	if s.validate(l.N) != nil || l.IndexID == [16]byte{} || l.LayoutID == [16]byte{} || b == nil {
 		return nil, Packet{}, Packet{}, cost, ErrBinding
 	}
 	var id [16]byte
@@ -105,11 +118,11 @@ func Preprocess(l targetpe.AlignmentLineage, s Shape, b anchorfilter.SCMPBackend
 	if e != nil {
 		return nil, Packet{}, Packet{}, cost, e
 	}
-	p[0].inc, p[1].inc, e = incidence.Preprocess(s.S, 26)
+	p[0].inc, p[1].inc, e = incidence.Preprocess(s.S, d)
 	if e != nil {
 		return nil, Packet{}, Packet{}, cost, e
 	}
-	z, m := s.K*s.R*26, s.K*26
+	z, m := s.K*s.R*d, s.K*d
 	p[0].z, p[1].z, e = incidence.Preprocess(z, 1)
 	if e != nil {
 		return nil, Packet{}, Packet{}, cost, e
@@ -126,7 +139,7 @@ func Preprocess(l targetpe.AlignmentLineage, s Shape, b anchorfilter.SCMPBackend
 	}
 	// Ring stages: Match B2A, group payload, rep B2A, rep payload,
 	// Keep B2A, Anchor mask, Target mask.
-	sizes := [7]int{s.G, 26 * s.G, z, z, m, m, m}
+	sizes := [7]int{s.G, d * s.G, z, z, m, m, m}
 	for i, n := range sizes {
 		p[0].ring[i], p[1].ring[i], e = ring64beaver.Preprocess(n)
 		if e != nil {
@@ -138,7 +151,7 @@ func Preprocess(l targetpe.AlignmentLineage, s Shape, b anchorfilter.SCMPBackend
 	if e != nil {
 		return nil, Packet{}, Packet{}, cost, e
 	}
-	cost.Z128 = uint64(6*s.S + 106*s.S + 6*z)
+	cost.Z128 = uint64(6*s.S + (2+4*d)*s.S + 6*z)
 	// Bin7/Bout1 native LLAMA codec: 284 key + 1 cached rb + 1 Z128 mask,
 	// per party per comparison. BoundMask metadata is accounted separately.
 	cost.SCMP = counted.bytes

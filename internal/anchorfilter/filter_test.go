@@ -167,7 +167,7 @@ func TestRBRemovalRegression(t *testing.T) {
 	}
 }
 
-func findBucket(t *testing.T, idx indexbuild.PartyIndex, id uint16) indexbuild.AnchorPartyBucket {
+func findBucket(t *testing.T, idx indexbuild.PartyIndex, id uint32) indexbuild.AnchorPartyBucket {
 	t.Helper()
 	for _, b := range idx.AnchorBuckets {
 		if b.BucketID == id {

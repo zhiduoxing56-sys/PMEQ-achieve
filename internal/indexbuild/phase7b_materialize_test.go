@@ -168,7 +168,7 @@ func TestPhase7BMaterialize(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		if a.TargetBuckets[bi].BucketID != uint16(targetcrypto.CombineBucketComponents(jb, wb)) {
+		if a.TargetBuckets[bi].BucketID != uint32(targetcrypto.CombineBucketComponents(jb, wb)) {
 			t.Fatal("bucket")
 		}
 		width, e := TierWidth(len(logical[key]))

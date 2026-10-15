@@ -21,7 +21,7 @@ type postingOracleSlot struct {
 	valid bool
 }
 
-var postingOracle map[uint16][][]postingOracleSlot
+var postingOracle map[uint32][][]postingOracleSlot
 var postingPackets [2]targetposition.Packet
 var postingCounts []int
 var postingTotal, postingHits, postingZero int
@@ -47,7 +47,7 @@ func init() {
 	finishPosting = finishPostings
 }
 func setupPostings(t *testing.T, h *harness, ps [2]indexbuild.PartyIndex) {
-	postingOracle = map[uint16][][]postingOracleSlot{}
+	postingOracle = map[uint32][][]postingOracleSlot{}
 	for bi, b := range ps[0].TargetBuckets {
 		for gi, g := range b.Groups {
 			var slots []postingOracleSlot
@@ -97,8 +97,8 @@ func preparePostings(t *testing.T, h *harness, q peWorkload) (targetrouting.Quer
 		for hi, w := range q.Words {
 			b, e := targetcrypto.WordBucketComponent(h.kt, w.QGram, 16)
 			must(t, e)
-			groupCapacity += len(postingOracle[uint16(a)^uint16(b)])
-			for _, gs := range postingOracle[uint16(a)^uint16(b)] {
+			groupCapacity += len(postingOracle[uint32(a)^uint32(b)])
+			for _, gs := range postingOracle[uint32(a)^uint32(b)] {
 				capacities[hi] += len(gs)
 			}
 		}

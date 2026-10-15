@@ -23,7 +23,7 @@ const AnchorBucketBits = 16
 
 var ErrTierOverflow = errors.New("indexbuild: real group size exceeds maximum padding tier")
 
-var tierLadder = [...]int{4, 16, 64, 256, 1024, 4096, 8192, 16384}
+var tierLadder = [...]int{4, 16, 64, 256, 1024, 4096, 8192, 16384, 32768}
 
 // TierWidth returns the smallest frozen padding tier that covers realSize.
 // Groups are never empty; callers passing a non-positive size receive an error.
@@ -64,11 +64,11 @@ type TargetPartyGroup struct {
 	Slots          []TargetPartySlot
 }
 type AnchorPartyBucket struct {
-	BucketID uint16
+	BucketID uint32
 	Groups   []AnchorPartyGroup
 }
 type TargetPartyBucket struct {
-	BucketID uint16
+	BucketID uint32
 	Groups   []TargetPartyGroup
 }
 type PartyIndex struct {
@@ -76,7 +76,7 @@ type PartyIndex struct {
 	TargetBuckets []TargetPartyBucket
 }
 type BucketMetadata struct {
-	BucketID   uint16
+	BucketID   uint32
 	GroupCount uint32
 	TotalSlots uint64
 }
@@ -119,11 +119,12 @@ type BuildStats struct {
 type anchorPosting struct {
 	recordID uint64
 	position uint32
+	joinID   uint64
 }
 type anchorLogicalGroup struct {
 	qgram    string
 	z        anchorindex.Value
-	bucket   uint16
+	bucket   uint32
 	postings []anchorPosting
 }
 type targetPosting struct {
@@ -134,7 +135,7 @@ type targetLogicalGroup struct {
 	joinID   uint64
 	qgram    string
 	target   *ristretto255.Element
-	bucket   uint16
+	bucket   uint32
 	postings []targetPosting
 }
 type targetIdentity struct {
@@ -152,7 +153,7 @@ var (
 )
 
 // AnchorBucket takes the first k bits of z, most-significant bit first.
-func AnchorBucket(z anchorindex.Value, k int) (uint16, error) {
+func AnchorBucket(z anchorindex.Value, k int) (uint32, error) {
 	if k < targetcrypto.MinBucketBits || k > targetcrypto.MaxBucketBits {
 		return 0, targetcrypto.ErrBucketBits
 	}
@@ -161,7 +162,7 @@ func AnchorBucket(z anchorindex.Value, k int) (uint16, error) {
 	for i := 0; i < bytesNeeded; i++ {
 		value = value<<8 | uint32(z[i])
 	}
-	return uint16(value >> uint(bytesNeeded*8-k)), nil
+	return uint32(value >> uint(bytesNeeded*8-k)), nil
 }
 
 // VisitQGrams emits every q=4 Unicode-code-point occurrence, including repeats.
@@ -178,14 +179,31 @@ func VisitQGrams(s string, visit func(string, uint32)) bool {
 
 // Build constructs both in-memory party indexes inside the trusted DO boundary.
 func Build(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjection(areas, aliases, nil, kB, kT, anchorBits, targetBits)
+}
+
+// BuildMovie uses the versioned IMDb index domains and distinct anchor object
+// and movie join IDs. The trusted caller must verify the frozen mapping first.
+func BuildMovie(areas []AreaRecord, joins []uint64, movies []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjectionWithMode(areas, movies, joins, kB, kT, 16, 16, true)
+}
+
+func buildProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjectionWithMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, false)
+}
+
+func buildProjectionWithMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, movie bool) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
 	started := time.Now()
+	if joins != nil && len(joins) != len(areas) {
+		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, errors.New("indexbuild: object/join input length mismatch")
+	}
 	if _, err := AnchorBucket(anchorindex.Value{}, anchorBits); err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
 	if _, err := targetcrypto.JoinBucketComponent(kT, 0, targetBits); err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
-	anchorGroups, targetGroups, stats, err := buildLogical(areas, aliases, kB, kT, anchorBits, targetBits)
+	anchorGroups, targetGroups, stats, err := buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, movie)
 	if err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
@@ -201,9 +219,21 @@ func Build(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.Key, kT
 }
 
 func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
+	return buildLogicalProjection(areas, aliases, nil, kB, kT, anchorBits, targetBits)
+}
+
+func buildLogicalProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
+	return buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, false)
+}
+
+func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, movie bool) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
 	stats := BuildStats{Anchor: SideStats{RawRecords: len(areas)}, Target: SideStats{RawRecords: len(aliases)}}
 	am := make(map[string]*anchorLogicalGroup)
-	for _, record := range areas {
+	for ri, record := range areas {
+		joinID := record.ID
+		if joins != nil {
+			joinID = joins[ri]
+		}
 		if !VisitQGrams(record.Name, func(qgram string, position uint32) {
 			stats.Anchor.QGramOccurrences++
 			group := am[qgram]
@@ -211,7 +241,7 @@ func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.
 				group = &anchorLogicalGroup{qgram: qgram}
 				am[qgram] = group
 			}
-			group.postings = append(group.postings, anchorPosting{record.ID, position})
+			group.postings = append(group.postings, anchorPosting{record.ID, position, joinID})
 		}) {
 			stats.Anchor.ShortStrings++
 		}
@@ -219,7 +249,13 @@ func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.
 	anchors := make([]anchorLogicalGroup, 0, len(am))
 	zSeen := make(map[anchorindex.Value]string)
 	for qgram, group := range am {
-		z, err := anchorindex.Encode(kB, qgram)
+		var z anchorindex.Value
+		var err error
+		if movie {
+			z, err = anchorindex.EncodeMovie(kB, qgram)
+		} else {
+			z, err = anchorindex.Encode(kB, qgram)
+		}
 		if err != nil {
 			return nil, nil, stats, err
 		}
@@ -252,7 +288,13 @@ func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.
 	targets := make([]targetLogicalGroup, 0, len(tm))
 	tSeen := make(map[[32]byte]targetIdentity)
 	for identity, group := range tm {
-		target, err := targetcrypto.DeriveTargetGroupPoint(kT, identity.joinID, identity.qgram)
+		var target *ristretto255.Element
+		var err error
+		if movie {
+			target, err = targetcrypto.DeriveMovieGroupPoint(kT, identity.joinID, identity.qgram)
+		} else {
+			target, err = targetcrypto.DeriveTargetGroupPoint(kT, identity.joinID, identity.qgram)
+		}
 		if err != nil {
 			return nil, nil, stats, err
 		}
@@ -266,12 +308,17 @@ func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.
 		if err != nil {
 			return nil, nil, stats, err
 		}
-		word, err := targetcrypto.WordBucketComponent(kT, identity.qgram, targetBits)
+		var word targetcrypto.BucketComponent
+		if movie {
+			word, err = targetcrypto.MovieWordBucketComponent(kT, identity.qgram, targetBits)
+		} else {
+			word, err = targetcrypto.WordBucketComponent(kT, identity.qgram, targetBits)
+		}
 		if err != nil {
 			return nil, nil, stats, err
 		}
 		group.target = target
-		group.bucket = uint16(targetcrypto.CombineBucketComponents(join, word))
+		group.bucket = uint32(targetcrypto.CombineBucketComponents(join, word))
 		targets = append(targets, *group)
 	}
 	stats.Anchor.LogicalGroups, stats.Target.LogicalGroups = len(anchors), len(targets)
@@ -314,15 +361,17 @@ func shareAndPad(anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT 
 			g1 := AnchorPartyGroup{Z: anchors[i].z, PadWidth: uint32(padWidth)}
 			for slot := 0; slot < padWidth; slot++ {
 				var id uint64
+				var joinID uint64
 				var pos uint32
 				valid := domain.BitZero
 				if slot < len(anchors[i].postings) {
 					id = anchors[i].postings[slot].recordID
+					joinID = anchors[i].postings[slot].joinID
 					pos = anchors[i].postings[slot].position
 					valid = domain.BitOne
 					stats.Anchor.RealSlots++
 				}
-				s0, s1, err := makeAnchorSlot(id, pos, valid, kT, targetBits)
+				s0, s1, err := makeAnchorSlot(id, joinID, pos, valid, kT, targetBits)
 				if err != nil {
 					return PublicMetadata{}, PartyIndex{}, PartyIndex{}, err
 				}
@@ -388,7 +437,7 @@ func shareAndPad(anchors []anchorLogicalGroup, targets []targetLogicalGroup, kT 
 	return meta, cs0, cs1, nil
 }
 
-func makeAnchorSlot(id uint64, pos uint32, valid domain.Bit, kT targetcrypto.MasterKey, targetBits int) (AnchorPartySlot, AnchorPartySlot, error) {
+func makeAnchorSlot(id, joinID uint64, pos uint32, valid domain.Bit, kT targetcrypto.MasterKey, targetBits int) (AnchorPartySlot, AnchorPartySlot, error) {
 	r0, r1, err := splitRing64(domain.Ring64(id))
 	if err != nil {
 		return AnchorPartySlot{}, AnchorPartySlot{}, err
@@ -404,11 +453,11 @@ func makeAnchorSlot(id uint64, pos uint32, valid domain.Bit, kT targetcrypto.Mas
 	kappa := ristretto255.NewScalar()
 	beta := targetcrypto.BucketComponent(0)
 	if valid == domain.BitOne {
-		kappa, err = targetcrypto.KJoin(kT, id)
+		kappa, err = targetcrypto.KJoin(kT, joinID)
 		if err != nil {
 			return AnchorPartySlot{}, AnchorPartySlot{}, err
 		}
-		beta, err = targetcrypto.JoinBucketComponent(kT, id, targetBits)
+		beta, err = targetcrypto.JoinBucketComponent(kT, joinID, targetBits)
 		if err != nil {
 			return AnchorPartySlot{}, AnchorPartySlot{}, err
 		}

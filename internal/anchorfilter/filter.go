@@ -8,12 +8,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"pmeq/internal/domain"
 	"pmeq/internal/dpf128"
 	"pmeq/internal/f2beaver"
 	"pmeq/internal/indexbuild"
+	"pmeq/internal/material"
 	"pmeq/internal/preprocess"
+	"pmeq/internal/qgram"
 	"pmeq/internal/share"
 )
 
@@ -24,12 +27,22 @@ type QueryChunk struct {
 
 // QueryChunks emits non-overlapping complete q=4 rune chunks and preserves repeats.
 func QueryChunks(q string) []QueryChunk {
-	r := []rune(q)
-	out := make([]QueryChunk, 0, len(r)/indexbuild.Q)
-	for i := 0; i+indexbuild.Q <= len(r); i += indexbuild.Q {
-		out = append(out, QueryChunk{string(r[i : i+indexbuild.Q]), uint32(i)})
-	}
+	out, _ := QueryChunksWithQ(q, indexbuild.Q, 0)
 	return out
+}
+
+// QueryChunksWithQ explicitly constructs experimental signatures. Production
+// index/token domain binding remains the caller's responsibility; no default changes.
+func QueryChunksWithQ(text string, q, count int) ([]QueryChunk, error) {
+	fragments, err := qgram.Query(text, q, count)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]QueryChunk, len(fragments))
+	for i, c := range fragments {
+		out[i] = QueryChunk{QGram: c.Word, Position: c.Position}
+	}
+	return out, nil
 }
 
 // DeriveBin returns the smallest signed SCMP width satisfying Upos+1 < 2^(Bin-1).
@@ -58,10 +71,11 @@ func ReducePosition(s share.Ring32Share, bin uint8) (uint32, error) {
 type SCMPKeyShare struct {
 	opaque []byte
 	rb     share.BitShare
+	use    *material.UseGuard
 }
 
 func NewSCMPKeyShare(opaque []byte, rb share.BitShare) SCMPKeyShare {
-	return SCMPKeyShare{append([]byte(nil), opaque...), rb}
+	return SCMPKeyShare{append([]byte(nil), opaque...), rb, material.NewUseGuard()}
 }
 func (k SCMPKeyShare) Opaque() []byte                  { return append([]byte(nil), k.opaque...) }
 func (k SCMPKeyShare) OutputMaskShare() share.BitShare { return k.rb }
@@ -76,7 +90,8 @@ type SCMPBackend interface {
 type UserPreprocessing struct {
 	PID        [16]byte
 	EtaL, EtaR uint32
-	used       bool
+	use        *material.UseGuard
+	bin        uint8
 }
 type PartyPreprocessing struct {
 	PID          [16]byte
@@ -90,7 +105,7 @@ func Preprocess(n int, bin uint8, backend SCMPBackend) (UserPreprocessing, Party
 	if n < 0 || bin < 2 || bin > 32 {
 		return UserPreprocessing{}, PartyPreprocessing{}, PartyPreprocessing{}, errors.New("anchorfilter: invalid preprocessing size or Bin")
 	}
-	var u UserPreprocessing
+	u := UserPreprocessing{use: material.NewUseGuard(), bin: bin}
 	if _, err := io.ReadFull(rand.Reader, u.PID[:]); err != nil {
 		return u, PartyPreprocessing{}, PartyPreprocessing{}, err
 	}
@@ -159,7 +174,7 @@ func splitRing(v uint32, bin uint8) (uint32, uint32, error) {
 
 type PartyQuery struct {
 	PID                [16]byte
-	BucketID           uint16
+	BucketID           uint32
 	DPFKey             dpf128.Key
 	Ltilde, RplusTilde uint32
 }
@@ -167,7 +182,7 @@ type PartyQuery struct {
 // ConsumeBounds runs at the authorized Query User boundary and consumes the
 // one-time packet while masking this occurrence's clipped interval.
 func (user *UserPreprocessing) ConsumeBounds(pQ, tau, uPos uint32) ([16]byte, uint32, uint32, error) {
-	if user.used {
+	if user == nil || user.use == nil {
 		return [16]byte{}, 0, 0, errors.New("anchorfilter: preprocessing pid already consumed")
 	}
 	if pQ > uPos {
@@ -177,9 +192,14 @@ func (user *UserPreprocessing) ConsumeBounds(pQ, tau, uPos uint32) ([16]byte, ui
 	if e != nil {
 		return [16]byte{}, 0, 0, e
 	}
+	if bin != user.bin {
+		return [16]byte{}, 0, 0, errors.New("anchorfilter: query position width differs from preprocessing")
+	}
 	l, r := Bounds(pQ, tau, uPos)
 	m := mask(bin)
-	user.used = true
+	if !user.use.Claim(0) {
+		return [16]byte{}, 0, 0, errors.New("anchorfilter: preprocessing pid already consumed")
+	}
 	return user.PID, (l + user.EtaL) & m, (r + 1 + user.EtaR) & m, nil
 }
 
@@ -201,7 +221,21 @@ type PartyPrepared struct {
 }
 type OpenedPositions struct{ PL, PR []uint32 }
 
+// PreparationMetrics counts only local DPF evaluations; no hidden values are logged.
+type PreparationMetrics struct {
+	MatchWall      time.Duration
+	DPFEvaluations uint64
+}
+
 func PrepareParty(bucket indexbuild.AnchorPartyBucket, query PartyQuery, prep PartyPreprocessing) (PartyPrepared, error) {
+	return prepareParty(bucket, query, prep, nil)
+}
+
+func PreparePartyMeasured(bucket indexbuild.AnchorPartyBucket, query PartyQuery, prep PartyPreprocessing, metrics *PreparationMetrics) (PartyPrepared, error) {
+	return prepareParty(bucket, query, prep, metrics)
+}
+
+func prepareParty(bucket indexbuild.AnchorPartyBucket, query PartyQuery, prep PartyPreprocessing, metrics *PreparationMetrics) (PartyPrepared, error) {
 	if bucket.BucketID != query.BucketID || prep.PID != query.PID {
 		return PartyPrepared{}, errors.New("anchorfilter: bucket or pid mismatch")
 	}
@@ -216,7 +250,15 @@ func PrepareParty(bucket indexbuild.AnchorPartyBucket, query PartyQuery, prep Pa
 	m := mask(prep.Bin)
 	j := 0
 	for _, g := range bucket.Groups {
+		var started time.Time
+		if metrics != nil {
+			started = time.Now()
+		}
 		mg := dpf128.Eval(query.DPFKey, dpf128.PointFromAnchorValue(g.Z))
+		if metrics != nil {
+			metrics.MatchWall += time.Since(started)
+			metrics.DPFEvaluations++
+		}
 		for _, s := range g.Slots {
 			p, e := ReducePosition(s.PositionShare, prep.Bin)
 			if e != nil {
@@ -252,6 +294,11 @@ func EvalPosition(party uint8, query PartyQuery, prep PartyPreprocessing, opened
 	}
 	out := make([]share.BitShare, len(opened.PL))
 	for i := range out {
+		// Key handles copied into a sliced route batch share the same guard.
+		// Each comparison instance may be evaluated only once by this wrapper.
+		if !prep.Lower[i].use.Claim(0) || !prep.Upper[i].use.Claim(0) {
+			return nil, errors.New("anchorfilter: comparison material already consumed")
+		}
 		eL, e := backend.Eval(party, prep.Lower[i], opened.PL[i], query.Ltilde)
 		if e != nil {
 			return nil, e

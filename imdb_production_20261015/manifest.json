@@ -1,0 +1,49 @@
+{
+  "version": "IMDB-100K-10K-20261015-v1",
+  "seed": 20261015,
+  "mother_database": "imdb_final_dataset/data/imdb_final.duckdb",
+  "mother_database_sha256": "e790ed19ba571ae1143efcc13239e0c6e0c290637c5aa02ef04a4e475820ba76",
+  "source_manifest_sha256": "2cd4cf314d77f541a4f94fdc281d0122ff3d4ab2b471a913aa4493108b6ae077",
+  "sampling_rule": {
+    "eligible_targets": "MOVIE JOIN MOVIE_COUNTS WHERE expectedRows>0; ORDER SHA256(tconst|target|20261015),tconst; first100000",
+    "target10000": "first10000 of that order",
+    "anchor100000": "all real MOVIECAST_OBJECTS for those10000 movies, ORDER SHA256(objectId|anchor|20261015),objectId; first100000",
+    "fairness": "Both proposals share exactly the same100000 anchor objects; target100000 contains target10000. Conditional-on-film sampling, not uniform over all41M; no per-film actor/director/alias cap or fabricated object."
+  },
+  "order": "sample_order is 1-based SHA256 rank; no title normalization or source deduplication",
+  "anchor_count": 100000,
+  "target_count": 10000,
+  "anchor_connected_movies": 8895,
+  "target_without_anchor": 1105,
+  "anchor_object_id_sequence_sha256": "7a31b5cc73af844a2a9fec83d964fd7e7927d4aee597047b10c2c241eede4fb7",
+  "target_tconst_sequence_sha256": "b9f050071281497cdc123321be8aa498af77dc30e8ff494d43574f47e3d0b488",
+  "repeated_title_groups": 17237,
+  "repeated_source_objects": 89937,
+  "files": {
+    "MOVIE.parquet": {
+      "bytes": 295107,
+      "sha256": "a025b1e1187a09d539ebf94a1214304ca426c240af7ddc4da005412253adc80f"
+    },
+    "MOVIECAST.parquet": {
+      "bytes": 3416834,
+      "sha256": "d6b0f8a7d919887b49812d9efde1f7adcba4108d735d5b9c9475f109ebf36ff5"
+    },
+    "MOVIECAST_SOURCE.parquet": {
+      "bytes": 1485289,
+      "sha256": "1f1dadcf297e57092746e3cda97b2340da40ab54802dcf87c4a6c77dd64402f1"
+    },
+    "repeated_sources.jsonl": {
+      "bytes": 13726501,
+      "sha256": "cb42a0ebad9ba748c030cba8e75e6c5ecc23aa8969f01b322c636ae153997eeb"
+    },
+    "identity_map.jsonl": {
+      "bytes": 21079273,
+      "sha256": "858452800d3814dd37e3ad474823409fc1455340bd5a53a84dfa1f80f305b85d"
+    },
+    "target_map.jsonl": {
+      "bytes": 1628713,
+      "sha256": "9397fbe9c902ac31501e07994bda7a44e3b8e88427fd4efb39c9ea13a25b4ba0"
+    }
+  },
+  "status": "FROZEN_FROM_READ_ONLY_MOTHER_DATABASE"
+}

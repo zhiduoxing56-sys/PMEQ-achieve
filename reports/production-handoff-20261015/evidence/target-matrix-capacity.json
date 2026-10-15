@@ -1,0 +1,42 @@
+{
+  "scope": "All MOVIE.primaryTitle only; single-table read-only q4 occurrence counters. No inverted index/buckets/keys/shares/workload generated. No MOVIECAST scan.",
+  "q": 4,
+  "rows": 759363,
+  "indexed_objects": 755539,
+  "short_objects": 3824,
+  "logical_join_qgram_groups": 11220632,
+  "raw_qgram_occurrences": 11297591,
+  "padded_slots_tier_ladder": 44883152,
+  "max_qgram_multiplicity": 12,
+  "objects_over_multiplicity3": 85,
+  "groups_over_multiplicity3": 165,
+  "first_violation_tconst": "tt0011620",
+  "max_multiplicity_witness_tconst": "tt8682630",
+  "max_codepoints": 242,
+  "tier_group_counts": {
+    "4": 11220580,
+    "16": 52,
+    "64": 0,
+    "256": 0,
+    "1024": 0,
+    "4096": 0,
+    "8192": 0,
+    "16384": 0,
+    "32768": 0
+  },
+  "structural_formula_not_completed_outsourcing": {
+    "16": {
+      "per_party_bytes": 2199516057,
+      "both_parties_bytes": 4399032114,
+      "dense_matrix_coefficient_bytes_per_party": 718130432,
+      "id_payload_bytes_per_party": 1436240896
+    },
+    "26": {
+      "per_party_bytes": 3545998137,
+      "both_parties_bytes": 7091996274,
+      "dense_matrix_coefficient_bytes_per_party": 1166961952,
+      "id_payload_bytes_per_party": 2333891456
+    }
+  },
+  "formula_warning": "Byte arithmetic for existing sidecar format over all 759363 MOVIE rows. Current builder rejects multiplicity>3; no actual crypto index or storage measurement. Hash bucket placement not generated. Excludes base index, RAM, payload, offline preprocessing and communication."
+}

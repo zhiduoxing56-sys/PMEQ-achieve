@@ -17,7 +17,7 @@ import (
 
 func TestBuildRejectsTierOverflow(t *testing.T) {
 	kB, kT := testKeys(t)
-	_, _, _, _, err := Build([]AreaRecord{{ID: 1, Name: strings.Repeat("a", 16388)}}, nil, kB, kT, 8, 8)
+	_, _, _, _, err := Build([]AreaRecord{{ID: 1, Name: strings.Repeat("a", 32772)}}, nil, kB, kT, 8, 8)
 	if !errors.Is(err, ErrTierOverflow) {
 		t.Fatalf("Build overflow error=%v, want ErrTierOverflow", err)
 	}
@@ -57,14 +57,14 @@ func TestQGramCodePointSemantics(t *testing.T) {
 
 func TestAnchorBucketMSBFirst(t *testing.T) {
 	var z anchorindex.Value
-	z[0], z[1] = 0xab, 0xcd
-	for k, want := range map[int]uint16{8: 0xab, 14: 0x2af3, 1: 1, 16: 0xabcd} {
+	z[0], z[1], z[2] = 0xab, 0xcd, 0x80
+	for k, want := range map[int]uint32{8: 0xab, 14: 0x2af3, 1: 1, 16: 0xabcd, 17: 0x1579b} {
 		got, err := AnchorBucket(z, k)
 		if err != nil || got != want {
 			t.Fatalf("k=%d got=%x err=%v want=%x", k, got, err, want)
 		}
 	}
-	for _, k := range []int{0, 17} {
+	for _, k := range []int{0, 18} {
 		if _, err := AnchorBucket(z, k); err == nil {
 			t.Fatalf("accepted k=%d", k)
 		}
@@ -97,7 +97,7 @@ func TestLogicalGroupIdentityAndRepeatedOccurrences(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if g.bucket != uint16(join^word) {
+		if g.bucket != uint32(join^word) {
 			t.Fatalf("target bucket=%d want join XOR word=%d", g.bucket, join^word)
 		}
 	}

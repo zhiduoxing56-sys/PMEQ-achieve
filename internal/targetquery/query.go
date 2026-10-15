@@ -4,6 +4,7 @@ package targetquery
 import (
 	"crypto/rand"
 	"errors"
+	"github.com/gtank/ristretto255"
 	"pmeq/internal/anchorfilter"
 	"pmeq/internal/targetcrypto"
 	"pmeq/internal/targetrouting"
@@ -12,6 +13,10 @@ import (
 // GenerateTokens is QUERY USER ONLY, before the Anchor query starts. No cloud
 // routine calls it. Each occurrence is freshly shared, including repeated words.
 func GenerateTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text string) (targetrouting.QueryToken, targetrouting.QueryToken, error) {
+	return generateTokens(m, key, text, 0, false)
+}
+
+func generateTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text string, count int, movie bool) (targetrouting.QueryToken, targetrouting.QueryToken, error) {
 	if e := m.Validate(); e != nil {
 		return targetrouting.QueryToken{}, targetrouting.QueryToken{}, e
 	}
@@ -21,10 +26,22 @@ func GenerateTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text s
 	}
 	runes := []rune(text)
 	n := len(runes) / 4
+	if count > 0 {
+		if n < count {
+			return targetrouting.QueryToken{}, targetrouting.QueryToken{}, ErrShortTarget
+		}
+		n = count
+	}
 	a, b := targetrouting.QueryToken{Manifest: m, QueryID: id, Party: 0, Words: make([]targetrouting.WordToken, n)}, targetrouting.QueryToken{Manifest: m, QueryID: id, Party: 1, Words: make([]targetrouting.WordToken, n)}
 	for h := 0; h < n; h++ {
 		word := string(runes[4*h : 4*h+4])
-		kw, e := targetcrypto.KWord(key, word)
+		var kw *ristretto255.Scalar
+		var e error
+		if movie {
+			kw, e = targetcrypto.KMovieWord(key, word)
+		} else {
+			kw, e = targetcrypto.KWord(key, word)
+		}
 		if e != nil {
 			return a, b, e
 		}
@@ -32,7 +49,12 @@ func GenerateTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text s
 		if e != nil {
 			return a, b, e
 		}
-		beta, e := targetcrypto.WordBucketComponent(key, word, int(m.TargetBucketBits))
+		var beta targetcrypto.BucketComponent
+		if movie {
+			beta, e = targetcrypto.MovieWordBucketComponent(key, word, int(m.TargetBucketBits))
+		} else {
+			beta, e = targetcrypto.WordBucketComponent(key, word, int(m.TargetBucketBits))
+		}
 		if e != nil {
 			return a, b, e
 		}
@@ -52,20 +74,28 @@ var ErrShortTarget = errors.New("targetquery: target shorter than q=4; completen
 // GeneratePositionTokens runs at the initial Query User boundary only. users
 // are preprovisioned one-time PHASE4 packets, one capacity per occurrence.
 func GeneratePositionTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text string, tau uint32, users []anchorfilter.UserPreprocessing) (targetrouting.QueryToken, targetrouting.QueryToken, error) {
+	return generatePositionTokens(m, key, text, tau, users, 0, 62, false)
+}
+
+func GenerateMoviePositionTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text string, tau uint32, users []anchorfilter.UserPreprocessing) (targetrouting.QueryToken, targetrouting.QueryToken, error) {
+	return generatePositionTokens(m, key, text, tau, users, 4, 270, true)
+}
+
+func generatePositionTokens(m targetrouting.Manifest, key targetcrypto.MasterKey, text string, tau uint32, users []anchorfilter.UserPreprocessing, count int, maxPosition uint32, movie bool) (targetrouting.QueryToken, targetrouting.QueryToken, error) {
 	if len([]rune(text)) < 4 {
 		return targetrouting.QueryToken{}, targetrouting.QueryToken{}, ErrShortTarget
 	}
-	if len(users) != len([]rune(text))/4 {
+	if (count == 0 && len(users) != len([]rune(text))/4) || (count > 0 && len(users) != count) {
 		return targetrouting.QueryToken{}, targetrouting.QueryToken{}, targetrouting.ErrBinding
 	}
-	a, b, e := GenerateTokens(m, key, text)
+	a, b, e := generateTokens(m, key, text, count, movie)
 	if e != nil {
 		return a, b, e
 	}
 	a.Position = make([]anchorfilter.PositionToken, len(users))
 	b.Position = make([]anchorfilter.PositionToken, len(users))
 	for i := range users {
-		pid, l, r, e := users[i].ConsumeBounds(uint32(4*i), tau, 62)
+		pid, l, r, e := users[i].ConsumeBounds(uint32(4*i), tau, maxPosition)
 		if e != nil {
 			return a, b, e
 		}

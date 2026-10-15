@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"pmeq/internal/aggregation"
@@ -22,6 +23,7 @@ import (
 	"pmeq/internal/targetartifact"
 	"pmeq/internal/targetcrypto"
 	"pmeq/internal/targetpe"
+	"pmeq/internal/zeroagg"
 	"sort"
 	"testing"
 	"time"
@@ -45,6 +47,7 @@ type reference struct {
 	Rejected          bool
 }
 type fixture struct {
+	bucketBits int
 	indexBuild time.Duration
 	keys       discovery.UserKeys
 	areas      []indexbuild.AreaRecord
@@ -53,8 +56,8 @@ type fixture struct {
 	side       [2]*targetaggregation.PartySidecar
 	payload    [2]aggregation.PartyPayload
 	layout     *aggregation.DealerLayout
-	anchor     [2]map[uint16]indexbuild.AnchorPartyBucket
-	posts      map[uint16][]incidence.Posting
+	anchor     [2]map[uint32]indexbuild.AnchorPartyBucket
+	posts      map[uint32][]incidence.Posting
 	trace      []workload
 	ref        []reference
 	static     map[string][2]uint64
@@ -63,7 +66,7 @@ type fixture struct {
 const rawDir = "/home/tenggn/projects/new-pmeq/data/musicbrainz/20260905-002519/area_tables/mbdump"
 
 func loadFixture(t *testing.T) *fixture {
-	f := &fixture{aliases: map[uint64][]indexbuild.AreaAliasRecord{}, posts: map[uint16][]incidence.Posting{}, static: map[string][2]uint64{}}
+	f := &fixture{bucketBits: 16, aliases: map[uint64][]indexbuild.AreaAliasRecord{}, posts: map[uint32][]incidence.Posting{}, static: map[string][2]uint64{}}
 	var kb, kt [32]byte
 	for i := range kb {
 		kb[i] = byte(i + 1)
@@ -130,7 +133,7 @@ func loadFixture(t *testing.T) *fixture {
 	_, a0, a1, stats, e := indexbuild.Build(f.areas, nil, f.keys.Anchor, f.keys.Target, 16, 16)
 	must(t, e)
 	f.indexBuild = time.Since(indexStart)
-	f.anchor = [2]map[uint16]indexbuild.AnchorPartyBucket{{}, {}}
+	f.anchor = [2]map[uint32]indexbuild.AnchorPartyBucket{{}, {}}
 	byZ := map[anchorindex.Value][]incidence.Posting{}
 	for _, a := range f.areas {
 		indexbuild.VisitQGrams(a.Name, func(q string, _ uint32) {
@@ -185,13 +188,13 @@ func loadFixture(t *testing.T) *fixture {
 	}
 	return f
 }
-func (f *fixture) prepareStatic(t *testing.T, q workload) ([2]*discovery.Static, []uint16) {
-	buckets := []uint16{}
-	as := [2]map[uint16]discovery.AnchorStatic{{}, {}}
+func (f *fixture) prepareStatic(t *testing.T, q workload) ([2]*discovery.Static, []uint32) {
+	buckets := []uint32{}
+	as := [2]map[uint32]discovery.AnchorStatic{{}, {}}
 	for _, c := range anchorfilter.QueryChunks(q.Anchor) {
 		z, e := anchorindex.Encode(f.keys.Anchor, c.QGram)
 		must(t, e)
-		id, e := indexbuild.AnchorBucket(z, 16)
+		id, e := indexbuild.AnchorBucket(z, f.bucketBits)
 		must(t, e)
 		buckets = append(buckets, id)
 		if _, ok := as[0][id]; ok {
@@ -200,15 +203,16 @@ func (f *fixture) prepareStatic(t *testing.T, q workload) ([2]*discovery.Static,
 		posts := f.posts[id]
 		local, e := incidence.PrepareLayout(posts)
 		must(t, e)
-		m0, m1, e := incidence.ShareIncidence(local)
+		m0, m1, e := zeroagg.ShareCoordinates(local.Coordinates, local.D)
 		must(t, e)
 		s0, s1, e := f.layout.Alignment(id, local, posts)
 		must(t, e)
 		b0, b1 := f.anchor[0][id], f.anchor[1][id]
 		b0.BucketID = id
 		b1.BucketID = id
-		as[0][id] = discovery.AnchorStatic{Bucket: b0, Incidence: m0, Stage0: s0}
-		as[1][id] = discovery.AnchorStatic{Bucket: b1, Incidence: m1, Stage1: s1}
+		labelID := fmt.Sprintf("%032x", uint64(id)+1)
+		as[0][id] = discovery.AnchorStatic{Bucket: b0, D: local.D, T: len(posts), Labels: m0, LabelID: labelID, Stage0: s0}
+		as[1][id] = discovery.AnchorStatic{Bucket: b1, D: local.D, T: len(posts), Labels: m1, LabelID: labelID, Stage1: s1}
 	}
 	var out [2]*discovery.Static
 	for u := range out {
@@ -218,7 +222,7 @@ func (f *fixture) prepareStatic(t *testing.T, q workload) ([2]*discovery.Static,
 	}
 	return out, buckets
 }
-func (f *fixture) provision(t *testing.T, q workload, statics [2]*discovery.Static, buckets []uint16) (*discovery.UserPacket, [2]*discovery.PartyPacket, discovery.OfflineBytes) {
+func (f *fixture) provision(t *testing.T, q workload, statics [2]*discovery.Static, buckets []uint32) (*discovery.UserPacket, [2]*discovery.PartyPacket, discovery.OfflineBytes) {
 	// Saved PHASE10 public workload capacities are used only by this offline
 	// reservation. They are not inputs to online Anchor Keep, routing or hits.
 	words := anchorfilter.QueryChunks(q.Target)
@@ -230,7 +234,7 @@ func (f *fixture) provision(t *testing.T, q workload, statics [2]*discovery.Stat
 		for h, w := range words {
 			b, e := targetcrypto.WordBucketComponent(f.keys.Target, w.QGram, 16)
 			must(t, e)
-			gs := f.idx[0].PositionGroups(uint16(j) ^ uint16(b))
+			gs := f.idx[0].PositionGroups(uint32(j) ^ uint32(b))
 			groups += len(gs)
 			for _, g := range gs {
 				cap[h] += int(g.PadWidth)
@@ -299,7 +303,9 @@ func TestIntegratedReal(t *testing.T) {
 		t.Skip("set PMEQ_PHASE11=1")
 	}
 	f := loadFixture(t)
-	save(t, "../../results/phase11-static.json", f.static)
+	if os.Getenv("PMEQ_ANCHOR_TIMING") != "1" {
+		save(t, "../../results/phase11-static.json", f.static)
+	}
 	var rows []row
 	rejected, total := 0, 0
 	smoke := os.Getenv("PMEQ_PHASE11_SMOKE") == "1"
@@ -324,6 +330,9 @@ func TestIntegratedReal(t *testing.T) {
 		u, p, cost := f.provision(t, q, statics, buckets)
 		out, m, e := discovery.RunLocal(context.Background(), query, f.keys, u, statics, p, scmpnative.Backend{})
 		must(t, e)
+		if m.AnchorParts.Total() != m.Anchor || m.AnchorParts.Other < 0 {
+			t.Fatal("Anchor timing partition", i, m.AnchorParts, m.Anchor)
+		}
 		want := f.oracle(q)
 		seen := map[candidatequery.Pair]bool{}
 		for _, pair := range out.Pairs {
@@ -350,6 +359,12 @@ func TestIntegratedReal(t *testing.T) {
 	name := "../../results/phase11-queries.json"
 	if smoke {
 		name = "../../results/phase11-smoke.json"
+	}
+	if os.Getenv("PMEQ_ANCHOR_TIMING") == "1" {
+		name = "../../results/anchor-breakdown-queries.json"
+		if smoke {
+			name = "../../results/anchor-breakdown-smoke.json"
+		}
 	}
 	save(t, name, rows)
 	t.Logf("INTEGRATED total=%d rejected=%d valid=%d pairs=%d FP=0 FN=0 duplicate=0 wrongAnchor=0 wrongTarget=0", len(rows), rejected, len(rows)-rejected, total)

@@ -73,7 +73,7 @@ func point(t testing.TB, a, b targetcrypto.PointShare) *ristretto255.Element {
 	return ristretto255.NewElement().Add(u, v)
 }
 func TestRoutingDomainsFreshOrderAndEmpty(t *testing.T) {
-	for _, bits := range []int{1, 8, 16} {
+	for _, bits := range []int{1, 8, 16, 17} {
 		m := manifest(t, bits)
 		for _, k := range []int{0, 1, 32} {
 			a, b := fixtures(t, 32, k, bits)
@@ -94,7 +94,7 @@ func TestRoutingDomainsFreshOrderAndEmpty(t *testing.T) {
 					must(t, e)
 					wb, e := r.EncodeToken(v)
 					must(t, e)
-					if len(wa) != r.TokenBytes(2) || len(wb) != len(wa) {
+					if len(wa) != r.TokenBytesForBits(uint8(bits), 2) || len(wb) != len(wa) {
 						t.Fatal("token bytes")
 					}
 					du, e := r.DecodeToken(m, 0, wa)
@@ -108,7 +108,11 @@ func TestRoutingDomainsFreshOrderAndEmpty(t *testing.T) {
 					if k == 0 && (len(pm) != 0 || len(qm) != 0) {
 						t.Fatal("empty access")
 					}
-					if k > 0 && len(pm) != r.OpeningHeaderBytes+4*k {
+					wireWidth := 2
+					if bits > 16 {
+						wireWidth = 4
+					}
+					if k > 0 && len(pm) != r.OpeningHeaderBytes+2*wireWidth*k {
 						t.Fatal("wire width")
 					}
 					x, e := p.Finish(qm)
@@ -129,7 +133,7 @@ func TestRoutingDomainsFreshOrderAndEmpty(t *testing.T) {
 						must(t, e)
 						w, e := targetcrypto.WordBucketComponent(key(t), "天地玄黄", bits)
 						must(t, e)
-						want := uint16(targetcrypto.CombineBucketComponents(j, w))
+						want := uint32(targetcrypto.CombineBucketComponents(j, w))
 						for h := 0; h < 2; h++ {
 							i := ci*2 + h
 							if point(t, x.Routes[i].Y, y.Routes[i].Y).Equal(expected) != 1 || x.Routes[i].BucketID != want || y.Routes[i].BucketID != want || x.Routes[i].CandidateIndex != uint32(ci) || x.Routes[i].OccurrenceID != uint32(h) {

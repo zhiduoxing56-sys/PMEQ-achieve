@@ -4,6 +4,7 @@ package candidatequery
 import (
 	"encoding/binary"
 	"errors"
+	"pmeq/internal/aggregation"
 	"pmeq/internal/domain"
 	"pmeq/internal/share"
 	"pmeq/internal/targetaggregation"
@@ -24,20 +25,31 @@ type Binding struct {
 
 const HeaderBytes = 86
 
-func valid(s targetaggregation.CandidatePairShares) bool {
-	return s.Manifest.Validate() == nil && s.Manifest.TargetBucketBits == 16 && s.Manifest.IndexID != [16]byte{} && s.LayoutID != [16]byte{} && s.CompactionID != [16]byte{} && s.QueryID != [16]byte{} && s.K >= 0 && s.K <= 120071 && s.DTarget == 26 && len(s.PairKeepShares) == 26*s.K && len(s.AnchorIDShares) == 26*s.K && len(s.TargetIDShares) == 26*s.K
+// validDomain bounds existing uint32 counts and length arithmetic. N is trusted
+// static metadata, not a value recovered from the peer message.
+func validDomain(n, k int) bool {
+	return n >= 0 && uint64(n) <= uint64(^uint32(0)) && k >= 0 && k <= n && k <= (int(^uint(0)>>1)-HeaderBytes)/(17*26)
+}
+
+func valid(s targetaggregation.CandidatePairShares, n int) bool {
+	return s.Manifest.Validate() == nil && s.Manifest.IndexID != [16]byte{} && s.LayoutID != [16]byte{} && s.CompactionID != [16]byte{} && s.QueryID != [16]byte{} && validDomain(n, s.K) && s.DTarget == 26 && len(s.PairKeepShares) == 26*s.K && len(s.AnchorIDShares) == 26*s.K && len(s.TargetIDShares) == 26*s.K
 }
 
 // EncodeShares serializes one party only. It never tests the secret Keep value.
 func EncodeShares(party uint8, s targetaggregation.CandidatePairShares) ([]byte, error) {
-	if party > 1 || !valid(s) {
+	return EncodeSharesForDomain(party, s, aggregation.CandidateCount)
+}
+
+// EncodeSharesForDomain uses the existing wire format with a trusted static N.
+func EncodeSharesForDomain(party uint8, s targetaggregation.CandidatePairShares, n int) ([]byte, error) {
+	if party > 1 || !valid(s, n) {
 		return nil, ErrResult
 	}
 	b := make([]byte, HeaderBytes+17*26*s.K)
 	copy(b, "PMEQPAIR")
 	b[8] = party
 	copy(b[9:25], s.Manifest.IndexID[:])
-	b[25] = 16
+	b[25] = s.Manifest.TargetBucketBits
 	binary.LittleEndian.PutUint32(b[26:], 4)
 	copy(b[30:46], s.LayoutID[:])
 	copy(b[46:62], s.CompactionID[:])
@@ -55,6 +67,12 @@ func EncodeShares(party uint8, s targetaggregation.CandidatePairShares) ([]byte,
 	return b, nil
 }
 func DecodeShares(party uint8, w Binding, b []byte) (targetaggregation.CandidatePairShares, error) {
+	return DecodeSharesForDomain(party, w, b, aggregation.CandidateCount)
+}
+
+// DecodeSharesForDomain bounds K by the verified static domain, without adding
+// any field to the message or changing the expected lineage binding.
+func DecodeSharesForDomain(party uint8, w Binding, b []byte, n int) (targetaggregation.CandidatePairShares, error) {
 	var s targetaggregation.CandidatePairShares
 	if len(b) < HeaderBytes || string(b[:8]) != "PMEQPAIR" || b[8] != party || party > 1 {
 		return s, ErrResult
@@ -67,7 +85,7 @@ func DecodeShares(party uint8, w Binding, b []byte) (targetaggregation.Candidate
 	copy(s.QueryID[:], b[62:78])
 	s.K = int(binary.LittleEndian.Uint32(b[78:]))
 	s.DTarget = int(binary.LittleEndian.Uint32(b[82:]))
-	if s.Manifest != w.Manifest || s.LayoutID != w.LayoutID || s.CompactionID != w.CompactionID || s.QueryID != w.QueryID || s.K > 120071 || s.DTarget != 26 || len(b) != HeaderBytes+17*26*s.K {
+	if s.Manifest != w.Manifest || s.LayoutID != w.LayoutID || s.CompactionID != w.CompactionID || s.QueryID != w.QueryID || !validDomain(n, s.K) || s.DTarget != 26 || len(b) != HeaderBytes+17*26*s.K {
 		return s, ErrResult
 	}
 	s.PairKeepShares = make([]share.BitShare, 26*s.K)
@@ -82,7 +100,7 @@ func DecodeShares(party uint8, w Binding, b []byte) (targetaggregation.Candidate
 		s.AnchorIDShares[i] = share.NewRing64Share(domain.Ring64(binary.LittleEndian.Uint64(b[at+1:])))
 		s.TargetIDShares[i] = share.NewRing64Share(domain.Ring64(binary.LittleEndian.Uint64(b[at+9:])))
 	}
-	if !valid(s) {
+	if !valid(s, n) {
 		return s, ErrResult
 	}
 	return s, nil
@@ -92,11 +110,17 @@ func DecodeShares(party uint8, w Binding, b []byte) (targetaggregation.Candidate
 // channels and the expected query/compaction binding. No sorting or deduplication
 // can silently change a malformed result: duplicates and nonzero masked zeros fail.
 func Recover(w Binding, a, b []byte) (CandidatePairs, error) {
-	x, e := DecodeShares(0, w, a)
+	return RecoverForDomain(w, a, b, aggregation.CandidateCount)
+}
+
+// RecoverForDomain retains the existing recovery and rejection rules; N comes
+// from the authorized user's verified static state.
+func RecoverForDomain(w Binding, a, b []byte, n int) (CandidatePairs, error) {
+	x, e := DecodeSharesForDomain(0, w, a, n)
 	if e != nil {
 		return CandidatePairs{}, e
 	}
-	y, e := DecodeShares(1, w, b)
+	y, e := DecodeSharesForDomain(1, w, b, n)
 	if e != nil || x.K != y.K {
 		return CandidatePairs{}, ErrResult
 	}

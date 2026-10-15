@@ -12,7 +12,7 @@ import (
 )
 
 func TestTierWidth(t *testing.T) {
-	tests := []struct{ n, w int }{{1, 4}, {4, 4}, {5, 16}, {16, 16}, {17, 64}, {64, 64}, {65, 256}, {256, 256}, {257, 1024}, {1024, 1024}, {1025, 4096}, {4096, 4096}, {4097, 8192}, {8192, 8192}, {8193, 16384}, {16384, 16384}}
+	tests := []struct{ n, w int }{{1, 4}, {4, 4}, {5, 16}, {16, 16}, {17, 64}, {64, 64}, {65, 256}, {256, 256}, {257, 1024}, {1024, 1024}, {1025, 4096}, {4096, 4096}, {4097, 8192}, {8192, 8192}, {8193, 16384}, {16384, 16384}, {16385, 32768}, {32768, 32768}}
 	for _, test := range tests {
 		got, err := TierWidth(test.n)
 		if err != nil || got != test.w {
@@ -22,7 +22,7 @@ func TestTierWidth(t *testing.T) {
 	if _, err := TierWidth(0); err == nil {
 		t.Fatal("accepted empty group")
 	}
-	if _, err := TierWidth(16385); !errors.Is(err, ErrTierOverflow) {
+	if _, err := TierWidth(32769); !errors.Is(err, ErrTierOverflow) {
 		t.Fatalf("overflow error=%v", err)
 	}
 }

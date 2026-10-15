@@ -22,7 +22,7 @@ type compactTuple struct {
 	keep   domain.Bit
 	id     uint64
 	scalar ristretto255.Scalar
-	bucket uint16
+	bucket uint32
 }
 
 func tupleAdd(a, b compactTuple) compactTuple {
@@ -43,9 +43,13 @@ func tupleSub(a, b compactTuple) compactTuple {
 }
 func randomTuples(n int, bits uint8) ([]compactTuple, error) {
 	out := make([]compactTuple, n)
-	var raw [75]byte
+	var raw [77]byte
 	for i := range out {
-		if _, e := rand.Read(raw[:]); e != nil {
+		width := 2
+		if bits > 16 {
+			width = 4
+		}
+		if _, e := rand.Read(raw[:73+width]); e != nil {
 			return nil, e
 		}
 		out[i].keep = domain.Bit(raw[0]&1 != 0)
@@ -53,7 +57,12 @@ func randomTuples(n int, bits uint8) ([]compactTuple, error) {
 		if _, e := out[i].scalar.SetUniformBytes(raw[9:73]); e != nil {
 			return nil, e
 		}
-		out[i].bucket = binary.LittleEndian.Uint16(raw[73:75]) & uint16((uint32(1)<<bits)-1)
+		if width == 4 {
+			out[i].bucket = binary.LittleEndian.Uint32(raw[73:77])
+		} else {
+			out[i].bucket = uint32(binary.LittleEndian.Uint16(raw[73:75]))
+		}
+		out[i].bucket &= uint32(1)<<bits - 1
 	}
 	return out, nil
 }
@@ -69,7 +78,7 @@ func inputTuples(x CandidateInput, id [16]byte, n int, bits uint8) ([]compactTup
 		}
 		out[i].keep = x.KeepShare[i].Value()
 		out[i].id = uint64(p.RecordIDShare.Value())
-		out[i].bucket = uint16(p.BucketJoinShare)
+		out[i].bucket = uint32(p.BucketJoinShare)
 		if _, e := out[i].scalar.SetCanonicalBytes(p.KappaJoinShare[:]); e != nil {
 			return nil, e
 		}
@@ -96,6 +105,7 @@ type ShuffleMessage struct {
 	layout, query [16]byte
 	stage         int
 	values        []compactTuple
+	bucketBits    uint8
 }
 
 // KeepOpening is deliberately limited to the final shuffled Keep shares.
@@ -189,7 +199,7 @@ func (p *Compaction1) Begin(x CandidateInput) (ShuffleMessage, error) {
 	clear(s.t)
 	s.t = nil
 	s.phase = 1
-	return ShuffleMessage{s.layout, s.query, 1, v}, nil
+	return ShuffleMessage{s.layout, s.query, 1, v, s.bucketBits}, nil
 }
 
 // Stage1 applies tau0 to every field. This result stays local to CS0.
@@ -197,7 +207,7 @@ func (p *Compaction0) Stage1(x CandidateInput, m ShuffleMessage) error {
 	s := p.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.phase != 0 || m.layout != s.layout || m.query != s.query || m.stage != 1 || len(m.values) != s.n {
+	if s.phase != 0 || m.layout != s.layout || m.query != s.query || m.stage != 1 || (s.bucketBits > 16) != (m.bucketBits > 16) || len(m.values) != s.n {
 		return ErrCompaction
 	}
 	v, e := inputTuples(x, s.layout, s.n, s.bucketBits)
@@ -235,7 +245,7 @@ func (p *Compaction0) BeginStage2() (ShuffleMessage, error) {
 	s.shuffled = s.r
 	s.r = nil
 	s.phase = 2
-	return ShuffleMessage{s.layout, s.query, 2, v}, nil
+	return ShuffleMessage{s.layout, s.query, 2, v, s.bucketBits}, nil
 }
 
 // Stage2 applies tau1 to every field; no input gamma is exported.
@@ -243,7 +253,7 @@ func (p *Compaction1) Stage2(m ShuffleMessage) error {
 	s := p.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.phase != 1 || m.layout != s.layout || m.query != s.query || m.stage != 2 || len(m.values) != s.n {
+	if s.phase != 1 || m.layout != s.layout || m.query != s.query || m.stage != 2 || (s.bucketBits > 16) != (m.bucketBits > 16) || len(m.values) != s.n {
 		return ErrCompaction
 	}
 	out := make([]compactTuple, s.n)

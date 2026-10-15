@@ -105,7 +105,7 @@ func TestComparisonDomainAndMasks(t *testing.T) {
 	}
 }
 func TestPartyStateSchemas(t *testing.T) {
-	for typ, want := range map[reflect.Type][]string{reflect.TypeOf(Stage0{}): {"LayoutID", "BucketID", "RhoSeed"}, reflect.TypeOf(Stage1{}): {"LayoutID", "BucketID", "sigma"}, reflect.TypeOf(PartyPayload{}): {"LayoutID", "Slots"}, reflect.TypeOf(PermPrep0{}): {"c1", "a2", "b2", "done1", "done2"}, reflect.TypeOf(PermPrep1{}): {"a1", "b1", "c2", "done1", "done2"}} {
+	for typ, want := range map[reflect.Type][]string{reflect.TypeOf(Stage0{}): {"LayoutID", "BucketID", "RhoSeed"}, reflect.TypeOf(Stage1{}): {"LayoutID", "BucketID", "sigma"}, reflect.TypeOf(PartyPayload{}): {"LayoutID", "Slots"}, reflect.TypeOf(PermPrep0{}): {"c1", "a2", "b2", "use", "stage"}, reflect.TypeOf(PermPrep1{}): {"a1", "b1", "c2", "use", "stage"}} {
 		if typ.NumField() != len(want) {
 			t.Fatal(typ)
 		}
@@ -164,8 +164,8 @@ type harness struct {
 	kt                 targetcrypto.MasterKey
 	global             *DealerLayout
 	payload0, payload1 PartyPayload
-	b0, b1             map[uint16]indexbuild.AnchorPartyBucket
-	slots              map[uint16][]provenance
+	b0, b1             map[uint32]indexbuild.AnchorPartyBucket
+	slots              map[uint32][]provenance
 	words              map[string][]provenance
 	areas              []indexbuild.AreaRecord
 }
@@ -176,7 +176,7 @@ func newHarness(t *testing.T, areas []indexbuild.AreaRecord) *harness {
 		kb[i] = byte(i + 1)
 		kt[i] = byte(255 - i)
 	}
-	h := &harness{areas: areas, b0: map[uint16]indexbuild.AnchorPartyBucket{}, b1: map[uint16]indexbuild.AnchorPartyBucket{}, slots: map[uint16][]provenance{}, words: map[string][]provenance{}}
+	h := &harness{areas: areas, b0: map[uint32]indexbuild.AnchorPartyBucket{}, b1: map[uint32]indexbuild.AnchorPartyBucket{}, slots: map[uint32][]provenance{}, words: map[string][]provenance{}}
 	var e error
 	h.kb, e = anchorindex.NewKey(kb)
 	must(t, e)

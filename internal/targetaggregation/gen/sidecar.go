@@ -32,8 +32,16 @@ func (c *counted) Write(b []byte) (int, error) { n, e := c.w.Write(b); c.n += ui
 // Ordinals sort ALL alias IDs numerically within a join, including short names.
 // They are not per-group ranks, and no actual join size enters either sidecar.
 func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer) (targetaggregation.SidecarManifest, Audit, error) {
+	return BuildWithCapacity(rawManifest, files, aliases, outputs, 26)
+}
+
+// BuildWithCapacity rebuilds only capacity-dependent auxiliary state, never PSMJ.
+func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer, d int) (targetaggregation.SidecarManifest, Audit, error) {
 	var out targetaggregation.SidecarManifest
 	var audit Audit
+	if d != 16 && d != 26 {
+		return out, audit, targetaggregation.ErrBinding
+	}
 	m, e := indexbuild.ReadTargetManifest(bytes.NewReader(rawManifest))
 	if e != nil {
 		return out, audit, e
@@ -65,21 +73,23 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 	for _, ids := range joins {
 		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 		audit.MaxAliases = max(audit.MaxAliases, len(ids))
-		if len(ids) > 26 {
+		if len(ids) > d {
 			return out, audit, targetaggregation.ErrBinding
 		}
 		for u, id := range ids {
 			ordinal[id] = u
 		}
 	}
-	var buckets [2][65536][]indexbuild.TargetPartyGroup
+	bucketCount := 1 << m.TargetBucketBits
+	var buckets [2][][]indexbuild.TargetPartyGroup
 	for u := range ps {
+		buckets[u] = make([][]indexbuild.TargetPartyGroup, bucketCount)
 		for _, b := range ps[u].TargetBuckets {
 			buckets[u][b.BucketID] = b.Groups
 		}
 	}
 	digest := sha256.Sum256(rawManifest)
-	out = targetaggregation.SidecarManifest{Version: 1, IndexID: m.IndexID, ManifestSHA256: hex.EncodeToString(digest[:]), DTarget: 26, MaxMultiplicity: 3, IncidenceBytes: 26 * m.PaddedSlots, TargetIDBytes: 26 * 8 * m.LogicalGroups}
+	out = targetaggregation.SidecarManifest{Version: 1, IndexID: m.IndexID, ManifestSHA256: hex.EncodeToString(digest[:]), DTarget: uint32(d), MaxMultiplicity: targetaggregation.MaxMultiplicity, IncidenceBytes: uint64(d) * m.PaddedSlots, TargetIDBytes: uint64(d) * 8 * m.LogicalGroups}
 	var writers [2]*bufio.Writer
 	var counters [2]*counted
 	hashes := [2]io.Writer{}
@@ -97,14 +107,18 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 	}
 	structure := sha256.New()
 	write := func(w io.Writer, v any) error { return binary.Write(w, binary.LittleEndian, v) }
-	for bi := 0; bi < 65536; bi++ {
+	for bi := 0; bi < bucketCount; bi++ {
 		gs, peer := buckets[0][bi], buckets[1][bi]
 		if len(gs) != len(peer) {
 			return out, audit, targetaggregation.ErrBinding
 		}
 		audit.CheckedBuckets++
 		audit.CheckedGroups += uint64(len(gs))
-		write(structure, uint16(bi))
+		if m.TargetBucketBits > 16 {
+			write(structure, uint32(bi))
+		} else {
+			write(structure, uint16(bi))
+		}
 		write(structure, uint32(len(gs)))
 		for _, w := range writers {
 			if e = write(w, uint32(len(gs))); e != nil {
@@ -112,7 +126,7 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 			}
 		}
 		coords := []int{}
-		payload := make([]uint64, len(gs)*26)
+		payload := make([]uint64, len(gs)*d)
 		for gi, g := range gs {
 			if g.PadWidth != peer[gi].PadWidth || len(g.Slots) != int(g.PadWidth) || len(peer[gi].Slots) != len(g.Slots) {
 				return out, audit, targetaggregation.ErrBinding
@@ -144,7 +158,7 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 					coord = ordinal[id]
 					counts[id]++
 					audit.MaxMultiplicity = max(audit.MaxMultiplicity, counts[id])
-					if counts[id] > 3 {
+					if counts[id] > targetaggregation.MaxMultiplicity {
 						return out, audit, targetaggregation.ErrBinding
 					}
 					audit.RealSlots++
@@ -158,19 +172,19 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 				return out, audit, targetaggregation.ErrBinding
 			}
 			for u, id := range joins[join] {
-				payload[gi*26+u] = id
+				payload[gi*d+u] = id
 			}
 		}
 		// Both dense coefficient arrays contain independent fresh local masks,
 		// including semantic zero, dummy columns and unused ordinals.
-		a, b := make([]byte, 26*len(coords)), make([]byte, 26*len(coords))
+		a, b := make([]byte, d*len(coords)), make([]byte, d*len(coords))
 		if _, e = rand.Read(a); e != nil {
 			return out, audit, e
 		}
 		for j := range a {
 			a[j] &= 127
 			v := byte(0)
-			if coords[j/26] == j%26 {
+			if coords[j/d] == j%d {
 				v = 1
 			}
 			b[j] = (v - a[j]) & 127

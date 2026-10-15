@@ -40,7 +40,7 @@ type peExperiment struct {
 	trace                              []peWorkload
 	idx                                [2]*targetpe.PartyIndex
 	packets                            [2][]targetpe.Packet
-	keys                               map[uint16][]peIdentity
+	keys                               map[uint32][]peIdentity
 	queries, routes, groups, zero, one int
 	counts                             []int
 }
@@ -87,7 +87,7 @@ func readPEPayload(t *testing.T, dir string, u int, m targetpe.PayloadManifest) 
 	return p
 }
 func setupPE(t *testing.T, h *harness) {
-	x := &peExperiment{keys: map[uint16][]peIdentity{}}
+	x := &peExperiment{keys: map[uint32][]peIdentity{}}
 	dir := peArtifactDir()
 	raw, e := os.ReadFile(filepath.Join(dir, "payload-manifest.json"))
 	must(t, e)

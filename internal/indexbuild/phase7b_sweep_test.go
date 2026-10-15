@@ -9,7 +9,7 @@ import (
 )
 
 type sweepBucket struct {
-	ID                   uint16
+	ID                   uint32
 	Groups, Slots, Joins int
 }
 type sweepLayout struct {
@@ -78,7 +78,7 @@ func TestPhase7BSweep(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			g.bucket = uint16(targetcrypto.CombineBucketComponents(j, w))
+			g.bucket = uint32(targetcrypto.CombineBucketComponents(j, w))
 			if joins[g.bucket] == nil {
 				joins[g.bucket] = map[uint64]bool{}
 			}
@@ -90,7 +90,7 @@ func TestPhase7BSweep(t *testing.T) {
 		}
 		row := sweepLayout{Bits: k, Stats: a.Target, Buckets: make([]sweepBucket, 1<<k)}
 		for i := range row.Buckets {
-			row.Buckets[i] = sweepBucket{ID: uint16(i), Joins: len(joins[i])}
+			row.Buckets[i] = sweepBucket{ID: uint32(i), Joins: len(joins[i])}
 		}
 		for _, b := range a.Metadata.TargetBuckets {
 			row.Buckets[b.BucketID].Groups = int(b.GroupCount)

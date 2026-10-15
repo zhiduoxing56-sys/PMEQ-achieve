@@ -14,15 +14,15 @@ const (
 	// MinBucketBits is the smallest supported bucket width.
 	MinBucketBits = 1
 	// MaxBucketBits is the largest supported bucket width.
-	MaxBucketBits = 16
+	MaxBucketBits = 17
 )
 
 // ErrBucketBits reports a bucket width outside [MinBucketBits, MaxBucketBits].
-var ErrBucketBits = errors.New("targetcrypto: bucket bits must be between 1 and 16")
+var ErrBucketBits = errors.New("targetcrypto: bucket bits must be between 1 and 17")
 
 // BucketComponent is a k-bit routing component in F_2^k. Only the low k bits
 // are significant; the width is a public system parameter.
-type BucketComponent uint16
+type BucketComponent uint32
 
 // JoinBucketComponent derives the keyed join routing component
 //
@@ -48,6 +48,17 @@ func WordBucketComponent(key MasterKey, qgram string, k int) (BucketComponent, e
 		return 0, err
 	}
 	message, err := CanonicalWord(wordBucketDomain, qgram)
+	if err != nil {
+		return 0, err
+	}
+	return bucketComponentFromHMAC(key, message, k), nil
+}
+
+func MovieWordBucketComponent(key MasterKey, qgram string, k int) (BucketComponent, error) {
+	if err := checkBucketBits(k); err != nil {
+		return 0, err
+	}
+	message, err := CanonicalMovieWord("PMEQ-TARGET-IMDB-BUCKET-WORD-V1", qgram)
 	if err != nil {
 		return 0, err
 	}
@@ -87,7 +98,7 @@ func CombineBucketComponents(a, b BucketComponent) BucketComponent {
 // BucketShare is one party's XOR share of a bucket component. It is a single
 // local k-bit value and nothing else: no peer share, no full component, and no
 // derivation metadata.
-type BucketShare uint16
+type BucketShare uint32
 
 // Value returns this party's share as a bucket component.
 func (s BucketShare) Value() BucketComponent {
@@ -104,18 +115,18 @@ func splitBucketComponentWithReader(random io.Reader, beta BucketComponent, k in
 	if err := checkBucketBits(k); err != nil {
 		return 0, 0, err
 	}
-	mask := uint16(1)<<uint(k) - 1
+	mask := uint32(1)<<uint(k) - 1
 	bytesNeeded := (k + 7) / 8
-	var raw [2]byte
+	var raw [3]byte
 	if _, err := io.ReadFull(random, raw[:bytesNeeded]); err != nil {
 		return 0, 0, err
 	}
-	left := uint16(0)
+	left := uint32(0)
 	for i := 0; i < bytesNeeded; i++ {
-		left = left<<8 | uint16(raw[i])
+		left = left<<8 | uint32(raw[i])
 	}
 	left >>= uint(bytesNeeded*8 - k)
-	value := uint16(beta) & mask
+	value := uint32(beta) & mask
 	return BucketShare(left), BucketShare((value ^ left) & mask), nil
 }
 

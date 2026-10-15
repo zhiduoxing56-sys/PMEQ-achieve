@@ -8,7 +8,7 @@ import (
 )
 
 func TestProductionManifestWidth(t *testing.T) {
-	m := indexbuild.TargetManifest{Version: 1, IndexID: [16]byte{3}, Q: 4, AnchorBucketBits: 16, TargetBucketBits: 16, Tiers: [8]uint32{4, 16, 64, 256, 1024, 4096, 8192, 16384}}
+	m := indexbuild.TargetManifest{Version: 1, IndexID: [16]byte{3}, Q: 4, AnchorBucketBits: 16, TargetBucketBits: 16, Tiers: [9]uint32{4, 16, 64, 256, 1024, 4096, 8192, 16384}}
 	raw, _ := json.Marshal(m)
 	bound, e := LoadIndex(bytes.NewReader(raw))
 	if e != nil {

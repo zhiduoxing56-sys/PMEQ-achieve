@@ -13,12 +13,15 @@ func TestTokenOmitsPlaintextAndConsumesPID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := anchorfilter.UserPreprocessing{PID: [16]byte{1}, EtaL: 3, EtaR: 5}
+	u, _, _, err := anchorfilter.Preprocess(0, 7, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	a, b, err := MakeOccurrence(k, anchorfilter.QueryChunk{QGram: "abcd", Position: 4}, 1, 62, 8, &u)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.BucketID != b.BucketID || a.PID != b.PID || a.Ltilde != 6 || a.RplusTilde != 11 {
+	if a.BucketID != b.BucketID || a.PID != b.PID || a.Ltilde != ((3+u.EtaL)&127) || a.RplusTilde != ((6+u.EtaR)&127) {
 		t.Fatal("party token mismatch")
 	}
 	if _, _, err = MakeOccurrence(k, anchorfilter.QueryChunk{QGram: "abcd", Position: 4}, 1, 62, 8, &u); err == nil {

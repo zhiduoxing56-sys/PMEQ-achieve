@@ -24,7 +24,7 @@ func must(t *testing.T, e error) {
 func syntheticIndex() (*PartyIndex, *PartyIndex) {
 	m := indexbuild.TargetManifest{IndexID: [16]byte{1}, TargetBucketBits: 16, Q: 4}
 	l := AlignmentLineage{m.IndexID, [16]byte{2}, 120071}
-	return &PartyIndex{manifest: m, lineage: l, party: 0}, &PartyIndex{manifest: m, lineage: l, party: 1}
+	return &PartyIndex{manifest: m, lineage: l, party: 0, buckets: make([][]indexbuild.TargetPartyGroup, 1<<m.TargetBucketBits)}, &PartyIndex{manifest: m, lineage: l, party: 1, buckets: make([][]indexbuild.TargetPartyGroup, 1<<m.TargetBucketBits)}
 }
 func run(t *testing.T, a, b *Session) (TargetGroupMatches, TargetGroupMatches) {
 	t.Helper()

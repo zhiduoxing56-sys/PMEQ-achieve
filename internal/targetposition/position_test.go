@@ -97,7 +97,7 @@ func TestBoundsOracle(t *testing.T)                      { testBounds(t, oracleB
 func TestSealedPostingCompositionAndGuards(t *testing.T) { testComposition(t, oracleBackend{}) }
 func testComposition(t *testing.T, backend anchorfilter.SCMPBackend) {
 	idx := loadIndexes(t)
-	bucket := uint16(0)
+	bucket := uint32(0)
 	for len(idx[0].PositionGroups(bucket)) < 2 {
 		bucket++
 	}

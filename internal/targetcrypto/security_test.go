@@ -43,7 +43,7 @@ func TestShareTypesHoldOnlyOneLocalValue(t *testing.T) {
 	}{
 		{"ScalarShare", reflect.TypeOf(ScalarShare{}), reflect.Array, 32},
 		{"PointShare", reflect.TypeOf(PointShare{}), reflect.Array, 32},
-		{"BucketShare", reflect.TypeOf(BucketShare(0)), reflect.Uint16, 2},
+		{"BucketShare", reflect.TypeOf(BucketShare(0)), reflect.Uint32, 4},
 	} {
 		if tc.typ.Kind() != tc.kind {
 			t.Fatalf("%s kind = %v, want %v", tc.name, tc.typ.Kind(), tc.kind)
@@ -115,13 +115,13 @@ func TestShareTypesExposeNoSecretEntryPoint(t *testing.T) {
 // the peer share or a full component above its declared width.
 func TestBucketShareHoldsOnlyItsOwnShare(t *testing.T) {
 	for k := MinBucketBits; k <= MaxBucketBits; k++ {
-		full := BucketComponent(0xFFFF & ((1 << uint(k)) - 1))
+		full := BucketComponent(0x1FFFF & ((1 << uint(k)) - 1))
 		left, right, err := SplitBucketComponent(full, k)
 		if err != nil {
 			t.Fatalf("k=%d: SplitBucketComponent: %v", k, err)
 		}
-		mask := uint16(1)<<uint(k) - 1
-		if uint16(left.Value())&^mask != 0 || uint16(right.Value())&^mask != 0 {
+		mask := uint32(1)<<uint(k) - 1
+		if uint32(left.Value())&^mask != 0 || uint32(right.Value())&^mask != 0 {
 			t.Fatalf("k=%d: a share carries bits above its width", k)
 		}
 		if left.Value()^right.Value() != full {

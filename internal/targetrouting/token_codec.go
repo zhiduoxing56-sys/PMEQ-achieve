@@ -13,7 +13,8 @@ func EncodeToken(t QueryToken) ([]byte, error) {
 	if t.Party > 1 || uint64(len(t.Words)) > uint64(^uint32(0))/4 {
 		return nil, ErrBinding
 	}
-	b := make([]byte, TokenBytes(len(t.Words)))
+	width := bucketWireBytes(t.Manifest.TargetBucketBits)
+	b := make([]byte, TokenBytesForBits(t.Manifest.TargetBucketBits, len(t.Words)))
 	copy(b[:16], t.Manifest.IndexID[:])
 	b[16] = t.Manifest.TargetBucketBits
 	binary.LittleEndian.PutUint32(b[17:21], t.Manifest.Q)
@@ -31,11 +32,15 @@ func EncodeToken(t QueryToken) ([]byte, error) {
 		if _, e := targetcrypto.NewPointShare(w.WordPointShare); e != nil {
 			return nil, e
 		}
-		at := 42 + 42*h
+		at := 42 + (40+width)*h
 		binary.LittleEndian.PutUint32(b[at:], w.OccurrenceID)
 		binary.LittleEndian.PutUint32(b[at+4:], w.Position)
 		copy(b[at+8:at+40], w.WordPointShare[:])
-		binary.LittleEndian.PutUint16(b[at+40:], uint16(w.BucketWordShare))
+		if width == 4 {
+			binary.LittleEndian.PutUint32(b[at+40:], uint32(w.BucketWordShare))
+		} else {
+			binary.LittleEndian.PutUint16(b[at+40:], uint16(w.BucketWordShare))
+		}
 	}
 	return b, nil
 }
@@ -44,7 +49,7 @@ func DecodeToken(m Manifest, party uint8, b []byte) (QueryToken, error) {
 		return QueryToken{}, ErrBinding
 	}
 	n := uint64(binary.LittleEndian.Uint32(b[38:42]))
-	if n > uint64(^uint32(0))/4 || uint64(len(b)) != 42+42*n {
+	if n > uint64(^uint32(0))/4 || uint64(len(b)) != uint64(TokenBytesForBits(m.TargetBucketBits, int(n))) {
 		return QueryToken{}, ErrBinding
 	}
 	var t QueryToken
@@ -57,13 +62,18 @@ func DecodeToken(m Manifest, party uint8, b []byte) (QueryToken, error) {
 		return t, ErrBinding
 	}
 	t.Words = make([]WordToken, int(n))
+	width := bucketWireBytes(m.TargetBucketBits)
 	for h := range t.Words {
-		at := 42 + 42*h
+		at := 42 + (40+width)*h
 		w := &t.Words[h]
 		w.OccurrenceID = binary.LittleEndian.Uint32(b[at:])
 		w.Position = binary.LittleEndian.Uint32(b[at+4:])
 		copy(w.WordPointShare[:], b[at+8:at+40])
-		w.BucketWordShare = targetcrypto.BucketShare(binary.LittleEndian.Uint16(b[at+40:]))
+		if width == 4 {
+			w.BucketWordShare = targetcrypto.BucketShare(binary.LittleEndian.Uint32(b[at+40:]))
+		} else {
+			w.BucketWordShare = targetcrypto.BucketShare(binary.LittleEndian.Uint16(b[at+40:]))
+		}
 	}
 	_, e := EncodeToken(t)
 	return t, e

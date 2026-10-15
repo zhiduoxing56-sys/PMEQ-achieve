@@ -51,7 +51,7 @@ type fixture struct {
 }
 
 func makeFixture(t *testing.T, k, r, aliases int) fixture {
-	f := fixture{shape: Shape{k, r, k * r * 128, k * r * 2}, lineage: targetpe.AlignmentLineage{IndexID: [16]byte{1}, LayoutID: [16]byte{2}, N: 120071}, counts: make([]int, k*26), ids: make([]uint64, 26)}
+	f := fixture{shape: Shape{K: k, R: r, S: k * r * 128, G: k * r * 2}, lineage: targetpe.AlignmentLineage{IndexID: [16]byte{1}, LayoutID: [16]byte{2}, N: 120071}, counts: make([]int, k*26), ids: make([]uint64, 26)}
 	rng := rand.New(rand.NewSource(10101))
 	splitBit := func(v bool) (share.BitShare, share.BitShare) {
 		a := rng.Intn(2) != 0
@@ -89,7 +89,7 @@ func makeFixture(t *testing.T, k, r, aliases int) fixture {
 		}
 	}
 	for u := 0; u < 2; u++ {
-		f.side[u] = &PartySidecar{party: uint8(u), manifest: SidecarManifest{IndexID: f.lineage.IndexID, DTarget: 26, MaxMultiplicity: 3}}
+		f.side[u] = &PartySidecar{party: uint8(u), bits: 16, buckets: make([]bucket, 1<<16), manifest: SidecarManifest{IndexID: f.lineage.IndexID, DTarget: 26, MaxMultiplicity: MaxMultiplicity}}
 		matrix, e := incidence.FromLocalCoefficients(26, 128, coeff[u])
 		must(t, e)
 		f.side[u].buckets[0] = bucket{[]uint32{64, 64}, matrix, payload[u]}

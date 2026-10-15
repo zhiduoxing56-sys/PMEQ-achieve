@@ -45,8 +45,8 @@ func TestAggregationFullDomain(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	totals := map[uint16]int{}
-	records := map[uint16]map[uint64]bool{}
+	totals := map[uint32]int{}
+	records := map[uint32]map[uint64]bool{}
 	for _, g := range groups {
 		w, e := TierWidth(len(g.postings))
 		if e != nil {

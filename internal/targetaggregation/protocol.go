@@ -187,7 +187,7 @@ func (s *session) and(x, y []share.BitShare, p f2beaver.PartyBatch) ([]share.Bit
 
 func validate(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.TargetGroupMatches, p Packet, t ThresholdToken) ([32]byte, error) {
 	var zero [32]byte
-	if side == nil || side.manifest.DTarget != 26 || side.manifest.MaxMultiplicity != 3 || p.state == nil || p.shape.validate() != nil || p.party != side.party || p.lineage.IndexID != side.manifest.IndexID || h.Manifest != g.Manifest || h.Manifest != (targetrouting.Manifest{IndexID: side.manifest.IndexID, TargetBucketBits: 16, Q: 4}) || h.LayoutID != p.lineage.LayoutID || h.LayoutID != g.LayoutID || h.CompactionID == [16]byte{} || h.CompactionID != g.CompactionID || h.QueryID == [16]byte{} || h.QueryID != g.QueryID || h.QueryID != t.QueryID || t.PacketID != p.id || t.FBound > 127 || t.KeepBound > 127 || h.K != g.K || h.K < 0 || h.K > p.shape.K || len(h.Occurrences) != p.shape.R || t.R != p.shape.R || len(g.Occurrences) != p.shape.R || len(h.AnchorRecordIDShare) != h.K || len(g.AnchorRecordIDShare) != h.K || len(h.HitShares) > p.shape.S || len(g.MatchShares) > p.shape.G || len(h.Routes) != h.K*p.shape.R || len(g.Routes) != len(h.Routes) {
+	if side == nil || int(side.manifest.DTarget) != p.shape.Capacity() || side.manifest.MaxMultiplicity != MaxMultiplicity || p.state == nil || p.shape.validate(p.lineage.N) != nil || p.party != side.party || p.lineage.IndexID != side.manifest.IndexID || h.Manifest != g.Manifest || h.Manifest != (targetrouting.Manifest{IndexID: side.manifest.IndexID, TargetBucketBits: side.bits, Q: 4}) || h.LayoutID != p.lineage.LayoutID || h.LayoutID != g.LayoutID || h.CompactionID == [16]byte{} || h.CompactionID != g.CompactionID || h.QueryID == [16]byte{} || h.QueryID != g.QueryID || h.QueryID != t.QueryID || t.PacketID != p.id || t.FBound > 127 || t.KeepBound > 127 || h.K != g.K || h.K < 0 || h.K > p.shape.K || len(h.Occurrences) != p.shape.R || t.R != p.shape.R || len(g.Occurrences) != p.shape.R || len(h.AnchorRecordIDShare) != h.K || len(g.AnchorRecordIDShare) != h.K || len(h.HitShares) > p.shape.S || len(g.MatchShares) > p.shape.G || len(h.Routes) != h.K*p.shape.R || len(g.Routes) != len(h.Routes) {
 		return zero, ErrBinding
 	}
 	for i, o := range h.Occurrences {
@@ -260,14 +260,15 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 	p.state.used = true
 	p.state.Unlock()
 	s := &session{party: p.party, binding: binding, exchange: exchange}
-	out = CandidatePairShares{Manifest: h.Manifest, LayoutID: h.LayoutID, CompactionID: h.CompactionID, QueryID: h.QueryID, K: h.K, DTarget: 26}
+	out = CandidatePairShares{Manifest: h.Manifest, LayoutID: h.LayoutID, CompactionID: h.CompactionID, QueryID: h.QueryID, K: h.K, DTarget: p.shape.Capacity()}
 	if h.K == 0 {
 		out.PairKeepShares = []share.BitShare{}
 		out.AnchorIDShares = []share.Ring64Share{}
 		out.TargetIDShares = []share.Ring64Share{}
 		return out, s.metrics, nil
 	}
-	r, m, zlen := p.shape.R, h.K*26, h.K*p.shape.R*26
+	d := p.shape.Capacity()
+	r, m, zlen := p.shape.R, h.K*d, h.K*p.shape.R*d
 	// Burn unused public capacity. All masks were provisioned before online
 	// execution; no actual candidate count is needed by the offline dealer.
 	if e = p.f.Limit(zlen); e != nil {
@@ -291,7 +292,7 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 			return CandidatePairShares{}, s.metrics, e
 		}
 	}
-	if zlen < p.shape.K*p.shape.R*26 {
+	if zlen < p.shape.K*p.shape.R*d {
 		stream, err := incidence.ClaimTriples(p.z)
 		if err != nil {
 			return CandidatePairShares{}, s.metrics, err
@@ -339,7 +340,7 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 				if err != nil {
 					return err
 				}
-				copy(F[ri*26:], v)
+				copy(F[ri*d:], v)
 			}
 			hits = nil
 			return nil
@@ -350,9 +351,9 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 			C = make([]incidence.Share, m)
 			for c := 0; c < h.K; c++ {
 				for hi := 0; hi < r; hi++ {
-					for u := 0; u < 26; u++ {
-						j := (c*r+hi)*26 + u
-						C[c*26+u] = incidence.Add(C[c*26+u], za[j])
+					for u := 0; u < d; u++ {
+						j := (c*r+hi)*d + u
+						C[c*d+u] = incidence.Add(C[c*d+u], za[j])
 					}
 				}
 			}
@@ -367,22 +368,22 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 				payload := side.buckets[route.BucketID].ids
 				for lo := 0; lo < route.GroupCount; lo += 64 {
 					n := min(64, route.GroupCount-lo)
-					x := make([]share.Ring64Share, n*26)
+					x := make([]share.Ring64Share, n*d)
 					for j := 0; j < n; j++ {
-						for u := 0; u < 26; u++ {
-							x[j*26+u] = match[route.MatchOffset+lo+j]
+						for u := 0; u < d; u++ {
+							x[j*d+u] = match[route.MatchOffset+lo+j]
 						}
 					}
-					tr, err := p.ring[1].Take(n * 26)
+					tr, err := p.ring[1].Take(n * d)
 					if err != nil {
 						return err
 					}
-					v, err := s.ring(tr, x, payload[lo*26:(lo+n)*26], nil)
+					v, err := s.ring(tr, x, payload[lo*d:(lo+n)*d], nil)
 					if err != nil {
 						return err
 					}
 					for j, a := range v {
-						q := ri*26 + j%26
+						q := ri*d + j%d
 						ids[q] = share.LocalAddRing64(ids[q], a)
 					}
 				}
@@ -396,9 +397,9 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 			for hi := 0; hi < r; hi++ {
 				x, y := make([]share.BitShare, m), make([]share.BitShare, m)
 				for c := 0; c < h.K; c++ {
-					for u := 0; u < 26; u++ {
-						j := c*26 + u
-						x[j] = z[(c*r+hi)*26+u]
+					for u := 0; u < d; u++ {
+						j := c*d + u
+						x[j] = z[(c*r+hi)*d+u]
 						y[j] = seen[j]
 						if p.party == 0 {
 							y[j] = share.LocalAddBit(y[j], share.NewBitShare(true))
@@ -410,9 +411,9 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 					return err
 				}
 				for c := 0; c < h.K; c++ {
-					for u := 0; u < 26; u++ {
-						j := c*26 + u
-						rep[(c*r+hi)*26+u] = v[j]
+					for u := 0; u < d; u++ {
+						j := c*d + u
+						rep[(c*r+hi)*d+u] = v[j]
 						seen[j] = share.LocalAddBit(seen[j], v[j])
 					}
 				}
@@ -435,9 +436,9 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 				}
 				for i, a := range v {
 					j := lo + i
-					c := j / (r * 26)
-					u := j % 26
-					selected[c*26+u] = share.LocalAddRing64(selected[c*26+u], a)
+					c := j / (r * d)
+					u := j % d
+					selected[c*d+u] = share.LocalAddRing64(selected[c*d+u], a)
 				}
 			}
 			rep64 = nil
@@ -448,7 +449,7 @@ func Run(side *PartySidecar, h targetposition.TargetPostingHits, g targetpe.Targ
 		func() error {
 			x := make([]share.Ring64Share, m)
 			for j := range x {
-				x[j] = h.AnchorRecordIDShare[j/26]
+				x[j] = h.AnchorRecordIDShare[j/d]
 			}
 			aid, e = s.ring(p.ring[5], keep64, x, nil)
 			return e

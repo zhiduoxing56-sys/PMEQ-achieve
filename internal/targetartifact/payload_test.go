@@ -14,7 +14,7 @@ func TestPayloadCodecBinding(t *testing.T) {
 	must(t, e)
 	_, a, b, e := aggregation.GeneratePayload([]uint64{1, 2, 3}, kt, 16)
 	must(t, e)
-	m := indexbuild.TargetManifest{Version: 1, IndexID: [16]byte{1}, Q: 4, AnchorBucketBits: 16, TargetBucketBits: 16, Tiers: [8]uint32{4, 16, 64, 256, 1024, 4096, 8192, 16384}}
+	m := indexbuild.TargetManifest{Version: 1, IndexID: [16]byte{1}, Q: 4, AnchorBucketBits: 16, TargetBucketBits: 16, Tiers: [9]uint32{4, 16, 64, 256, 1024, 4096, 8192, 16384}}
 	for u, p := range []aggregation.PartyPayload{a, b} {
 		var buf bytes.Buffer
 		must(t, WritePayload(&buf, m, uint8(u), p))

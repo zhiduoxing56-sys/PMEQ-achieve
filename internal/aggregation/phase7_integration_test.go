@@ -24,14 +24,14 @@ type joinWord struct {
 }
 type indexedPoint struct {
 	point  [32]byte
-	bucket uint16
+	bucket uint32
 }
 type targetExperiment struct {
 	manifest                                             targetrouting.Manifest
 	aliases                                              []indexbuild.AreaAliasRecord
 	byArea                                               map[uint64][]indexbuild.AreaAliasRecord
 	repeated                                             []indexbuild.AreaAliasRecord
-	points                                               map[[32]byte]uint16
+	points                                               map[[32]byte]uint32
 	logical                                              map[joinWord]indexedPoint
 	queries, positive, negative, repeats, pairs, present int
 }
@@ -64,7 +64,7 @@ func setupTargetRouting(t *testing.T, h *harness) {
 	aliases, e := indexbuild.LoadAreaAlias(f, 0)
 	f.Close()
 	must(t, e)
-	x := &targetExperiment{byArea: map[uint64][]indexbuild.AreaAliasRecord{}, points: map[[32]byte]uint16{}, logical: map[joinWord]indexedPoint{}}
+	x := &targetExperiment{byArea: map[uint64][]indexbuild.AreaAliasRecord{}, points: map[[32]byte]uint32{}, logical: map[joinWord]indexedPoint{}}
 	counts := []int{}
 	short := 0
 	for _, a := range aliases {
@@ -125,7 +125,7 @@ func setupTargetRouting(t *testing.T, h *harness) {
 			must(t, e)
 			wb, e := targetcrypto.WordBucketComponent(h.kt, w, 8)
 			must(t, e)
-			bucket := uint16(targetcrypto.CombineBucketComponents(jb, wb))
+			bucket := uint32(targetcrypto.CombineBucketComponents(jb, wb))
 			if x.points[encoded] != bucket {
 				t.Fatal("index bucket mismatch")
 			}
@@ -360,7 +360,7 @@ func afterTargetRouting(t *testing.T, h *harness, a, b CompactedCandidates, ctx 
 			must(t, e)
 			wb, e := targetcrypto.WordBucketComponent(harnessKey(t), w.QGram, 8)
 			must(t, e)
-			bucket := uint16(targetcrypto.CombineBucketComponents(jb, wb))
+			bucket := uint32(targetcrypto.CombineBucketComponents(jb, wb))
 			if point != exp || u.BucketID != bucket || v.BucketID != bucket || u.CandidateIndex != uint32(ci) || u.OccurrenceID != uint32(h) {
 				t.Fatal("routing oracle")
 			}

@@ -73,7 +73,7 @@ func TestFinalPayloadAndRoutes(t *testing.T) {
 			t.Fatal("artifact hash")
 		}
 	}
-	stored := map[[32]byte]uint16{}
+	stored := map[[32]byte]uint32{}
 	for bi, b := range indexes[0].TargetBuckets {
 		for gi, g := range b.Groups {
 			p := fullPoint(t, g.TargetKeyShare, indexes[1].TargetBuckets[bi].Groups[gi].TargetKeyShare)
@@ -226,7 +226,7 @@ func TestFinalPayloadAndRoutes(t *testing.T) {
 				must(t, e)
 				wb, e := targetcrypto.WordBucketComponent(kt, w.QGram, int(m.TargetBucketBits))
 				must(t, e)
-				beta := uint16(targetcrypto.CombineBucketComponents(jb, wb))
+				beta := uint32(targetcrypto.CombineBucketComponents(jb, wb))
 				if x.BucketID != beta || y.BucketID != beta || x.CandidateIndex != uint32(ci) || x.OccurrenceID != uint32(h) {
 					t.Fatal("route binding/bucket")
 				}

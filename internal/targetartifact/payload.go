@@ -50,7 +50,11 @@ func WritePayload(w io.Writer, m indexbuild.TargetManifest, party uint8, p aggre
 		if e := write(s.KappaJoinShare); e != nil {
 			return e
 		}
-		if e := write(s.BucketJoinShare); e != nil {
+		if m.TargetBucketBits > 16 {
+			if e := write(uint32(s.BucketJoinShare)); e != nil {
+				return e
+			}
+		} else if e := write(uint16(s.BucketJoinShare)); e != nil {
 			return e
 		}
 	}
@@ -93,8 +97,18 @@ func ReadPayload(r io.Reader, m indexbuild.TargetManifest, party uint8, layoutID
 		if _, e := ristretto255.NewScalar().SetCanonicalBytes(s.KappaJoinShare[:]); e != nil {
 			return out, e
 		}
-		if e := read(&s.BucketJoinShare); e != nil {
-			return out, e
+		if m.TargetBucketBits > 16 {
+			var v uint32
+			if e := read(&v); e != nil {
+				return out, e
+			}
+			s.BucketJoinShare = targetcrypto.BucketShare(v)
+		} else {
+			var v uint16
+			if e := read(&v); e != nil {
+				return out, e
+			}
+			s.BucketJoinShare = targetcrypto.BucketShare(v)
 		}
 		if e := d.Validate(s.BucketJoinShare); e != nil {
 			return out, e

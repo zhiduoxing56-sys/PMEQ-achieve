@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"math/big"
 	"pmeq/internal/incidence"
+	"pmeq/internal/material"
 )
 
 func permutation(n int) ([]uint32, error) {
@@ -83,17 +84,20 @@ func ExpandRho(seed [32]byte, n int) ([]uint32, error) {
 // Stage0/Stage1 have distinct types: neither contains the peer permutation.
 type Stage0 struct {
 	LayoutID [16]byte
-	BucketID uint16
+	BucketID uint32
 	RhoSeed  [32]byte
 }
 type Stage1 struct {
 	LayoutID [16]byte
-	BucketID uint16
+	BucketID uint32
 	sigma    []uint32
 }
 
+// GlobalRecords returns the public domain length without exposing sigma.
+func (s *Stage1) GlobalRecords() int { return len(s.sigma) }
+
 // SplitPermutation is DO-only. pi is never retained in either party object.
-func SplitPermutation(id [16]byte, bucket uint16, pi []uint32) (*Stage0, *Stage1, error) {
+func SplitPermutation(id [16]byte, bucket uint32, pi []uint32) (*Stage0, *Stage1, error) {
 	if !validPermutation(pi) {
 		return nil, nil, ErrShape
 	}
@@ -114,28 +118,36 @@ func SplitPermutation(id [16]byte, bucket uint16, pi []uint32) (*Stage0, *Stage1
 
 // ExpandedStage0 is invocation-local scratch, NOT static bucket state.
 // Callers may release it after Message2; no all-bucket expansion/cache exists.
-type ExpandedStage0 struct{ rho []uint32 }
+type ExpandedStage0 struct {
+	rho   []uint32
+	owner *Stage0
+}
 
 func (s *Stage0) Expand(n int) (*ExpandedStage0, error) {
 	rho, e := ExpandRho(s.RhoSeed, n)
 	if e != nil {
 		return nil, e
 	}
-	return &ExpandedStage0{rho}, nil
+	return &ExpandedStage0{rho: rho, owner: s}, nil
 }
 
 type PermPrep0 struct {
-	c1, a2, b2   []incidence.Z128
-	done1, done2 bool
+	c1, a2, b2 []incidence.Z128
+	use        *material.UseGuard
+	stage      *Stage0
 }
 type PermPrep1 struct {
-	a1, b1, c2   []incidence.Z128
-	done1, done2 bool
+	a1, b1, c2 []incidence.Z128
+	use        *material.UseGuard
+	stage      *Stage1
 }
 
 // PreprocessPermutation reuses the old masked-scatter equations with fresh
 // correlated randomness per invocation, including repeated query chunks.
 func PreprocessPermutation(p *Stage0, q *Stage1) (*PermPrep0, *PermPrep1, error) {
+	if p == nil || q == nil {
+		return nil, nil, ErrShape
+	}
 	n := len(q.sigma)
 	if p.LayoutID != q.LayoutID || p.BucketID != q.BucketID {
 		return nil, nil, ErrShape
@@ -164,15 +176,14 @@ func PreprocessPermutation(p *Stage0, q *Stage1) (*PermPrep0, *PermPrep1, error)
 		j := int(coordinate)
 		b2[j] = a2[i].Sub(c2[j])
 	}
-	return &PermPrep0{c1: c1, a2: a2, b2: b2}, &PermPrep1{a1: a1, b1: b1, c2: c2}, nil
+	return &PermPrep0{c1: c1, a2: a2, b2: b2, use: material.NewUseGuard(), stage: p}, &PermPrep1{a1: a1, b1: b1, c2: c2, use: material.NewUseGuard(), stage: q}, nil
 }
 
 // Message1 travels CS1 -> CS0. Local inputs beyond D are public zero shares.
 func (p *PermPrep1) Message1(x []incidence.Share) ([]incidence.Z128, error) {
-	if p.done1 || len(x) > len(p.a1) {
+	if p == nil || len(x) > len(p.a1) || !p.use.Claim(0) {
 		return nil, ErrShape
 	}
-	p.done1 = true
 	d := make([]incidence.Z128, len(p.a1))
 	for i := range d {
 		v := incidence.Z128(0)
@@ -186,7 +197,7 @@ func (p *PermPrep1) Message1(x []incidence.Share) ([]incidence.Z128, error) {
 
 // Message2 travels CS0 -> CS1; CS0's final share is independently masked b2.
 func (s *Stage0) Message2(p *PermPrep0, x []incidence.Share, d1 []incidence.Z128) ([]incidence.Z128, []incidence.Share, error) {
-	if p.done1 {
+	if s == nil || p == nil || p.stage != s {
 		return nil, nil, ErrShape
 	}
 	expanded, e := s.Expand(len(d1))
@@ -197,11 +208,13 @@ func (s *Stage0) Message2(p *PermPrep0, x []incidence.Share, d1 []incidence.Z128
 }
 
 func (s *ExpandedStage0) Message2(p *PermPrep0, x []incidence.Share, d1 []incidence.Z128) ([]incidence.Z128, []incidence.Share, error) {
-	n := len(s.rho)
-	if p.done1 || len(x) > n || len(d1) != n || len(p.a2) != n {
+	if s == nil {
 		return nil, nil, ErrShape
 	}
-	p.done1 = true
+	n := len(s.rho)
+	if p == nil || p.stage != s.owner || len(x) > n || len(d1) != n || len(p.a2) != n || !p.use.Claim(0) {
+		return nil, nil, ErrShape
+	}
 	d2 := make([]incidence.Z128, n)
 	for i, coordinate := range s.rho {
 		j := int(coordinate)
@@ -218,11 +231,13 @@ func (s *ExpandedStage0) Message2(p *PermPrep0, x []incidence.Share, d1 []incide
 	return d2, out, nil
 }
 func (s *Stage1) Finish(p *PermPrep1, d2 []incidence.Z128) ([]incidence.Share, error) {
-	n := len(s.sigma)
-	if !p.done1 || p.done2 || len(d2) != n || len(p.b1) != n {
+	if s == nil {
 		return nil, ErrShape
 	}
-	p.done2 = true
+	n := len(s.sigma)
+	if p == nil || p.stage != s || len(d2) != n || len(p.b1) != n || !p.use.Claim(1) {
+		return nil, ErrShape
+	}
 	out := make([]incidence.Share, n)
 	for i, coordinate := range s.sigma {
 		j := int(coordinate)

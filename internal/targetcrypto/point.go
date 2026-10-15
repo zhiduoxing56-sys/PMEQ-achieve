@@ -69,6 +69,18 @@ func DeriveTargetGroupPoint(key MasterKey, joinID uint64, qgram string) (*ristre
 	return FullEval(CombineScalar(joinScalar, wordScalar)), nil
 }
 
+func DeriveMovieGroupPoint(key MasterKey, joinID uint64, qgram string) (*ristretto255.Element, error) {
+	joinScalar, err := KJoin(key, joinID)
+	if err != nil {
+		return nil, err
+	}
+	wordScalar, err := KMovieWord(key, qgram)
+	if err != nil {
+		return nil, err
+	}
+	return FullEval(CombineScalar(joinScalar, wordScalar)), nil
+}
+
 // PointShare is one party's additive share of a Target group point. It holds a
 // single canonical 32-byte Ristretto255 encoding and nothing else: no peer
 // share, no full point, no party index, and no derivation metadata. Encoding a

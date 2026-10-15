@@ -115,7 +115,7 @@ func TestSeededPermutationAlgebra100000(t *testing.T) {
 		}
 		pi, e := permutation(n)
 		must(t, e)
-		p, q, e := SplitPermutation([16]byte{5, 3}, uint16(trial), pi)
+		p, q, e := SplitPermutation([16]byte{5, 3}, uint32(trial), pi)
 		must(t, e)
 		rho, e := ExpandRho(p.RhoSeed, n)
 		must(t, e)

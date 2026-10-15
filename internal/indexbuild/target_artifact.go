@@ -17,8 +17,8 @@ import (
 // TargetBucketBits is the PHASE 7B production setting. Build's explicit widths
 // remain available for controlled layout experiments and historical tests.
 const TargetBucketBits = 16
-const TargetArtifactVersion = 1
-const TargetHeaderBytes = 70
+const TargetArtifactVersion = 2
+const TargetHeaderBytes = 74
 
 var ErrTargetArtifact = errors.New("indexbuild: invalid target artifact or binding")
 
@@ -31,7 +31,7 @@ type TargetManifest struct {
 	Q                uint32
 	AnchorBucketBits uint8
 	TargetBucketBits uint8
-	Tiers            [8]uint32
+	Tiers            [9]uint32
 	LogicalGroups    uint64
 	RealPostings     uint64
 	PaddedSlots      uint64
@@ -41,10 +41,16 @@ type TargetManifest struct {
 }
 
 func (m TargetManifest) Validate() error {
-	if m.Version != TargetArtifactVersion || m.IndexID == [16]byte{} || m.Q != Q || m.AnchorBucketBits != AnchorBucketBits || m.TargetBucketBits != TargetBucketBits {
+	if (m.Version != 1 && m.Version != TargetArtifactVersion) || m.IndexID == [16]byte{} || m.Q != Q || m.AnchorBucketBits != m.TargetBucketBits || m.TargetBucketBits < 14 || m.TargetBucketBits > 17 {
 		return ErrTargetArtifact
 	}
 	for i, v := range tierLadder {
+		if m.Version == 1 && i == 8 {
+			if m.Tiers[i] != 0 {
+				return ErrTargetArtifact
+			}
+			break
+		}
 		if m.Tiers[i] != uint32(v) {
 			return ErrTargetArtifact
 		}
@@ -61,6 +67,11 @@ func NewTargetManifest(id [16]byte, m PublicMetadata, s SideStats) (TargetManife
 	}
 	return out, out.Validate()
 }
+
+// BuildFinalTargetWithBits uses the selected complete-query bucket domain.
+func BuildFinalTargetWithBits(aliases []AreaAliasRecord, kt targetcrypto.MasterKey, bits int) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return Build(nil, aliases, anchorindex.Key{}, kt, bits, bits)
+}
 func ReadTargetManifest(r io.Reader) (TargetManifest, error) {
 	var m TargetManifest
 	d := json.NewDecoder(io.LimitReader(r, 16384))
@@ -75,9 +86,16 @@ func ReadTargetManifest(r io.Reader) (TargetManifest, error) {
 	return m, m.Validate()
 }
 
-// TargetEncodedBytes is the exact v1 encoding size, excluding its JSON manifest.
+// TargetEncodedBytes is the exact current encoding size, excluding its JSON manifest.
 func TargetEncodedBytes(buckets, groups, slots uint64) uint64 {
 	return TargetHeaderBytes + 14*buckets + 36*groups + 13*slots
+}
+
+func TargetEncodedBytesForBits(bits uint8, buckets, groups, slots uint64) uint64 {
+	if bits > 16 {
+		return TargetHeaderBytes + 16*buckets + 36*groups + 13*slots
+	}
+	return TargetEncodedBytes(buckets, groups, slots)
 }
 
 // WriteTargetParty encodes only one party's PSMJ. Callers must supply a trusted
@@ -91,16 +109,7 @@ func WriteTargetParty(w io.Writer, m TargetManifest, party uint8, p PartyIndex) 
 	}
 	b := bufio.NewWriter(w)
 	write := func(v any) error { return binary.Write(b, binary.LittleEndian, v) }
-	header := struct {
-		Magic       [8]byte
-		Version     uint32
-		ID          [16]byte
-		Party, Bits uint8
-		Q           uint32
-		Tiers       [8]uint32
-		Buckets     uint32
-	}{[8]byte{'P', 'M', 'E', 'Q', 'P', 'S', '0', '1'}, m.Version, m.IndexID, party, m.TargetBucketBits, m.Q, m.Tiers, m.NonemptyBuckets}
-	if e := write(header); e != nil {
+	if e := writeTargetHeader(b, m, party); e != nil {
 		return e
 	}
 	var groups, slots uint64
@@ -114,7 +123,11 @@ func WriteTargetParty(w io.Writer, m TargetManifest, party uint8, p PartyIndex) 
 		for _, g := range bucket.Groups {
 			total += uint64(g.PadWidth)
 		}
-		if e := write(bucket.BucketID); e != nil {
+		if m.TargetBucketBits > 16 {
+			if e := write(bucket.BucketID); e != nil {
+				return e
+			}
+		} else if e := write(uint16(bucket.BucketID)); e != nil {
 			return e
 		}
 		if e := write(uint32(len(bucket.Groups))); e != nil {
@@ -124,7 +137,7 @@ func WriteTargetParty(w io.Writer, m TargetManifest, party uint8, p PartyIndex) 
 			return e
 		}
 		for _, g := range bucket.Groups {
-			if !validPad(g.PadWidth) || len(g.Slots) != int(g.PadWidth) {
+			if !validManifestPad(m, g.PadWidth) || len(g.Slots) != int(g.PadWidth) {
 				return ErrTargetArtifact
 			}
 			if _, e := ristretto255.NewElement().SetCanonicalBytes(g.TargetKeyShare[:]); e != nil {
@@ -181,29 +194,25 @@ func ReadTargetParty(r io.Reader, m TargetManifest, party uint8) (PartyIndex, er
 	}
 	b := bufio.NewReader(r)
 	read := func(v any) error { return binary.Read(b, binary.LittleEndian, v) }
-	var h struct {
-		Magic       [8]byte
-		Version     uint32
-		ID          [16]byte
-		Party, Bits uint8
-		Q           uint32
-		Tiers       [8]uint32
-		Buckets     uint32
-	}
-	if e := read(&h); e != nil {
+	if e := readTargetHeader(b, m, party); e != nil {
 		return out, e
-	}
-	if string(h.Magic[:]) != "PMEQPS01" || h.Version != m.Version || h.ID != m.IndexID || h.Party != party || h.Bits != m.TargetBucketBits || h.Q != m.Q || h.Tiers != m.Tiers || h.Buckets != m.NonemptyBuckets {
-		return out, ErrTargetArtifact
 	}
 	var groups, slots uint64
 	last := -1
-	for bi := uint32(0); bi < h.Buckets; bi++ {
-		var id uint16
+	for bi := uint32(0); bi < m.NonemptyBuckets; bi++ {
+		var id uint32
 		var count uint32
 		var total uint64
-		if e := read(&id); e != nil {
-			return out, e
+		if m.TargetBucketBits > 16 {
+			if e := read(&id); e != nil {
+				return out, e
+			}
+		} else {
+			var narrow uint16
+			if e := read(&narrow); e != nil {
+				return out, e
+			}
+			id = uint32(narrow)
 		}
 		if e := read(&count); e != nil {
 			return out, e
@@ -225,7 +234,7 @@ func ReadTargetParty(r io.Reader, m TargetManifest, party uint8) (PartyIndex, er
 			if e := read(&g.PadWidth); e != nil {
 				return out, e
 			}
-			if !validPad(g.PadWidth) || uint64(g.PadWidth) > total-actual {
+			if !validManifestPad(m, g.PadWidth) || uint64(g.PadWidth) > total-actual {
 				return out, ErrTargetArtifact
 			}
 			if _, e := ristretto255.NewElement().SetCanonicalBytes(g.TargetKeyShare[:]); e != nil {
@@ -273,4 +282,64 @@ func ReadTargetParty(r io.Reader, m TargetManifest, party uint8) (PartyIndex, er
 // query caller nor the outsourcing caller can select another production width.
 func BuildFinalTarget(aliases []AreaAliasRecord, kt targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
 	return Build(nil, aliases, anchorindex.Key{}, kt, AnchorBucketBits, TargetBucketBits)
+}
+
+// v1 retains its exact 70-byte/eight-tier header. v2 physically writes nine
+// tiers (74 bytes); old manifests and bytes are read without rewriting them.
+func manifestTierCount(m TargetManifest) int {
+	if m.Version == 1 {
+		return 8
+	}
+	return 9
+}
+func validManifestPad(m TargetManifest, p uint32) bool {
+	for _, v := range m.Tiers[:manifestTierCount(m)] {
+		if v == p {
+			return true
+		}
+	}
+	return false
+}
+func writeTargetHeader(w io.Writer, m TargetManifest, u uint8) error {
+	prefix := struct {
+		Magic       [8]byte
+		Version     uint32
+		ID          [16]byte
+		Party, Bits uint8
+		Q           uint32
+	}{[8]byte{'P', 'M', 'E', 'Q', 'P', 'S', '0', '1'}, m.Version, m.IndexID, u, m.TargetBucketBits, m.Q}
+	if e := binary.Write(w, binary.LittleEndian, prefix); e != nil {
+		return e
+	}
+	if e := binary.Write(w, binary.LittleEndian, m.Tiers[:manifestTierCount(m)]); e != nil {
+		return e
+	}
+	return binary.Write(w, binary.LittleEndian, m.NonemptyBuckets)
+}
+func readTargetHeader(r io.Reader, m TargetManifest, u uint8) error {
+	var p struct {
+		Magic       [8]byte
+		Version     uint32
+		ID          [16]byte
+		Party, Bits uint8
+		Q           uint32
+	}
+	if e := binary.Read(r, binary.LittleEndian, &p); e != nil {
+		return e
+	}
+	if string(p.Magic[:]) != "PMEQPS01" || p.Version != m.Version || p.ID != m.IndexID || p.Party != u || p.Bits != m.TargetBucketBits || p.Q != m.Q {
+		return ErrTargetArtifact
+	}
+	var tiers [9]uint32
+	if e := binary.Read(r, binary.LittleEndian, tiers[:manifestTierCount(m)]); e != nil {
+		return e
+	}
+	var buckets uint32
+	if e := binary.Read(r, binary.LittleEndian, &buckets); e != nil {
+		return e
+	}
+	if tiers != m.Tiers || buckets != m.NonemptyBuckets {
+		return ErrTargetArtifact
+	}
+	return nil
 }

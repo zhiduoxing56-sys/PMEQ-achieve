@@ -24,7 +24,7 @@ type Candidates struct {
 }
 type Route struct {
 	CandidateIndex, OccurrenceID uint32
-	BucketID                     uint16
+	BucketID                     uint32
 	Y                            targetcrypto.PointShare
 }
 type RoutedCandidates struct {
@@ -150,7 +150,8 @@ const OpeningHeaderBytes = 82
 
 func (p *Pending) message() []byte {
 	o := p.output
-	b := make([]byte, OpeningHeaderBytes+2*len(p.buckets))
+	w := bucketWireBytes(o.Manifest.TargetBucketBits)
+	b := make([]byte, OpeningHeaderBytes+w*len(p.buckets))
 	copy(b, "PR07")
 	b[4] = p.party
 	b[5] = o.Manifest.TargetBucketBits
@@ -162,7 +163,11 @@ func (p *Pending) message() []byte {
 	binary.LittleEndian.PutUint32(b[74:78], uint32(o.K))
 	binary.LittleEndian.PutUint32(b[78:82], uint32(len(o.Occurrences)))
 	for i, v := range p.buckets {
-		binary.LittleEndian.PutUint16(b[82+2*i:], uint16(v))
+		if w == 4 {
+			binary.LittleEndian.PutUint32(b[82+w*i:], uint32(v))
+		} else {
+			binary.LittleEndian.PutUint16(b[82+w*i:], uint16(v))
+		}
 	}
 	return b
 }
@@ -193,18 +198,25 @@ func (p *Pending) Finish(peer []byte) (RoutedCandidates, error) {
 		}
 	}
 	domain, _ := targetcrypto.NewBucketDomain(int(p.output.Manifest.TargetBucketBits))
+	w := bucketWireBytes(p.output.Manifest.TargetBucketBits)
+	peerShare := func(i int) targetcrypto.BucketShare {
+		if w == 4 {
+			return targetcrypto.BucketShare(binary.LittleEndian.Uint32(peer[82+w*i:]))
+		}
+		return targetcrypto.BucketShare(binary.LittleEndian.Uint16(peer[82+w*i:]))
+	}
 	// Validate the entire message before changing any public bucket field.
 	for i := range p.buckets {
-		if e := domain.Validate(targetcrypto.BucketShare(binary.LittleEndian.Uint16(peer[82+2*i:]))); e != nil {
+		if e := domain.Validate(peerShare(i)); e != nil {
 			return RoutedCandidates{}, e
 		}
 	}
 	for i, v := range p.buckets {
-		b, e := domain.Open(v, targetcrypto.BucketShare(binary.LittleEndian.Uint16(peer[82+2*i:])))
+		b, e := domain.Open(v, peerShare(i))
 		if e != nil {
 			return RoutedCandidates{}, e
 		}
-		p.output.Routes[i].BucketID = uint16(b)
+		p.output.Routes[i].BucketID = uint32(b)
 	}
 	out := p.output
 	p.output = RoutedCandidates{}
@@ -216,4 +228,11 @@ func (p *Pending) Finish(peer []byte) (RoutedCandidates, error) {
 
 // TokenBytes specifies the query-user wire schema: same manifest/query header
 // (IndexID16, bits1,Q4,QueryID16,party1,r4) plus h4,pos4,point32,bucket2.
-func TokenBytes(r int) int { return 42 + 42*r }
+func TokenBytes(r int) int                    { return 42 + 42*r }
+func TokenBytesForBits(bits uint8, r int) int { return 42 + (40+bucketWireBytes(bits))*r }
+func bucketWireBytes(bits uint8) int {
+	if bits > 16 {
+		return 4
+	}
+	return 2
+}

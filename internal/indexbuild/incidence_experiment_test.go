@@ -18,7 +18,7 @@ import (
 )
 
 type incidenceBucket struct {
-	id      uint16
+	id      uint32
 	slots   []incidence.Posting
 	m, d, g int
 }
@@ -168,7 +168,7 @@ func TestFullIncidenceExperiment(t *testing.T) {
 		t.Fatal("raw regression", stats)
 	}
 	bs := incidenceBuckets(t, areas)
-	by := map[uint16]incidenceBucket{}
+	by := map[uint32]incidenceBucket{}
 	total := 0
 	for _, b := range bs {
 		by[b.id] = b
@@ -185,13 +185,13 @@ func TestFullIncidenceExperiment(t *testing.T) {
 		}
 		return hot[i].id < hot[j].id
 	})
-	top := map[uint16]bool{}
+	top := map[uint32]bool{}
 	for _, b := range hot[:10] {
 		top[b.id] = true
 	}
 	kb, _ := testKeys(t)
 	rs, ps, ws := []int{}, []int{}, []int{}
-	freq := map[uint16]int{}
+	freq := map[uint32]int{}
 	anyTop := 0
 	for _, a := range areas {
 		runes := []rune(a.Name)
@@ -200,7 +200,7 @@ func TestFullIncidenceExperiment(t *testing.T) {
 			continue
 		}
 		p, w := 0, 0
-		seen := map[uint16]bool{}
+		seen := map[uint32]bool{}
 		for h := 0; h < chunks; h++ {
 			z, e := anchorindex.Encode(kb, string(runes[h*Q:(h+1)*Q]))
 			if e != nil {

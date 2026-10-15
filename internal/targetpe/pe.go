@@ -20,7 +20,7 @@ const RecommendedWorkers = 1
 
 type Route struct {
 	CandidateIndex, OccurrenceID uint32
-	BucketID                     uint16
+	BucketID                     uint32
 	MatchOffset, GroupCount      int
 }
 type TargetGroupMatches struct {

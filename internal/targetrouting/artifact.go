@@ -19,7 +19,7 @@ func LoadIndex(r io.Reader) (BoundIndex, error) {
 }
 func (b BoundIndex) TokenManifest() Manifest { return b.manifest }
 func (b BoundIndex) Prepare(party uint8, c Candidates, t QueryToken, workers int) (*Pending, []byte, error) {
-	if b.manifest.IndexID == [16]byte{} || b.manifest.TargetBucketBits != indexbuild.TargetBucketBits {
+	if b.manifest.IndexID == [16]byte{} {
 		return nil, nil, ErrBinding
 	}
 	return Prepare(b.manifest, party, c, t, workers)

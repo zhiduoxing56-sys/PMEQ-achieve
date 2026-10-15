@@ -1,0 +1,53 @@
+{
+  "capture_date": "2026-10-15",
+  "mother_database_opened_read_only": true,
+  "no_raw_or_derived_data_embedded": true,
+  "files": [
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks/validation.json",
+      "bytes": 16823,
+      "sha256": "dae53ea079a9f6ce371585b237e212716017c5b0db2dbd1421aab051c3596200"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks/delivery_acceptance.json",
+      "bytes": 468,
+      "sha256": "23267fe219eb6f198da170ba14b7320c89a246c767d30e9241c037deff1e3cb7"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks/build_complete.json",
+      "bytes": 5178,
+      "sha256": "83c99e81ca3c93a5f454a640e4d1bf6be2a8e79c5261775ecc0e1b4a0402d3bb"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/checks/independent_raw_validation.json",
+      "bytes": 3451,
+      "sha256": "49d35b84daae81d5a75559e7dd72a1bda2cfe3943e3146af908a5aaffb265685"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/provenance/source_manifest.json",
+      "bytes": 8047,
+      "sha256": "2cd4cf314d77f541a4f94fdc281d0122ff3d4ab2b471a913aa4493108b6ae077"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/artifact_manifest.json",
+      "bytes": 23368,
+      "sha256": "c39f8e9c526bf4049c4969b1ad0effb2353b6a65f6b370723b9f4eef2f659f26"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/README.txt",
+      "bytes": 2409,
+      "sha256": "4fc1df0c73f3e3b08d28218c1ba974c08dfbca92752545582598f88e2f04a045"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/requirements.txt",
+      "bytes": 14,
+      "sha256": "afa5bd1cbd0d0be1318c3e8992b31f1deae587e80425877fc7dee2fee0d1572f"
+    },
+    {
+      "path": "/home/tenggn/projects/clean_pmeq/imdb_final_dataset/data/imdb_final.duckdb",
+      "bytes": 686305280,
+      "mtime_utc": "2026-10-14T11:26:08.207044+00:00",
+      "sha256": "not recomputed: large mother database opened read-only"
+    }
+  ]
+}

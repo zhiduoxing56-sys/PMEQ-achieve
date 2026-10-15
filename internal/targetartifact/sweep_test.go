@@ -11,7 +11,7 @@ import (
 type bucketLayout struct {
 	Bits    int
 	Buckets []struct {
-		ID                   uint16
+		ID                   uint32
 		Groups, Slots, Joins int
 	}
 }
@@ -65,14 +65,14 @@ func TestPhase7BWorkloadSweep(t *testing.T) {
 		totalG, totalS := 0, 0
 		for _, q := range qs {
 			load := queryLoad{Query: q.Query, K: len(q.Joins), R: len(q.Words), Routes: len(q.Joins) * len(q.Words)}
-			accessed := map[uint16]bool{}
+			accessed := map[uint32]bool{}
 			for _, j := range q.Joins {
 				for _, w := range q.Words {
 					jb, e := targetcrypto.JoinBucketComponent(kt, j, layout.Bits)
 					must(t, e)
 					wb, e := targetcrypto.WordBucketComponent(kt, w.QGram, layout.Bits)
 					must(t, e)
-					beta := uint16(targetcrypto.CombineBucketComponents(jb, wb))
+					beta := uint32(targetcrypto.CombineBucketComponents(jb, wb))
 					bucket := layout.Buckets[beta]
 					if bucket.ID != beta {
 						t.Fatal("layout bucket order")

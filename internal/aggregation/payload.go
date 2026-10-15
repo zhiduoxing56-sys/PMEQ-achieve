@@ -27,6 +27,15 @@ type DealerLayout struct {
 }
 
 func GeneratePayload(ids []uint64, kt targetcrypto.MasterKey, targetBits int) (*DealerLayout, PartyPayload, PartyPayload, error) {
+	return GeneratePayloadWithJoins(ids, ids, kt, targetBits)
+}
+
+// GeneratePayloadWithJoins keeps object identity independent of the selected
+// join value. Sharing, hidden coordinates and routing derivations are unchanged.
+func GeneratePayloadWithJoins(ids, joins []uint64, kt targetcrypto.MasterKey, targetBits int) (*DealerLayout, PartyPayload, PartyPayload, error) {
+	if len(ids) != len(joins) {
+		return nil, PartyPayload{}, PartyPayload{}, ErrShape
+	}
 	n := len(ids)
 	pi, e := permutation(n)
 	if e != nil {
@@ -47,7 +56,7 @@ func GeneratePayload(ids []uint64, kt targetcrypto.MasterKey, targetBits int) (*
 		if e != nil {
 			return nil, a, b, e
 		}
-		k, e := targetcrypto.KJoin(kt, id)
+		k, e := targetcrypto.KJoin(kt, joins[i])
 		if e != nil {
 			return nil, a, b, e
 		}
@@ -55,7 +64,7 @@ func GeneratePayload(ids []uint64, kt targetcrypto.MasterKey, targetBits int) (*
 		if e != nil {
 			return nil, a, b, e
 		}
-		v, e := targetcrypto.JoinBucketComponent(kt, id, targetBits)
+		v, e := targetcrypto.JoinBucketComponent(kt, joins[i], targetBits)
 		if e != nil {
 			return nil, a, b, e
 		}
@@ -69,7 +78,7 @@ func GeneratePayload(ids []uint64, kt targetcrypto.MasterKey, targetBits int) (*
 
 // Alignment embeds the existing DO incidence coordinates, then completes pi
 // randomly, including unused rows and the appended public-zero coordinates.
-func (d *DealerLayout) Alignment(bucket uint16, local incidence.DealerLayout, slots []incidence.Posting) (*Stage0, *Stage1, error) {
+func (d *DealerLayout) Alignment(bucket uint32, local incidence.DealerLayout, slots []incidence.Posting) (*Stage0, *Stage1, error) {
 	if local.D > d.N || len(local.Coordinates) != len(slots) {
 		return nil, nil, ErrShape
 	}

@@ -11,6 +11,7 @@ import (
 	"io"
 
 	"pmeq/internal/domain"
+	"pmeq/internal/imdbprod"
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/share"
@@ -19,7 +20,7 @@ import (
 
 const DTarget = 26
 const MaxOccurrences = 16
-const MaxMultiplicity = 3
+const MaxMultiplicity = imdbprod.TargetMultiplicity
 const SidecarMagic = "PMEQTG01"
 
 var ErrBinding = errors.New("targetaggregation: invalid binding, domain, shape or lifecycle")
@@ -52,7 +53,8 @@ type bucket struct {
 type PartySidecar struct {
 	manifest SidecarManifest
 	party    uint8
-	buckets  [65536]bucket
+	buckets  []bucket
+	bits     uint8
 }
 
 // LoadSidecar reads only the caller's hash-bound sidecar. It checks every
@@ -70,10 +72,11 @@ func LoadSidecar(m SidecarManifest, sealedManifest []byte, idx *targetpe.PartyIn
 	if digest != idx.ManifestDigest() {
 		return nil, ErrBinding
 	}
-	if m.Version != 1 || m.IndexID != sm.IndexID || m.IndexID != idx.Manifest().IndexID || m.ManifestSHA256 != hex.EncodeToString(digest[:]) || m.StructureDigest != idx.StructureDigest() || m.DTarget != DTarget || m.MaxMultiplicity != MaxMultiplicity || m.IncidenceBytes != DTarget*sm.PaddedSlots || m.TargetIDBytes != DTarget*8*sm.LogicalGroups {
+	if m.Version != 1 || m.IndexID != sm.IndexID || m.IndexID != idx.Manifest().IndexID || m.ManifestSHA256 != hex.EncodeToString(digest[:]) || m.StructureDigest != idx.StructureDigest() || (m.DTarget != 16 && m.DTarget != 26) || m.MaxMultiplicity != MaxMultiplicity || m.IncidenceBytes != uint64(m.DTarget)*sm.PaddedSlots || m.TargetIDBytes != uint64(m.DTarget)*8*sm.LogicalGroups {
 		return nil, ErrBinding
 	}
-	expected := uint64(8+1+16+32) + 65536*4 + sm.LogicalGroups*4 + m.IncidenceBytes + m.TargetIDBytes
+	d := int(m.DTarget)
+	expected := uint64(8+1+16+32) + uint64(1<<sm.TargetBucketBits)*4 + sm.LogicalGroups*4 + m.IncidenceBytes + m.TargetIDBytes
 	u := idx.Party()
 	if m.PartyBytes != ([2]uint64{expected, expected}) {
 		return nil, ErrBinding
@@ -94,10 +97,10 @@ func LoadSidecar(m SidecarManifest, sealedManifest []byte, idx *targetpe.PartyIn
 	if string(header[:8]) != SidecarMagic || header[8] != u || !bytes.Equal(header[9:25], m.IndexID[:]) || !bytes.Equal(header[25:], digest[:]) {
 		return nil, ErrBinding
 	}
-	out := &PartySidecar{manifest: m, party: u}
+	out := &PartySidecar{manifest: m, party: u, bits: sm.TargetBucketBits, buckets: make([]bucket, 1<<sm.TargetBucketBits)}
 	var n, width uint32
 	for bi := range out.buckets {
-		gs := idx.PositionGroups(uint16(bi))
+		gs := idx.PositionGroups(uint32(bi))
 		if e = binary.Read(r, binary.LittleEndian, &n); e != nil {
 			return nil, e
 		}
@@ -117,15 +120,15 @@ func LoadSidecar(m SidecarManifest, sealedManifest []byte, idx *targetpe.PartyIn
 			b.widths[gi] = width
 			t += int(width)
 		}
-		coeff := make([]byte, DTarget*t)
+		coeff := make([]byte, d*t)
 		if _, e = io.ReadFull(r, coeff); e != nil {
 			return nil, e
 		}
-		b.matrix, e = incidence.FromLocalCoefficients(DTarget, t, coeff)
+		b.matrix, e = incidence.FromLocalCoefficients(d, t, coeff)
 		if e != nil {
 			return nil, e
 		}
-		b.ids = make([]share.Ring64Share, DTarget*len(gs))
+		b.ids = make([]share.Ring64Share, d*len(gs))
 		var v uint64
 		for j := range b.ids {
 			if e = binary.Read(r, binary.LittleEndian, &v); e != nil {
@@ -149,3 +152,7 @@ type countReader struct {
 }
 
 func (r *countReader) Read(b []byte) (int, error) { n, e := r.r.Read(b); r.n += uint64(n); return n, e }
+
+// Capacity is public static metadata, bound by the sealed manifest.
+func (s *PartySidecar) Capacity() int     { return int(s.manifest.DTarget) }
+func (s *PartySidecar) Multiplicity() int { return int(s.manifest.MaxMultiplicity) }

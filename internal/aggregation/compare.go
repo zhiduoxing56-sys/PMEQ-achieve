@@ -9,6 +9,7 @@ import (
 	"pmeq/internal/domain"
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
+	"pmeq/internal/material"
 	"pmeq/internal/share"
 )
 
@@ -21,23 +22,22 @@ func randomBytes(n int) ([]byte, error) { b := make([]byte, n); _, e := rand.Rea
 
 // BoundMask belongs to the authorized user, not either cloud.
 type BoundMask struct {
-	eta  byte
-	used bool
+	eta byte
+	use *material.UseGuard
 }
 
 func (u *BoundMask) Mask(bound int) (uint32, error) {
-	if u.used || bound < 0 || bound >= 64 {
+	if u == nil || bound < 0 || bound >= 64 || !u.use.Claim(0) {
 		return 0, ErrShape
 	}
-	u.used = true
 	return uint32((byte(bound) + u.eta) & 127), nil
 }
 
 type ComparisonParty struct {
-	party           uint8
-	masks           []incidence.Share
-	keys            []anchorfilter.SCMPKeyShare
-	begun, finished bool
+	party uint8
+	masks []incidence.Share
+	keys  []anchorfilter.SCMPKeyShare
+	use   *material.UseGuard
 }
 
 // PreprocessComparison is independent of the value and threshold. LLAMA keys
@@ -50,9 +50,9 @@ func PreprocessComparison(n int, b anchorfilter.SCMPBackend) (*BoundMask, *Compa
 	if e != nil {
 		return nil, nil, nil, e
 	}
-	u := &BoundMask{eta: rnd[0] & 127}
-	p := &ComparisonParty{party: 0, masks: make([]incidence.Share, n), keys: make([]anchorfilter.SCMPKeyShare, n)}
-	q := &ComparisonParty{party: 1, masks: make([]incidence.Share, n), keys: make([]anchorfilter.SCMPKeyShare, n)}
+	u := &BoundMask{eta: rnd[0] & 127, use: material.NewUseGuard()}
+	p := &ComparisonParty{party: 0, use: material.NewUseGuard(), masks: make([]incidence.Share, n), keys: make([]anchorfilter.SCMPKeyShare, n)}
+	q := &ComparisonParty{party: 1, use: material.NewUseGuard(), masks: make([]incidence.Share, n), keys: make([]anchorfilter.SCMPKeyShare, n)}
 	for i := 0; i < n; i++ {
 		r, a := rnd[1+3*i]&127, rnd[2+3*i]&127
 		p.masks[i] = incidence.NewShare(incidence.Z128(a))
@@ -67,10 +67,9 @@ func PreprocessComparison(n int, b anchorfilter.SCMPBackend) (*BoundMask, *Compa
 
 // Prepare exposes only a local share of v+R; it never reconstructs v.
 func (p *ComparisonParty) Prepare(v []incidence.Share) ([]incidence.Z128, error) {
-	if p.begun || len(v) != len(p.masks) {
+	if p == nil || len(v) != len(p.masks) || !p.use.Claim(0) {
 		return nil, ErrShape
 	}
-	p.begun = true
 	o := make([]incidence.Z128, len(v))
 	for i := range v {
 		o[i] = v[i].Value().Add(p.masks[i].Value())
@@ -88,10 +87,9 @@ func OpenComparison(a, b []incidence.Z128) ([]incidence.Z128, error) {
 	return o, nil
 }
 func (p *ComparisonParty) Finish(open []incidence.Z128, bound uint32, b anchorfilter.SCMPBackend) ([]share.BitShare, error) {
-	if !p.begun || p.finished || len(open) != len(p.keys) || bound > 127 {
+	if p == nil || b == nil || len(open) != len(p.keys) || bound > 127 || !p.use.Claim(1) {
 		return nil, ErrShape
 	}
-	p.finished = true
 	o := make([]share.BitShare, len(open))
 	for i, x := range open {
 		v, e := b.Eval(p.party, p.keys[i], uint32(x), bound)

@@ -188,6 +188,29 @@ func TestKATBucketComponents(t *testing.T) {
 	}
 }
 
+func TestBucketSeventeenBitPrefixExtendsSixteen(t *testing.T) {
+	key, err := NewMasterKey(katMasterKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, derive := range []func(int) (BucketComponent, error){
+		func(bits int) (BucketComponent, error) { return JoinBucketComponent(key, katJoinID, bits) },
+		func(bits int) (BucketComponent, error) { return WordBucketComponent(key, katQGram, bits) },
+	} {
+		sixteen, err := derive(16)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seventeen, err := derive(17)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if seventeen>>1 != sixteen || seventeen >= 1<<17 {
+			t.Fatal("17-bit MSB prefix")
+		}
+	}
+}
+
 // TestKATSeparateDomains locks the fact that the join and word derivations are
 // domain-separated: the same bytes under the other domain must not collide.
 func TestKATSeparateDomains(t *testing.T) {

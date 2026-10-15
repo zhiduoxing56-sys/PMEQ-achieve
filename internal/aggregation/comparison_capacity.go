@@ -4,7 +4,7 @@ package aggregation
 // The enclosing one-use query packet burns the unused capacity. No mask/key is
 // regenerated, and the existing Prepare/Finish equations are unchanged.
 func (p *ComparisonParty) Limit(n int) error {
-	if p == nil || p.begun || p.finished || n < 0 || n > len(p.keys) {
+	if p == nil || !p.use.Fresh() || n < 0 || n > len(p.keys) {
 		return ErrShape
 	}
 	clear(p.keys[n:])

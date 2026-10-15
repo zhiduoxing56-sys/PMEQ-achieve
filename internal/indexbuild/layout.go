@@ -21,14 +21,14 @@ type TierPopulation struct {
 type AnchorMaxGroup struct {
 	QGram                                 string
 	Occurrences, PadWidth                 int
-	BucketID                              uint16
+	BucketID                              uint32
 	BucketGroups, BucketLPad, BucketSlots int
 }
 type TargetMaxGroup struct {
 	JoinID                                uint64
 	QGram                                 string
 	Occurrences, PadWidth                 int
-	BucketID                              uint16
+	BucketID                              uint32
 	BucketGroups, BucketLPad, BucketSlots int
 }
 
@@ -118,8 +118,8 @@ func layoutLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex
 	return buildLogical(areas, aliases, kB, kT, anchorBits, targetBits)
 }
 
-func uniformAnchorMetadata(groups []anchorLogicalGroup) ([]BucketMetadata, map[uint16]int) {
-	counts, lpads := map[uint16]int{}, map[uint16]int{}
+func uniformAnchorMetadata(groups []anchorLogicalGroup) ([]BucketMetadata, map[uint32]int) {
+	counts, lpads := map[uint32]int{}, map[uint32]int{}
 	for _, g := range groups {
 		counts[g.bucket]++
 		if len(g.postings) > lpads[g.bucket] {
@@ -128,8 +128,8 @@ func uniformAnchorMetadata(groups []anchorLogicalGroup) ([]BucketMetadata, map[u
 	}
 	return uniformMetadata(counts, lpads), lpads
 }
-func uniformTargetMetadata(groups []targetLogicalGroup) ([]BucketMetadata, map[uint16]int) {
-	counts, lpads := map[uint16]int{}, map[uint16]int{}
+func uniformTargetMetadata(groups []targetLogicalGroup) ([]BucketMetadata, map[uint32]int) {
+	counts, lpads := map[uint32]int{}, map[uint32]int{}
 	for _, g := range groups {
 		counts[g.bucket]++
 		if len(g.postings) > lpads[g.bucket] {
@@ -138,8 +138,8 @@ func uniformTargetMetadata(groups []targetLogicalGroup) ([]BucketMetadata, map[u
 	}
 	return uniformMetadata(counts, lpads), lpads
 }
-func uniformMetadata(counts, lpads map[uint16]int) []BucketMetadata {
-	by := make(map[uint16]BucketMetadata, len(counts))
+func uniformMetadata(counts, lpads map[uint32]int) []BucketMetadata {
+	by := make(map[uint32]BucketMetadata, len(counts))
 	for id, count := range counts {
 		by[id] = BucketMetadata{BucketID: id, GroupCount: uint32(count), TotalSlots: uint64(count * lpads[id])}
 	}
@@ -147,7 +147,7 @@ func uniformMetadata(counts, lpads map[uint16]int) []BucketMetadata {
 }
 
 func tierAnchorMetadata(groups []anchorLogicalGroup) ([]BucketMetadata, []int, []TierPopulation, error) {
-	by := map[uint16]BucketMetadata{}
+	by := map[uint32]BucketMetadata{}
 	widths := make([]int, 0, len(groups))
 	pop := newTierPopulation()
 	for _, g := range groups {
@@ -166,7 +166,7 @@ func tierAnchorMetadata(groups []anchorLogicalGroup) ([]BucketMetadata, []int, [
 	return sortedBucketMetadata(by), widths, finishTierPopulation(pop, len(groups)), nil
 }
 func tierTargetMetadata(groups []targetLogicalGroup) ([]BucketMetadata, []int, []TierPopulation, error) {
-	by := map[uint16]BucketMetadata{}
+	by := map[uint32]BucketMetadata{}
 	widths := make([]int, 0, len(groups))
 	pop := newTierPopulation()
 	for _, g := range groups {
@@ -209,7 +209,7 @@ func finishTierPopulation(p map[int]*TierPopulation, total int) []TierPopulation
 	return out
 }
 
-func finishUniformStats(stats *SideStats, buckets []BucketMetadata, lpads map[uint16]int) {
+func finishUniformStats(stats *SideStats, buckets []BucketMetadata, lpads map[uint32]int) {
 	stats.NonemptyBuckets = len(buckets)
 	groups := make([]int, len(buckets))
 	pads := make([]int, len(buckets))
@@ -227,7 +227,7 @@ func finishUniformStats(stats *SideStats, buckets []BucketMetadata, lpads map[ui
 		stats.PaddingRatio = float64(stats.PaddedSlots) / float64(stats.RealSlots)
 	}
 }
-func sortedBucketMetadata(by map[uint16]BucketMetadata) []BucketMetadata {
+func sortedBucketMetadata(by map[uint32]BucketMetadata) []BucketMetadata {
 	out := make([]BucketMetadata, 0, len(by))
 	for _, m := range by {
 		out = append(out, m)
@@ -235,15 +235,15 @@ func sortedBucketMetadata(by map[uint16]BucketMetadata) []BucketMetadata {
 	sort.Slice(out, func(i, j int) bool { return out[i].BucketID < out[j].BucketID })
 	return out
 }
-func metadataMap(b []BucketMetadata) map[uint16]BucketMetadata {
-	out := make(map[uint16]BucketMetadata, len(b))
+func metadataMap(b []BucketMetadata) map[uint32]BucketMetadata {
+	out := make(map[uint32]BucketMetadata, len(b))
 	for _, x := range b {
 		out[x.BucketID] = x
 	}
 	return out
 }
 
-func largestAnchorGroup(groups []anchorLogicalGroup, buckets []BucketMetadata, lpads map[uint16]int, tiered bool) AnchorMaxGroup {
+func largestAnchorGroup(groups []anchorLogicalGroup, buckets []BucketMetadata, lpads map[uint32]int, tiered bool) AnchorMaxGroup {
 	by := metadataMap(buckets)
 	var out AnchorMaxGroup
 	for _, g := range groups {
@@ -260,7 +260,7 @@ func largestAnchorGroup(groups []anchorLogicalGroup, buckets []BucketMetadata, l
 	}
 	return out
 }
-func largestTargetGroup(groups []targetLogicalGroup, buckets []BucketMetadata, lpads map[uint16]int, tiered bool) TargetMaxGroup {
+func largestTargetGroup(groups []targetLogicalGroup, buckets []BucketMetadata, lpads map[uint32]int, tiered bool) TargetMaxGroup {
 	by := metadataMap(buckets)
 	var out TargetMaxGroup
 	for _, g := range groups {

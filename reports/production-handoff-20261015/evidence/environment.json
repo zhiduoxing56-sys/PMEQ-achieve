@@ -1,0 +1,25 @@
+{
+  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "go": {
+    "returncode": 0,
+    "stdout": "go version go1.27.1 linux/amd64",
+    "stderr": ""
+  },
+  "gxx": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+  "default_go_on_PATH": null,
+  "module_file_sha256": "2a9001353f4d3d0f5b01f1986086bd73c66583fd4fd1e5cf6ca476e58d662de2",
+  "go_sum_sha256": "48ca4a0f44387b72770c28b0d91ac3bd53a5b8844c03aaaf5f092450be9dadea",
+  "native_archive": {
+    "path": "/home/tenggn/projects/clean_pmeq/imdb_q_crypto_preexperiment_20261014/native/libphase6scmp.a",
+    "bytes": 143132,
+    "sha256": "73fcbbccf6e42345f3c861caa4d3ff52383048a7c867d39eb5926b27e58d529e"
+  },
+  "memory": {
+    "MemTotal": "49219672 kB",
+    "MemAvailable": "47142448 kB",
+    "SwapFree": "33554432 kB"
+  },
+  "module_cache": "/home/tenggn/projects/clean_pmeq/verification/anchor-replacement/cache/mod",
+  "native_archive_rebuilt": false
+}
