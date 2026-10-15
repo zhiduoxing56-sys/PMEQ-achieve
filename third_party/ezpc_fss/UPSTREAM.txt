@@ -1,0 +1,16 @@
+PMEQ native dependency, pinned from the stage-0 recoverable source snapshot.
+Source: /tmp/pmeq-stage0-restore-20261011/dependencies/external-scmp/vendor/ezpc_fss
+Original project: /home/tenggn/projects/new-pmeq/dmpf_agg_proto
+Per-file pre-repair SHA256: docs/review/stage3-20261011/upstream-native-hashes.json
+Preserve LICENSE and the Microsoft Research author notices in each upstream file.
+cryptoTools headers/source are included only to compile the existing LLAMA DCF/SCMP primitive.
+
+Local repairs: group_element.h splitShare uses uniform RAND_priv_bytes-backed words;
+pubdiv.cpp uses the same secure splitter randomness for the output mask;
+unused splitShareCommonPRNG and global prngShared are removed. comms.cpp is not
+vendored or linked. No fixed-seed external FFI/test adapters are included.
+cryptoTools sysRandomSeed also uses RAND_priv_bytes for its dealer-private
+128-bit seed; key generation is serialized and entropy errors fail closed.
+The sole build is tools/build_phase6_native.sh; the external-backend override is rejected.
+No change to DCF/SCMP evaluation equations. Native interface supports Bin7/Bout1
+and plaintext comparisons within [0,63]; masked inputs lie in [0,127].
