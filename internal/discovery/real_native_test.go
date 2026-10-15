@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"pmeq/internal/aggregation"
@@ -22,6 +23,7 @@ import (
 	"pmeq/internal/targetartifact"
 	"pmeq/internal/targetcrypto"
 	"pmeq/internal/targetpe"
+	"pmeq/internal/zeroagg"
 	"sort"
 	"testing"
 	"time"
@@ -201,15 +203,16 @@ func (f *fixture) prepareStatic(t *testing.T, q workload) ([2]*discovery.Static,
 		posts := f.posts[id]
 		local, e := incidence.PrepareLayout(posts)
 		must(t, e)
-		m0, m1, e := incidence.ShareIncidence(local)
+		m0, m1, e := zeroagg.ShareCoordinates(local.Coordinates, local.D)
 		must(t, e)
 		s0, s1, e := f.layout.Alignment(id, local, posts)
 		must(t, e)
 		b0, b1 := f.anchor[0][id], f.anchor[1][id]
 		b0.BucketID = id
 		b1.BucketID = id
-		as[0][id] = discovery.AnchorStatic{Bucket: b0, Incidence: m0, Stage0: s0}
-		as[1][id] = discovery.AnchorStatic{Bucket: b1, Incidence: m1, Stage1: s1}
+		labelID := fmt.Sprintf("%032x", uint64(id)+1)
+		as[0][id] = discovery.AnchorStatic{Bucket: b0, D: local.D, T: len(posts), Labels: m0, LabelID: labelID, Stage0: s0}
+		as[1][id] = discovery.AnchorStatic{Bucket: b1, D: local.D, T: len(posts), Labels: m1, LabelID: labelID, Stage1: s1}
 	}
 	var out [2]*discovery.Static
 	for u := range out {

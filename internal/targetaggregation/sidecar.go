@@ -11,6 +11,7 @@ import (
 	"io"
 
 	"pmeq/internal/domain"
+	"pmeq/internal/imdbprod"
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/share"
@@ -19,7 +20,7 @@ import (
 
 const DTarget = 26
 const MaxOccurrences = 16
-const MaxMultiplicity = 3
+const MaxMultiplicity = imdbprod.TargetMultiplicity
 const SidecarMagic = "PMEQTG01"
 
 var ErrBinding = errors.New("targetaggregation: invalid binding, domain, shape or lifecycle")
@@ -153,4 +154,5 @@ type countReader struct {
 func (r *countReader) Read(b []byte) (int, error) { n, e := r.r.Read(b); r.n += uint64(n); return n, e }
 
 // Capacity is public static metadata, bound by the sealed manifest.
-func (s *PartySidecar) Capacity() int { return int(s.manifest.DTarget) }
+func (s *PartySidecar) Capacity() int     { return int(s.manifest.DTarget) }
+func (s *PartySidecar) Multiplicity() int { return int(s.manifest.MaxMultiplicity) }

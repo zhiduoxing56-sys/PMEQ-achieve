@@ -1,0 +1,22 @@
+Authoritative repository: /home/tenggn/projects/clean_pmeq
+Begin HEAD: c67336ed04c1ca26438ea2003333863c1b19e895 (clean at initial gate)
+Final source validation before the single PHASE11 commit:
+gofmt: PASS (no unformatted Go source)
+go test ./...: PASS
+go vet ./...: PASS
+go test -race -timeout=60m ./...: PASS
+Native integrated edge tests under race: PASS
+Native go vet -tags phase6native ./...: PASS
+Actual complete replay: 1003 total,149 rejected,854 valid,1510 pairs
+FP=0 FN=0 duplicates=0 wrongAnchorID=0 wrongTargetID=0
+Repeated integrated runs: all4 cases,10 warmup+30 measured each,PASS
+Separate offline timing samples: PASS; excluded from online measurements
+Original6 sealed files and3 manifests unchanged: PASS
+git diff --check: PASS
+Obsolete-path git grep: NO MATCHES (exit1)
+Tracked and untracked source/evidence obsolete-path scan: NO MATCHES
+Paper modified: NO
+Alternate repository created/used: NO
+Backup modified: NO
+Evidence was generated from the final runtime source with directional party launchers.
+Local process models party API isolation; no OS-process/network isolation claim.

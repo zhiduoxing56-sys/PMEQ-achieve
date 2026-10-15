@@ -33,6 +33,16 @@ func canonicalAnchorLogicalKey(qgram string) ([]byte, error) {
 	return encodeLengthDelimited(anchorIndexKind, anchorTable, anchorSearch, anchorJoin, qgram)
 }
 
+func canonicalMovieLogicalKey(qgram string) ([]byte, error) {
+	if !utf8.ValidString(qgram) {
+		return nil, errInvalidUTF8
+	}
+	if utf8.RuneCountInString(qgram) != anchorQ {
+		return nil, errInvalidQ
+	}
+	return encodeLengthDelimited("BSMJ-IMDB-V1", "MOVIECAST", "aliasTitle", "tconst", qgram)
+}
+
 func encodeLengthDelimited(fields ...string) ([]byte, error) {
 	total := 0
 	for _, field := range fields {

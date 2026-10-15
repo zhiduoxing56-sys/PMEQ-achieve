@@ -9,6 +9,7 @@ import (
 	"pmeq/internal/anchorfilter"
 	"pmeq/internal/anchorindex"
 	"pmeq/internal/f2beaver"
+	"pmeq/internal/imdbprod"
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/material"
@@ -64,11 +65,12 @@ func validAnchorLabels(a AnchorStatic) bool {
 }
 
 type Static struct {
-	party   uint8
-	anchor  map[uint32]AnchorStatic
-	payload aggregation.PartyPayload
-	target  *targetpe.PartyIndex
-	sidecar *targetaggregation.PartySidecar
+	party        uint8
+	anchor       map[uint32]AnchorStatic
+	payload      aggregation.PartyPayload
+	target       *targetpe.PartyIndex
+	sidecar      *targetaggregation.PartySidecar
+	movieBinding [32]byte
 }
 
 func NewStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar) (*Static, error) {
@@ -91,6 +93,36 @@ func NewStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggregation.
 		}
 	}
 	return &Static{party: party, anchor: anchor, payload: payload, target: target, sidecar: sidecar}, nil
+}
+
+// NewMovieStatic accepts only a frozen IMDb sample/layout binding. The new
+// token domain carries its digest, so an old QU12 token cannot run on it.
+func NewMovieStatic(party uint8, anchor map[uint32]AnchorStatic, payload aggregation.PartyPayload, target *targetpe.PartyIndex, sidecar *targetaggregation.PartySidecar, binding imdbprod.Binding) (*Static, error) {
+	digest, err := binding.Digest()
+	if err != nil || target == nil || sidecar == nil || target.Lineage().IndexID != binding.IndexID || target.Lineage().LayoutID != binding.LayoutID || target.Lineage().N != imdbprod.AnchorObjects || target.Manifest().TargetBucketBits != imdbprod.BucketBits || target.Manifest().Q != imdbprod.Q || sidecar.Capacity() != imdbprod.TargetDimension || sidecar.Multiplicity() != imdbprod.TargetMultiplicity {
+		return nil, ErrBinding
+	}
+	s, err := NewStatic(party, anchor, payload, target, sidecar)
+	if err != nil {
+		return nil, err
+	}
+	// The offline S/G reservation uses this fixed public bucket envelope.
+	// A different keyed layout is rejected before allocating a query batch.
+	for bucket := uint32(0); bucket < 1<<imdbprod.BucketBits; bucket++ {
+		groups := target.PositionGroups(bucket)
+		if len(groups) > 11 {
+			return nil, ErrBinding
+		}
+		slots := 0
+		for _, group := range groups {
+			slots += int(group.PadWidth)
+		}
+		if slots > 44 {
+			return nil, ErrBinding
+		}
+	}
+	s.movieBinding = digest
+	return s, nil
 }
 
 type guard struct {
@@ -142,6 +174,7 @@ type PartyPacket struct {
 	agg            targetaggregation.Packet
 	output         *aggregation.PairPermutation
 	capacity       int
+	movieBinding   [32]byte
 	interruptZero  bool
 	persistentRefs []zeroReference
 }
@@ -153,13 +186,15 @@ type UserPacket struct {
 	keep                   *aggregation.BoundMask
 	target                 []anchorfilter.UserPreprocessing
 	agg                    *targetaggregation.UserMaterial
+	movieBinding           [32]byte
 }
 type cloudToken struct {
-	packet [16]byte
-	anchor []anchorfilter.PartyQuery
-	keep   uint32
-	target targetrouting.QueryToken
-	agg    targetaggregation.ThresholdToken
+	packet       [16]byte
+	anchor       []anchorfilter.PartyQuery
+	keep         uint32
+	target       targetrouting.QueryToken
+	agg          targetaggregation.ThresholdToken
+	movieBinding [32]byte
 }
 type OfflineBytes struct{ AnchorPosition, AnchorAggregation, Compaction, TargetPE, TargetPosition, TargetAggregation, OutputPermutation uint64 }
 type fail struct{ err error }

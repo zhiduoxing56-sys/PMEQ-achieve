@@ -1,0 +1,29 @@
+=== RUN   TestPhase10NativeBenchmarks
+    phase10_benchmark_native_test.go:147: PHASE10 benchmark S=176 K=1 r=8 warm=10 measured=50 errors=0
+    phase10_benchmark_native_test.go:147: PHASE10 benchmark S=9440 K=161 r=3 warm=10 measured=50 errors=0
+--- PASS: TestPhase10NativeBenchmarks (43.01s)
+PASS
+ok  	pmeq/internal/targetposition	43.047s
+	Command being timed: "/tmp/go/bin/go test -tags phase6native ./internal/targetposition -run ^TestPhase10NativeBenchmarks$ -count=1 -timeout=30m -v"
+	User time (seconds): 49.52
+	System time (seconds): 9.76
+	Percent of CPU this job got: 135%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:43.62
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2246644
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 71
+	Minor (reclaiming a frame) page faults: 822736
+	Voluntary context switches: 272508
+	Involuntary context switches: 202
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 27984
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,60 @@
+=== RUN   TestIntegratedReal
+    real_native_test.go:341: integrated 0/1003 mean-primary samples recorded; last wall=328.289383ms
+    real_native_test.go:341: integrated 25/1003 mean-primary samples recorded; last wall=326.645976ms
+    real_native_test.go:341: integrated 75/1003 mean-primary samples recorded; last wall=267.57855ms
+    real_native_test.go:341: integrated 100/1003 mean-primary samples recorded; last wall=306.000054ms
+    real_native_test.go:341: integrated 125/1003 mean-primary samples recorded; last wall=353.032473ms
+    real_native_test.go:341: integrated 150/1003 mean-primary samples recorded; last wall=276.650472ms
+    real_native_test.go:341: integrated 175/1003 mean-primary samples recorded; last wall=288.553064ms
+    real_native_test.go:341: integrated 200/1003 mean-primary samples recorded; last wall=336.793928ms
+    real_native_test.go:341: integrated 275/1003 mean-primary samples recorded; last wall=379.465159ms
+    real_native_test.go:341: integrated 300/1003 mean-primary samples recorded; last wall=598.626724ms
+    real_native_test.go:341: integrated 325/1003 mean-primary samples recorded; last wall=304.873872ms
+    real_native_test.go:341: integrated 375/1003 mean-primary samples recorded; last wall=346.493243ms
+    real_native_test.go:341: integrated 400/1003 mean-primary samples recorded; last wall=291.772033ms
+    real_native_test.go:341: integrated 425/1003 mean-primary samples recorded; last wall=297.744248ms
+    real_native_test.go:341: integrated 450/1003 mean-primary samples recorded; last wall=313.166572ms
+    real_native_test.go:341: integrated 475/1003 mean-primary samples recorded; last wall=262.849573ms
+    real_native_test.go:341: integrated 525/1003 mean-primary samples recorded; last wall=1.634176094s
+    real_native_test.go:341: integrated 550/1003 mean-primary samples recorded; last wall=285.690231ms
+    real_native_test.go:341: integrated 575/1003 mean-primary samples recorded; last wall=530.074074ms
+    real_native_test.go:341: integrated 600/1003 mean-primary samples recorded; last wall=284.034771ms
+    real_native_test.go:341: integrated 625/1003 mean-primary samples recorded; last wall=262.925931ms
+    real_native_test.go:341: integrated 650/1003 mean-primary samples recorded; last wall=279.13217ms
+    real_native_test.go:341: integrated 675/1003 mean-primary samples recorded; last wall=272.226047ms
+    real_native_test.go:341: integrated 700/1003 mean-primary samples recorded; last wall=305.938873ms
+    real_native_test.go:341: integrated 725/1003 mean-primary samples recorded; last wall=299.513984ms
+    real_native_test.go:341: integrated 775/1003 mean-primary samples recorded; last wall=387.554391ms
+    real_native_test.go:341: integrated 800/1003 mean-primary samples recorded; last wall=328.920267ms
+    real_native_test.go:341: integrated 850/1003 mean-primary samples recorded; last wall=417.219751ms
+    real_native_test.go:341: integrated 900/1003 mean-primary samples recorded; last wall=344.717901ms
+    real_native_test.go:341: integrated 925/1003 mean-primary samples recorded; last wall=321.453126ms
+    real_native_test.go:341: integrated 950/1003 mean-primary samples recorded; last wall=436.878886ms
+    real_native_test.go:341: integrated 1000/1003 mean-primary samples recorded; last wall=293.194405ms
+    real_native_test.go:355: INTEGRATED total=1003 rejected=149 valid=854 pairs=1510 FP=0 FN=0 duplicate=0 wrongAnchor=0 wrongTarget=0
+--- PASS: TestIntegratedReal (2335.80s)
+PASS
+ok  	pmeq/internal/discovery	2336.057s
+	Command being timed: "/tmp/go/bin/go test -tags phase6native ./internal/discovery -run ^TestIntegratedReal$ -count=1 -timeout=90m -v"
+	User time (seconds): 2581.83
+	System time (seconds): 757.12
+	Percent of CPU this job got: 142%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 39:07.71
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 7150976
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 83
+	Minor (reclaiming a frame) page faults: 30342987
+	Voluntary context switches: 3628702
+	Involuntary context switches: 32450
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 29544
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

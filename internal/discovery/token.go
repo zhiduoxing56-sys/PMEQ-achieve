@@ -8,6 +8,7 @@ import (
 	"pmeq/internal/anchorfilter"
 	"pmeq/internal/anchorquery"
 	dpfcodec "pmeq/internal/dpf128/codec"
+	"pmeq/internal/imdbprod"
 	"pmeq/internal/targetquery"
 	"pmeq/internal/targetrouting"
 )
@@ -16,7 +17,12 @@ func put(b *bytes.Buffer, x any) { check(binary.Write(b, binary.LittleEndian, x)
 func get(b *bytes.Reader, x any) { check(binary.Read(b, binary.LittleEndian, x)) }
 func encodeToken(t cloudToken) []byte {
 	var b bytes.Buffer
-	b.WriteString("PMEQQU12")
+	if t.movieBinding == [32]byte{} {
+		b.WriteString("PMEQQU12")
+	} else {
+		b.WriteString("PMEQQU13")
+		b.Write(t.movieBinding[:])
+	}
 	put(&b, t.packet)
 	put(&b, uint32(len(t.anchor)))
 	put(&b, t.keep)
@@ -46,13 +52,29 @@ func encodeToken(t cloudToken) []byte {
 	return b.Bytes()
 }
 func decodeToken(raw []byte, m targetrouting.Manifest, party uint8) (t cloudToken, err error) {
+	return decodeTokenWithProfile(raw, m, party, [32]byte{})
+}
+func decodeTokenWithProfile(raw []byte, m targetrouting.Manifest, party uint8, binding [32]byte) (t cloudToken, err error) {
 	defer caught(&err)
 	b := bytes.NewReader(raw)
 	magic := make([]byte, 8)
 	_, err = io.ReadFull(b, magic)
 	check(err)
-	if string(magic) != "PMEQQU12" {
-		check(ErrBinding)
+	if binding == [32]byte{} {
+		if string(magic) != "PMEQQU12" {
+			check(ErrBinding)
+		}
+	} else {
+		if string(magic) != "PMEQQU13" {
+			check(ErrBinding)
+		}
+		var actual [32]byte
+		_, err = io.ReadFull(b, actual[:])
+		check(err)
+		if actual != binding {
+			check(ErrBinding)
+		}
+		t.movieBinding = actual
 	}
 	get(b, &t.packet)
 	var n uint32
@@ -106,13 +128,28 @@ func decodeToken(raw []byte, m targetrouting.Manifest, party uint8) (t cloudToke
 }
 func generate(q Query, k UserKeys, u *UserPacket, m targetrouting.Manifest) (out [2][]byte, err error) {
 	defer caught(&err)
-	check(Validate(q))
+	movie := u.movieBinding != [32]byte{}
+	if movie {
+		check(imdbprod.Production().CheckQuery(q.Anchor, q.Target, q.TauAnchor, q.TauTarget))
+	} else {
+		check(Validate(q))
+	}
 	check(u.g.claim())
 	cs := anchorfilter.QueryChunks(q.Anchor)
+	if movie {
+		cs, err = anchorfilter.QueryChunksWithQ(q.Anchor, imdbprod.Q, imdbprod.AnchorSignatures)
+		check(err)
+	}
 	if len(cs) != len(u.anchor) {
 		check(ErrBinding)
 	}
-	a, b, e := targetquery.GeneratePositionTokens(m, k.Target, q.Target, uint32(q.TauTarget), u.target)
+	var a, b targetrouting.QueryToken
+	var e error
+	if movie {
+		a, b, e = targetquery.GenerateMoviePositionTokens(m, k.Target, q.Target, uint32(q.TauTarget), u.target)
+	} else {
+		a, b, e = targetquery.GeneratePositionTokens(m, k.Target, q.Target, uint32(q.TauTarget), u.target)
+	}
 	check(e)
 	agg, e := u.agg.Token(a.QueryID, q.TauTarget)
 	check(e)
@@ -120,9 +157,15 @@ func generate(q Query, k UserKeys, u *UserPacket, m targetrouting.Manifest) (out
 	check(e)
 	keep, e := u.keep.Mask(l)
 	check(e)
-	ts := [2]cloudToken{{packet: u.id, keep: keep, target: a, agg: agg}, {packet: u.id, keep: keep, target: b, agg: agg}}
+	ts := [2]cloudToken{{packet: u.id, keep: keep, target: a, agg: agg, movieBinding: u.movieBinding}, {packet: u.id, keep: keep, target: b, agg: agg, movieBinding: u.movieBinding}}
 	for i, c := range cs {
-		x, y, e := anchorquery.MakeOccurrence(k.Anchor, c, uint32(q.TauAnchor), 62, int(m.TargetBucketBits), &u.anchor[i])
+		var x, y anchorfilter.PartyQuery
+		var e error
+		if movie {
+			x, y, e = anchorquery.MakeMovieOccurrence(k.Anchor, c, uint32(q.TauAnchor), imdbprod.PositionMax, int(m.TargetBucketBits), &u.anchor[i])
+		} else {
+			x, y, e = anchorquery.MakeOccurrence(k.Anchor, c, uint32(q.TauAnchor), 62, int(m.TargetBucketBits), &u.anchor[i])
+		}
 		check(e)
 		if x.BucketID != u.buckets[i] {
 			check(ErrBinding)

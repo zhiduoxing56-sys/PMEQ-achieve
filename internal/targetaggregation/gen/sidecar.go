@@ -89,7 +89,7 @@ func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild
 		}
 	}
 	digest := sha256.Sum256(rawManifest)
-	out = targetaggregation.SidecarManifest{Version: 1, IndexID: m.IndexID, ManifestSHA256: hex.EncodeToString(digest[:]), DTarget: uint32(d), MaxMultiplicity: 3, IncidenceBytes: uint64(d) * m.PaddedSlots, TargetIDBytes: uint64(d) * 8 * m.LogicalGroups}
+	out = targetaggregation.SidecarManifest{Version: 1, IndexID: m.IndexID, ManifestSHA256: hex.EncodeToString(digest[:]), DTarget: uint32(d), MaxMultiplicity: targetaggregation.MaxMultiplicity, IncidenceBytes: uint64(d) * m.PaddedSlots, TargetIDBytes: uint64(d) * 8 * m.LogicalGroups}
 	var writers [2]*bufio.Writer
 	var counters [2]*counted
 	hashes := [2]io.Writer{}
@@ -158,7 +158,7 @@ func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild
 					coord = ordinal[id]
 					counts[id]++
 					audit.MaxMultiplicity = max(audit.MaxMultiplicity, counts[id])
-					if counts[id] > 3 {
+					if counts[id] > targetaggregation.MaxMultiplicity {
 						return out, audit, targetaggregation.ErrBinding
 					}
 					audit.RealSlots++

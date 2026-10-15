@@ -141,13 +141,8 @@ func freshSignatureUser(t *testing.T, q Query, key UserKeys, manifest targetrout
 		if err != nil {
 			t.Fatal(err)
 		}
-		mask, _, _, err := aggregation.PreprocessComparison(0, b)
-		if err != nil {
-			t.Fatal(err)
-		}
 		u.buckets = append(u.buckets, bucket)
 		u.anchor = append(u.anchor, user)
-		u.f = append(u.f, mask)
 	}
 	var err error
 	u.keep, _, _, err = aggregation.PreprocessComparison(0, b)
@@ -182,11 +177,17 @@ func TestTokenSignatureCountExperiment(t *testing.T) {
 	full := os.Getenv("PMEQ_SIGNATURE_FULL") == "1"
 	if full {
 		pf, err := os.OpenFile(filepath.Join(output, "source-pairs.json"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-		if err != nil { t.Fatal(err) }
+		if err != nil {
+			t.Fatal(err)
+		}
 		pe := json.NewEncoder(pf)
 		pe.SetIndent("", "  ")
-		if err := pe.Encode(pairs); err != nil { t.Fatal(err) }
-		if err := pf.Close(); err != nil { t.Fatal(err) }
+		if err := pe.Encode(pairs); err != nil {
+			t.Fatal(err)
+		}
+		if err := pf.Close(); err != nil {
+			t.Fatal(err)
+		}
 	}
 	mf, err := os.Open("../../artifacts/phase7b/manifest.json")
 	if err != nil {
@@ -256,7 +257,10 @@ func TestTokenSignatureCountExperiment(t *testing.T) {
 		BucketBits        int             `json:"bucket_bits"`
 		Cases             []signatureCase `json:"cases"`
 	}{"length-controlled constructed query set", signatureSeed, eligible, len(pairs), 120071, 67896, 4, 16, cases}
-	if full { set.Label = "full length-controlled constructed query set"; set.Seed = 0 }
+	if full {
+		set.Label = "full length-controlled constructed query set"
+		set.Seed = 0
+	}
 	qf, err := os.OpenFile(filepath.Join(output, "constructed-queries.json"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
 		t.Fatal(err)

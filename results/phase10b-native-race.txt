@@ -1,0 +1,8 @@
+=== RUN   TestNativeFixedPairs
+--- PASS: TestNativeFixedPairs (0.56s)
+=== RUN   TestNativeCapacityPrefixes
+--- PASS: TestNativeCapacityPrefixes (0.12s)
+=== RUN   TestActualLoadedManifestBinding
+--- PASS: TestActualLoadedManifestBinding (14.00s)
+PASS
+ok  	pmeq/internal/targetaggregation	15.731s

@@ -1,0 +1,58 @@
+{
+ "BSMJMaterialization": 5276988986,
+ "SetupIncludingOracle": 9071925795,
+ "Samples": [
+  {
+   "Query": 292,
+   "StaticExtension": 46632915,
+   "OneTimeProvision": 965167096,
+   "Offline": {
+    "AnchorPosition": 308352,
+    "AnchorAggregation": 69821454,
+    "Compaction": 31938886,
+    "TargetPE": 428400,
+    "TargetPosition": 11025920,
+    "TargetAggregation": 15493048
+   }
+  },
+  {
+   "Query": 82,
+   "StaticExtension": 45889773,
+   "OneTimeProvision": 742441228,
+   "Offline": {
+    "AnchorPosition": 112128,
+    "AnchorAggregation": 69463374,
+    "Compaction": 31938886,
+    "TargetPE": 12240,
+    "TargetPosition": 205568,
+    "TargetAggregation": 330808
+   }
+  },
+  {
+   "Query": 382,
+   "StaticExtension": 99710747,
+   "OneTimeProvision": 1148795967,
+   "Offline": {
+    "AnchorPosition": 1308160,
+    "AnchorAggregation": 72646648,
+    "Compaction": 31938886,
+    "TargetPE": 942480,
+    "TargetPosition": 24462592,
+    "TargetAggregation": 31853592
+   }
+  },
+  {
+   "Query": 538,
+   "StaticExtension": 213488343,
+   "OneTimeProvision": 5820846437,
+   "Offline": {
+    "AnchorPosition": 6606208,
+    "AnchorAggregation": 146706658,
+    "Compaction": 31938886,
+    "TargetPE": 10098000,
+    "TargetPosition": 261169472,
+    "TargetAggregation": 341238672
+   }
+  }
+ ]
+}

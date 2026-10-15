@@ -1,0 +1,3 @@
+    phase7_integration_test.go:91: TARGET_WORKLOAD raw=67896 short=4047 normal=63849 repeated=34 r min=1 p50=2 p90=4 p95=5 p99=7 max=16
+    phase7_integration_test.go:137: PSMJ materialized target_bits=8 anchor_bits=16 groups=310331 padded=1317260 all_group_checks=0 errors
+    phase7_integration_test.go:236: GROUP_ROUTING equal=100000 unequal=100000 categories=[33332 26045 40623] errors=0

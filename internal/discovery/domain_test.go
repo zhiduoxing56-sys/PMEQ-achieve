@@ -25,6 +25,7 @@ import (
 	"pmeq/internal/targetartifact"
 	"pmeq/internal/targetcrypto"
 	"pmeq/internal/targetpe"
+	"pmeq/internal/zeroagg"
 )
 
 // This backend is an insecure unit-test oracle, never a performance backend.
@@ -148,11 +149,11 @@ func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int) domai
 	}
 	loc, e := incidence.PrepareLayout(posts)
 	domainMust(t, e)
-	i0, i1, e := incidence.ShareIncidence(loc)
+	i0, i1, e := zeroagg.ShareCoordinates(loc.Coordinates, loc.D)
 	domainMust(t, e)
 	s0, s1, e := layout.Alignment(id, loc, posts)
 	domainMust(t, e)
-	anchors := [2]map[uint32]AnchorStatic{{id: {Bucket: bs[0], Incidence: i0, Stage0: s0}}, {id: {Bucket: bs[1], Incidence: i1, Stage1: s1}}}
+	anchors := [2]map[uint32]AnchorStatic{{id: {Bucket: bs[0], D: loc.D, T: len(posts), Labels: i0, LabelID: "01000000000000000000000000000000", Stage0: s0}}, {id: {Bucket: bs[1], D: loc.D, T: len(posts), Labels: i1, LabelID: "01000000000000000000000000000000", Stage1: s1}}}
 	for u := 0; u < 2; u++ {
 		idx, e := targetpe.Load(bytes.NewReader(mr), bytes.NewReader(pr), bytes.NewReader(files[u]), bytes.NewReader(pb[u]), uint8(u), targetpe.AlignmentLineage{IndexID: m.IndexID, LayoutID: layout.LayoutID, N: n})
 		domainMust(t, e)
@@ -185,6 +186,8 @@ func runDomainFixture(t *testing.T, f domainFixture, backend anchorfilter.SCMPBa
 	t.Helper()
 	n := len(f.st[0].payload.Slots)
 	u, p0, p1, cost, e := Provision(f.st[0], f.st[1], f.buckets, f.cap, f.shape, backend)
+	domainMust(t, e)
+	_, e = PersistReservation(t.TempDir(), t.TempDir(), u, p0, p1, f.st[0], f.st[1])
 	domainMust(t, e)
 	compactionBytes := 266
 	if f.st[0].target.Manifest().TargetBucketBits > 16 {

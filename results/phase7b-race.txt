@@ -1,0 +1,3 @@
+ok  	pmeq/internal/indexbuild	16.356s
+ok  	pmeq/internal/targetartifact	1.018s
+ok  	pmeq/internal/targetrouting	2.157s

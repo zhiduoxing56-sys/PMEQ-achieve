@@ -1,0 +1,32 @@
+=== RUN   TestCompactionBenchmark
+    compaction_test.go:255: BENCH N=120071 K=0 warmup=10 measured=50 stage1=22.368729/28.998296 stage2=14.903039/19.464012 open=0.900062/1.172778 extract=2.429683/2.847092 p50/p95_ms sampled_heap_increment=27271184
+    compaction_test.go:255: BENCH N=120071 K=1 warmup=10 measured=50 stage1=22.671095/30.284064 stage2=15.137639/19.093936 open=0.949340/1.186898 extract=2.446257/3.247897 p50/p95_ms sampled_heap_increment=27271264
+    compaction_test.go:255: BENCH N=120071 K=8 warmup=10 measured=50 stage1=21.392297/25.917042 stage2=15.297559/26.494033 open=1.031998/1.325514 extract=2.519842/3.212641 p50/p95_ms sampled_heap_increment=27271840
+    compaction_test.go:255: BENCH N=120071 K=64 warmup=10 measured=50 stage1=23.079466/30.194267 stage2=15.110797/18.158448 open=0.947874/1.324520 extract=2.442511/3.025509 p50/p95_ms sampled_heap_increment=27276544
+    compaction_test.go:255: BENCH N=120071 K=512 warmup=10 measured=50 stage1=22.127420/30.230083 stage2=14.755526/22.321316 open=0.961849/1.232389 extract=2.492154/3.297040 p50/p95_ms sampled_heap_increment=27314176
+--- PASS: TestCompactionBenchmark (140.54s)
+PASS
+ok  	pmeq/internal/aggregation	140.550s
+	Command being timed: "/tmp/go/bin/go test ./internal/aggregation -run ^TestCompactionBenchmark$ -count=1 -v"
+	User time (seconds): 63.82
+	System time (seconds): 75.63
+	Percent of CPU this job got: 102%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:15.89
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 115824
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 36
+	Minor (reclaiming a frame) page faults: 3415503
+	Voluntary context switches: 184203
+	Involuntary context switches: 398
+	Swaps: 0
+	File system inputs: 24
+	File system outputs: 11536
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

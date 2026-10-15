@@ -41,6 +41,14 @@ func KWord(key MasterKey, qgram string) (*ristretto255.Scalar, error) {
 	return scalarFromHMAC(key, message)
 }
 
+func KMovieWord(key MasterKey, qgram string) (*ristretto255.Scalar, error) {
+	message, err := CanonicalMovieWord("PMEQ-TARGET-IMDB-WORD-SCALAR-V1", qgram)
+	if err != nil {
+		return nil, err
+	}
+	return scalarFromHMAC(key, message)
+}
+
 // scalarFromHMAC is the only scalar derivation path. The master key is used
 // exclusively as an HMAC key; it is never a message field, the digest is never
 // reduced by a hand-written modulus, and the result is never rejected or

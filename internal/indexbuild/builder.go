@@ -182,7 +182,17 @@ func Build(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.Key, kT
 	return buildProjection(areas, aliases, nil, kB, kT, anchorBits, targetBits)
 }
 
+// BuildMovie uses the versioned IMDb index domains and distinct anchor object
+// and movie join IDs. The trusted caller must verify the frozen mapping first.
+func BuildMovie(areas []AreaRecord, joins []uint64, movies []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjectionWithMode(areas, movies, joins, kB, kT, 16, 16, true)
+}
+
 func buildProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjectionWithMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, false)
+}
+
+func buildProjectionWithMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, movie bool) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
 	started := time.Now()
 	if joins != nil && len(joins) != len(areas) {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, errors.New("indexbuild: object/join input length mismatch")
@@ -193,7 +203,7 @@ func buildProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint
 	if _, err := targetcrypto.JoinBucketComponent(kT, 0, targetBits); err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
-	anchorGroups, targetGroups, stats, err := buildLogicalProjection(areas, aliases, joins, kB, kT, anchorBits, targetBits)
+	anchorGroups, targetGroups, stats, err := buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, movie)
 	if err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
@@ -213,6 +223,10 @@ func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.
 }
 
 func buildLogicalProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
+	return buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, false)
+}
+
+func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, movie bool) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
 	stats := BuildStats{Anchor: SideStats{RawRecords: len(areas)}, Target: SideStats{RawRecords: len(aliases)}}
 	am := make(map[string]*anchorLogicalGroup)
 	for ri, record := range areas {
@@ -235,7 +249,13 @@ func buildLogicalProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins
 	anchors := make([]anchorLogicalGroup, 0, len(am))
 	zSeen := make(map[anchorindex.Value]string)
 	for qgram, group := range am {
-		z, err := anchorindex.Encode(kB, qgram)
+		var z anchorindex.Value
+		var err error
+		if movie {
+			z, err = anchorindex.EncodeMovie(kB, qgram)
+		} else {
+			z, err = anchorindex.Encode(kB, qgram)
+		}
 		if err != nil {
 			return nil, nil, stats, err
 		}
@@ -268,7 +288,13 @@ func buildLogicalProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins
 	targets := make([]targetLogicalGroup, 0, len(tm))
 	tSeen := make(map[[32]byte]targetIdentity)
 	for identity, group := range tm {
-		target, err := targetcrypto.DeriveTargetGroupPoint(kT, identity.joinID, identity.qgram)
+		var target *ristretto255.Element
+		var err error
+		if movie {
+			target, err = targetcrypto.DeriveMovieGroupPoint(kT, identity.joinID, identity.qgram)
+		} else {
+			target, err = targetcrypto.DeriveTargetGroupPoint(kT, identity.joinID, identity.qgram)
+		}
 		if err != nil {
 			return nil, nil, stats, err
 		}
@@ -282,7 +308,12 @@ func buildLogicalProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins
 		if err != nil {
 			return nil, nil, stats, err
 		}
-		word, err := targetcrypto.WordBucketComponent(kT, identity.qgram, targetBits)
+		var word targetcrypto.BucketComponent
+		if movie {
+			word, err = targetcrypto.MovieWordBucketComponent(kT, identity.qgram, targetBits)
+		} else {
+			word, err = targetcrypto.WordBucketComponent(kT, identity.qgram, targetBits)
+		}
 		if err != nil {
 			return nil, nil, stats, err
 		}

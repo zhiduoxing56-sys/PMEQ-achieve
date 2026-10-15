@@ -74,6 +74,15 @@ func CanonicalJoin(domain string, joinID uint64) ([]byte, error) {
 // (PSMJ, area_alias, name, area, qgram) under the supplied domain. The q-gram
 // must be valid UTF-8 containing exactly targetQ Unicode code points.
 func CanonicalWord(domain string, qgram string) ([]byte, error) {
+	return canonicalWordWithFields(domain, qgram, psmjLabel, targetTable, targetSearchAttr, targetJoinAttr)
+}
+
+// CanonicalMovieWord binds the actual IMDb target tuple and its format version.
+func CanonicalMovieWord(domain string, qgram string) ([]byte, error) {
+	return canonicalWordWithFields(domain, qgram, "PSMJ-IMDB-V1", "MOVIE", "primaryTitle", "tconst")
+}
+
+func canonicalWordWithFields(domain string, qgram string, label, table, search, join string) ([]byte, error) {
 	if !utf8.ValidString(qgram) {
 		return nil, ErrInvalidUTF8
 	}
@@ -81,10 +90,10 @@ func CanonicalWord(domain string, qgram string) ([]byte, error) {
 		return nil, ErrInvalidQ
 	}
 	return Frame(domain,
-		[]byte(psmjLabel),
-		[]byte(targetTable),
-		[]byte(targetSearchAttr),
-		[]byte(targetJoinAttr),
+		[]byte(label),
+		[]byte(table),
+		[]byte(search),
+		[]byte(join),
 		[]byte(qgram),
 	)
 }

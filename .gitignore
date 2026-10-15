@@ -1,26 +1,4 @@
-# Private data and runtime state are never published.
-/data/
-/artifacts/
-/results/
-/state/
-**/private/
-**/cache/
-**/tmp/
-**/bin/
-**/.venv/
-**/__pycache__/
-*.pyc
-*.duckdb
-*.parquet
-*.xlsx
-*.csv
-*.tbl
-*.bin
-*.key
-*.pem
-*.consumed
-*.o
-*.a
-*.so
-.env
-.env.*
+# Large party-local share artifacts remain local; manifests and hashes are tracked.
+/artifacts/phase7b/*.bin
+/artifacts/phase10b/*.bin
+__pycache__/

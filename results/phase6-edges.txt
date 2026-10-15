@@ -1,0 +1,38 @@
+=== RUN   TestExactKCompaction
+=== RUN   TestExactKCompaction/N0K0
+=== RUN   TestExactKCompaction/N0K0#01
+=== RUN   TestExactKCompaction/N1K0
+=== RUN   TestExactKCompaction/N1K1
+=== RUN   TestExactKCompaction/N127K0
+=== RUN   TestExactKCompaction/N127K127
+=== RUN   TestExactKCompaction/N127K1
+=== RUN   TestExactKCompaction/N127K8
+=== RUN   TestExactKCompaction/N127K63
+=== RUN   TestExactKCompaction/N127K126
+=== RUN   TestExactKCompaction/N120071K0
+=== RUN   TestExactKCompaction/N120071K120071
+=== RUN   TestExactKCompaction/N120071K1
+=== RUN   TestExactKCompaction/N120071K8
+=== RUN   TestExactKCompaction/N120071K60035
+=== RUN   TestExactKCompaction/N120071K120070
+--- PASS: TestExactKCompaction (7.02s)
+    --- PASS: TestExactKCompaction/N0K0 (0.00s)
+    --- PASS: TestExactKCompaction/N0K0#01 (0.00s)
+    --- PASS: TestExactKCompaction/N1K0 (0.00s)
+    --- PASS: TestExactKCompaction/N1K1 (0.00s)
+    --- PASS: TestExactKCompaction/N127K0 (0.00s)
+    --- PASS: TestExactKCompaction/N127K127 (0.00s)
+    --- PASS: TestExactKCompaction/N127K1 (0.00s)
+    --- PASS: TestExactKCompaction/N127K8 (0.00s)
+    --- PASS: TestExactKCompaction/N127K63 (0.00s)
+    --- PASS: TestExactKCompaction/N127K126 (0.00s)
+    --- PASS: TestExactKCompaction/N120071K0 (1.17s)
+    --- PASS: TestExactKCompaction/N120071K120071 (1.26s)
+    --- PASS: TestExactKCompaction/N120071K1 (1.11s)
+    --- PASS: TestExactKCompaction/N120071K8 (1.06s)
+    --- PASS: TestExactKCompaction/N120071K60035 (1.18s)
+    --- PASS: TestExactKCompaction/N120071K120070 (1.21s)
+=== RUN   TestCompactionBindings
+--- PASS: TestCompactionBindings (0.00s)
+PASS
+ok  	pmeq/internal/aggregation	7.025s

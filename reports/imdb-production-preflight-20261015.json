@@ -1,0 +1,67 @@
+{
+  "version": "IMDB-100K-10K-20261015-v1",
+  "sample_file_hashes_verified": true,
+  "mother_database_unchanged": true,
+  "anchor_objects": 100000,
+  "target_objects": 10000,
+  "source_objects": 100000,
+  "covered_movies": 8895,
+  "max_target_q4_repeat": 4,
+  "public_C": 10000,
+  "q": 4,
+  "signatures_each": 4,
+  "bucket_count": 65536,
+  "D_target": 26,
+  "position_bin": 10,
+  "position_max": 270,
+  "math_domains": {
+    "object_and_join": "uint64 / Ring64 shares",
+    "positions": "Ring32 shares; SCMP Bin10/Bout1",
+    "anchor_labels": "GF(2^16)",
+    "counts_and_matrix": "Z/128Z",
+    "hits": "F2"
+  },
+  "layout": {
+    "anchor_real_postings": 1371570,
+    "anchor_padded_slots": 2906340,
+    "anchor_nonempty_buckets": 53116,
+    "target_real_postings": 139232,
+    "target_padded_slots": 553616,
+    "target_max_bucket_slots": 44,
+    "target_max_bucket_groups": 11
+  },
+  "bytes": {
+    "anchor_cs1_sigma_one_party": 21246400000,
+    "anchor_index_both": 278208432,
+    "target_matrix_both": 87995730,
+    "target_position_offline_both": 2647040000,
+    "target_matrix_offline_both": 1660720000,
+    "target_PE_offline_both": 84150000,
+    "anchor_global_offline_both": 86200000,
+    "anchor_local_max_shape_offline_both": 150198720,
+    "static_semantic_total": 21660523546,
+    "one_offline_batch": 4628308720,
+    "static_plus_offline": 26288832266,
+    "memory_planning_1p5_plus_2GiB": 41580732047,
+    "disk_two_copies_plus_stage_floor": 74238188078,
+    "mem_available_now": 48050532352,
+    "disk_available_now": 869272498176
+  },
+  "peak_temporary_copy": "Current DO builds permutation, rho, sigma and party artifacts in memory; no measured heap upper bound. One sigma bucket is 400000 bytes; all 53116 are 21246400000 bytes.",
+  "query_execution": {
+    "candidate_slots": 10000,
+    "target_routes": 40000,
+    "S_bound": 1760000,
+    "G_bound": 440000,
+    "one_time_material_burn": true
+  },
+  "startup_conditions": {
+    "memory_budget_now": true,
+    "disk_planning_floor_now": true,
+    "actual_keyed_bucket_layout_verified": false,
+    "bucket_local_sigma_persistence_and_lazy_loading_implemented": false,
+    "measured_DO_and_cloud_peak_heap": false,
+    "movie_DO_build_and_recovery_entrypoints_complete": false
+  },
+  "ready_to_launch": false
+}

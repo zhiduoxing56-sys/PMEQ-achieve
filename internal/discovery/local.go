@@ -4,6 +4,7 @@ import (
 	"context"
 	"pmeq/internal/anchorfilter"
 	"pmeq/internal/candidatequery"
+	"pmeq/internal/imdbprod"
 	"runtime"
 	"sync"
 	"time"
@@ -45,7 +46,12 @@ type Metrics struct {
 // User token generation ends before clouds start; the next user operation is
 // recovery. This is not socket/network latency. Provision must already be done.
 func RunCloudLocal(ctx context.Context, q Query, keys UserKeys, u *UserPacket, statics [2]*Static, packets [2]*PartyPacket, backend anchorfilter.SCMPBackend) (wires [2][]byte, binding candidatequery.Binding, m Metrics, err error) {
-	if err = Validate(q); err != nil {
+	if statics[0] != nil && statics[0].movieBinding != [32]byte{} {
+		err = imdbprod.Production().CheckQuery(q.Anchor, q.Target, q.TauAnchor, q.TauTarget)
+	} else {
+		err = Validate(q)
+	}
+	if err != nil {
 		return
 	}
 	if u == nil || statics[0] == nil || statics[1] == nil || packets[0] == nil || packets[1] == nil || backend == nil {
@@ -53,7 +59,7 @@ func RunCloudLocal(ctx context.Context, q Query, keys UserKeys, u *UserPacket, s
 	}
 	for party := 0; party < 2; party++ {
 		s, p := statics[party], packets[party]
-		if s.target == nil || s.sidecar == nil || len(s.payload.Slots) != s.target.Lineage().N || s.party != uint8(party) || p.party != uint8(party) || p.g == nil || u.g == nil || p.id != u.id || u.layout != s.payload.LayoutID {
+		if s.target == nil || s.sidecar == nil || len(s.payload.Slots) != s.target.Lineage().N || s.party != uint8(party) || p.party != uint8(party) || p.g == nil || u.g == nil || p.id != u.id || u.layout != s.payload.LayoutID || s.movieBinding != p.movieBinding || s.movieBinding != u.movieBinding {
 			return wires, binding, m, ErrBinding
 		}
 	}
@@ -178,7 +184,7 @@ func RunCloudLocal(ctx context.Context, q Query, keys UserKeys, u *UserPacket, s
 	if err != nil {
 		return
 	}
-	t, e := decodeToken(tokens[0], statics[0].target.Manifest(), 0)
+	t, e := decodeTokenWithProfile(tokens[0], statics[0].target.Manifest(), 0, statics[0].movieBinding)
 	if e != nil {
 		return wires, binding, m, e
 	}

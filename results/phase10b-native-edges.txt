@@ -1,0 +1,4 @@
+=== RUN   TestNativeFixedPairs
+--- PASS: TestNativeFixedPairs (0.10s)
+PASS
+ok  	pmeq/internal/targetaggregation	0.102s

@@ -1,0 +1,31 @@
+=== RUN   TestPEBenchmarks
+    benchmark_test.go:254: PE_MEMORY G=50754 workers=1 rss_kib=194916 hwm_kib=197340
+    benchmark_test.go:255: PE_BENCH mode=large G=50754 W=794 workers=1 warmup=10 measured=50 A_ms=[2077.59239 2841.175389] B_ms=[41.147778 57.320136] C_ms=[2.578191 3.896812] D_ms=[3.404456 4.422208] E_ms=[2128.903411 2908.011206] offline_each=4859280 online=6479040 framing=992 encoding_both=3248256 matches_both=101508 heap_delta=33489088
+    benchmark_test.go:254: PE_MEMORY G=180227 workers=1 rss_kib=277192 hwm_kib=292708
+    benchmark_test.go:255: PE_BENCH mode=large G=180227 W=2817 workers=1 warmup=5 measured=20 A_ms=[7546.573972 8117.392947] B_ms=[158.249226 178.969267] C_ms=[19.527207 23.93232] D_ms=[13.305107 15.285824] E_ms=[7738.222709000001 8329.451299] offline_each=17240040 online=22986720 framing=992 encoding_both=11534528 matches_both=360454 heap_delta=118527680
+--- PASS: TestPEBenchmarks (337.56s)
+PASS
+ok  	pmeq/internal/targetpe	337.576s
+	Command being timed: "/tmp/go/bin/go test ./internal/targetpe -run ^TestPEBenchmarks$ -count=1 -v -timeout=60m"
+	User time (seconds): 330.16
+	System time (seconds): 5.02
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 5:29.31
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 292708
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 52
+	Minor (reclaiming a frame) page faults: 700652
+	Voluntary context switches: 93781
+	Involuntary context switches: 712
+	Swaps: 0
+	File system inputs: 8
+	File system outputs: 9560
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

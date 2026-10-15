@@ -1,0 +1,6 @@
+SCMP n=6560 round=0 offline_ms=5.51338 masked_open_local_ms=0.001085 eval_both_ms=3.35167 key_bytes_per_party=284 wire=13122
+SCMP n=6560 round=1 offline_ms=4.71398 masked_open_local_ms=0.00052 eval_both_ms=3.17061 key_bytes_per_party=284 wire=13122
+SCMP n=6560 round=2 offline_ms=3.85991 masked_open_local_ms=0.000513 eval_both_ms=3.61965 key_bytes_per_party=284 wire=13122
+SCMP n=6560 round=3 offline_ms=4.4692 masked_open_local_ms=0.000849 eval_both_ms=3.58381 key_bytes_per_party=284 wire=13122
+SCMP n=6560 round=4 offline_ms=4.47049 masked_open_local_ms=0.000617 eval_both_ms=3.49949 key_bytes_per_party=284 wire=13122
+corrected_errors=0 omitted_rb_errors=16388 comparisons=32800

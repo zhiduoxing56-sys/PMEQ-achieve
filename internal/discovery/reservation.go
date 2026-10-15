@@ -14,7 +14,7 @@ import (
 // this durable, party-local reservation burn. Restart never refills a ticket.
 // The new permutation factors/masks are independently sealed per party.
 func persistBaseReservation(root string, u *UserPacket, a, b *PartyPacket) error {
-	if u == nil || a == nil || b == nil || u.g == nil || a.g == nil || b.g == nil || a.id != u.id || b.id != u.id || (a.output == nil) != (b.output == nil) || a.g.used || b.g.used {
+	if u == nil || a == nil || b == nil || u.g == nil || a.g == nil || b.g == nil || a.id != u.id || b.id != u.id || a.movieBinding != u.movieBinding || b.movieBinding != u.movieBinding || (a.output == nil) != (b.output == nil) || a.g.used || b.g.used {
 		return ErrBinding
 	}
 	dir := filepath.Join(root, hex.EncodeToString(u.id[:]))
@@ -71,9 +71,10 @@ func persistBaseReservation(root string, u *UserPacket, a, b *PartyPacket) error
 		}
 		meta, e := json.Marshal(struct {
 			Packet, Layout                   [16]byte
+			MovieBinding                     [32]byte
 			C, D                             int
 			SharingDomain, PermutationSHA256 string
-		}{u.id, u.layout, x.p.capacity, outputCapacity, "F2xRing64xRing64-v1", permutationDigest})
+		}{u.id, u.layout, u.movieBinding, x.p.capacity, outputCapacity, "F2xRing64xRing64-v1", permutationDigest})
 		if e != nil {
 			return e
 		}

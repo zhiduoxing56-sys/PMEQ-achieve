@@ -1,0 +1,17 @@
+ok  	pmeq/internal/aggregation	92.508s
+ok  	pmeq/internal/anchorfilter	6.683s
+ok  	pmeq/internal/anchorindex	1.035s
+ok  	pmeq/internal/anchorquery	1.027s
+ok  	pmeq/internal/domain	1.028s
+ok  	pmeq/internal/dpf128	1.069s
+ok  	pmeq/internal/dpf128/gen	58.288s
+ok  	pmeq/internal/dpf128/internal/core	1.033s
+ok  	pmeq/internal/f2beaver	1.814s
+ok  	pmeq/internal/incidence	1.494s
+ok  	pmeq/internal/indexbuild	26.539s
+ok  	pmeq/internal/preprocess	1.085s
+ok  	pmeq/internal/reconstruct	1.032s
+ok  	pmeq/internal/share	1.025s
+ok  	pmeq/internal/targetcrypto	713.038s
+?   	pmeq/internal/targetquery	[no test files]
+ok  	pmeq/internal/targetrouting	2.882s

@@ -1,0 +1,4 @@
+=== RUN   TestOfflineTiming
+--- PASS: TestOfflineTiming (18.16s)
+PASS
+ok  	pmeq/internal/discovery	18.231s

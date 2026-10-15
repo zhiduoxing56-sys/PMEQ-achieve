@@ -1,0 +1,8 @@
+=== RUN   TestNativePositionBoundsAndComposition
+--- PASS: TestNativePositionBoundsAndComposition (2.57s)
+=== RUN   TestBoundsOracle
+--- PASS: TestBoundsOracle (0.00s)
+=== RUN   TestSealedPostingCompositionAndGuards
+--- PASS: TestSealedPostingCompositionAndGuards (2.50s)
+PASS
+ok  	pmeq/internal/targetposition	5.091s

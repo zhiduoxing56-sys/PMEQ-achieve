@@ -31,6 +31,7 @@ import (
 	"pmeq/internal/incidence"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/scmpnative"
+	"pmeq/internal/zeroagg"
 )
 
 // This file contains experiment orchestration only. The frozen pilot helpers
@@ -162,7 +163,7 @@ func formalStatic(t *testing.T, f *fixture, trace []workload, valid []int) ([2]*
 		posts := f.posts[id]
 		local, e := incidence.PrepareLayout(posts)
 		must(t, e)
-		m0, m1, e := incidence.ShareIncidence(local)
+		m0, m1, e := zeroagg.ShareCoordinates(local.Coordinates, local.D)
 		must(t, e)
 		s0, s1, e := f.layout.Alignment(id, local, posts)
 		must(t, e)
@@ -172,8 +173,9 @@ func formalStatic(t *testing.T, f *fixture, trace []workload, valid []int) ([2]*
 		b0, b1 := f.anchor[0][id], f.anchor[1][id]
 		b0.BucketID = id
 		b1.BucketID = id
-		as[0][id] = discovery.AnchorStatic{Bucket: b0, Incidence: m0, Stage0: s0}
-		as[1][id] = discovery.AnchorStatic{Bucket: b1, Incidence: m1, Stage1: s1}
+		labelID := fmt.Sprintf("%032x", uint64(id)+1)
+		as[0][id] = discovery.AnchorStatic{Bucket: b0, D: local.D, T: len(posts), Labels: m0, LabelID: labelID, Stage0: s0}
+		as[1][id] = discovery.AnchorStatic{Bucket: b1, D: local.D, T: len(posts), Labels: m1, LabelID: labelID, Stage1: s1}
 		if j%1000 == 0 {
 			t.Logf("STATIC N=%d buckets=%d/%d", len(f.areas), j, len(ids))
 		}

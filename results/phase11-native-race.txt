@@ -1,0 +1,4 @@
+=== RUN   TestIntegratedNativeEdges
+--- PASS: TestIntegratedNativeEdges (123.00s)
+PASS
+ok  	pmeq/internal/discovery	124.371s

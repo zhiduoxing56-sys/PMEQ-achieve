@@ -8,6 +8,7 @@ import (
 	"pmeq/internal/anchorfilter"
 	"pmeq/internal/domain"
 	"pmeq/internal/f2beaver"
+	"pmeq/internal/imdbprod"
 	"pmeq/internal/incidence"
 	"pmeq/internal/share"
 	"pmeq/internal/targetaggregation"
@@ -40,6 +41,20 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	if a == nil || b == nil || a.party != 0 || b.party != 1 || a.target == nil || b.target == nil || a.target.Lineage() != b.target.Lineage() || a.target.ManifestDigest() != b.target.ManifestDigest() || len(buckets) < 1 || len(buckets) > 14 || len(capacities) != shape.R || backend == nil {
 		return nil, nil, nil, cost, ErrBinding
 	}
+	if a.movieBinding != b.movieBinding {
+		return nil, nil, nil, cost, ErrBinding
+	}
+	movie := a.movieBinding != [32]byte{}
+	if movie {
+		if len(buckets) != imdbprod.AnchorSignatures || shape.K != imdbprod.CandidateCapacity || shape.R != imdbprod.TargetSignatures || shape.Capacity() != imdbprod.TargetDimension || shape.S != 1760000 || shape.G != 440000 {
+			return nil, nil, nil, cost, ErrBinding
+		}
+		for _, capacity := range capacities {
+			if capacity != 440000 {
+				return nil, nil, nil, cost, ErrBinding
+			}
+		}
+	}
 	if a.sidecar.Capacity() != shape.Capacity() || b.sidecar.Capacity() != shape.Capacity() {
 		return nil, nil, nil, cost, ErrBinding
 	}
@@ -47,11 +62,11 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	if n != a.target.Lineage().N || len(b.payload.Slots) != n || a.payload.LayoutID != a.target.Lineage().LayoutID || b.payload.LayoutID != a.payload.LayoutID || shape.K < 0 || shape.K > n {
 		return nil, nil, nil, cost, ErrBinding
 	}
-	u = &UserPacket{g: &guard{}, layout: a.payload.LayoutID, buckets: append([]uint32(nil), buckets...)}
+	u = &UserPacket{g: &guard{}, layout: a.payload.LayoutID, buckets: append([]uint32(nil), buckets...), movieBinding: a.movieBinding}
 	_, err = rand.Read(u.id[:])
 	check(err)
-	p0 = &PartyPacket{g: &guard{}, id: u.id, party: 0}
-	p1 = &PartyPacket{g: &guard{}, id: u.id, party: 1}
+	p0 = &PartyPacket{g: &guard{}, id: u.id, party: 0, movieBinding: a.movieBinding}
+	p1 = &PartyPacket{g: &guard{}, id: u.id, party: 1, movieBinding: a.movieBinding}
 	cb := &counter{b: backend}
 	for _, id := range buckets {
 		as, ok := a.anchor[id]
@@ -68,7 +83,11 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 		}
 		x, y := anchorPacket{bucket: id}, anchorPacket{bucket: id}
 		start := cb.bytes
-		user, v, w, e := anchorfilter.Preprocess(t, 7, cb)
+		bin := uint8(7)
+		if movie {
+			bin = imdbprod.PositionBin
+		}
+		user, v, w, e := anchorfilter.Preprocess(t, bin, cb)
 		check(e)
 		x.position, y.position = v, w
 		u.anchor = append(u.anchor, user)
@@ -106,7 +125,11 @@ func Provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	check(err)
 	cost.TargetPE = uint64(12240 * targetpe.Words(shape.G))
 	var pos targetposition.OfflineBytes
-	u.target, p0.position, p1.position, pos, err = targetposition.Preprocess(a.target.Lineage(), capacities, backend)
+	if movie {
+		u.target, p0.position, p1.position, pos, err = targetposition.PreprocessWithDomain(a.target.Lineage(), capacities, imdbprod.PositionBin, imdbprod.PositionMax, backend)
+	} else {
+		u.target, p0.position, p1.position, pos, err = targetposition.Preprocess(a.target.Lineage(), capacities, backend)
+	}
 	check(err)
 	cost.TargetPosition = 2 * (pos.SCMP + pos.Beaver)
 	var ag targetaggregation.OfflineBody

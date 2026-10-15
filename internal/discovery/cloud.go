@@ -142,11 +142,11 @@ type cloudMetrics struct {
 func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPBackend, wire func([]byte) ([]byte, error)) (output []byte, metrics cloudMetrics, err error) {
 	defer caught(&err)
 	started := time.Now()
-	if st == nil || p == nil || st.party != p.party {
+	if st == nil || p == nil || st.party != p.party || st.movieBinding != p.movieBinding {
 		check(ErrBinding)
 	}
 	check(p.g.claim())
-	t, e := decodeToken(raw, st.target.Manifest(), st.party)
+	t, e := decodeTokenWithProfile(raw, st.target.Manifest(), st.party, st.movieBinding)
 	check(e)
 	if p.id != t.packet || len(t.anchor) != len(p.anchor) {
 		check(ErrBinding)
@@ -197,7 +197,7 @@ func runParty(st *Static, p *PartyPacket, raw []byte, backend anchorfilter.SCMPB
 		if v.Len() != 0 {
 			check(ErrBinding)
 		}
-		opened, e := anchorfilter.OpenMaskedPositions(pr.PL, pr.PR, pl, rr, 7)
+		opened, e := anchorfilter.OpenMaskedPositions(pr.PL, pr.PR, pl, rr, ap.position.Bin)
 		check(e)
 		pos, e := anchorfilter.EvalPosition(st.party, q, ap.position, opened, backend)
 		check(e)

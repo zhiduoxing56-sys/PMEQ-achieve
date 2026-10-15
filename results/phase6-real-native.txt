@@ -1,0 +1,52 @@
+=== RUN   TestReal1000Queries
+    aggregation_test.go:486: real queries 0/1000
+    aggregation_test.go:486: real queries 50/1000
+    aggregation_test.go:486: real queries 100/1000
+    aggregation_test.go:486: real queries 150/1000
+    aggregation_test.go:486: real queries 200/1000
+    aggregation_test.go:486: real queries 250/1000
+    aggregation_test.go:486: real queries 300/1000
+    aggregation_test.go:486: real queries 350/1000
+    aggregation_test.go:486: real queries 400/1000
+    aggregation_test.go:486: real queries 450/1000
+    aggregation_test.go:486: real queries 500/1000
+    aggregation_test.go:486: real queries 550/1000
+    aggregation_test.go:486: real queries 600/1000
+    aggregation_test.go:486: real queries 650/1000
+    aggregation_test.go:486: real queries 700/1000
+    aggregation_test.go:486: real queries 750/1000
+    aggregation_test.go:486: real queries 800/1000
+    aggregation_test.go:486: real queries 850/1000
+    aggregation_test.go:486: real queries 900/1000
+    aggregation_test.go:486: real queries 950/1000
+    aggregation_test.go:492: PHASE6 K n=1000 min=1 p50=5 p90=151 p95=431 p99=2843 max=4780
+    aggregation_test.go:498: COMPONENT pct=0.50 query="Kōzushima" intrinsic=32772 stats={XF:243.642µs Perm:2.27306ms Sum:273.334µs B2AZ:4.242µs FComparisons:160 R:2 T:332 P:35968 K:1 Peak:832424536}
+    aggregation_test.go:498: COMPONENT pct=0.95 query="Negrilla de Palencia" intrinsic=25174016 stats={XF:197.140979ms Perm:4.559309ms Sum:647.4µs B2AZ:92.487µs FComparisons:6560 R:5 T:8700 P:25342848 K:1 Peak:840875320}
+    aggregation_test.go:498: COMPONENT pct=0.99 query="Saint-Pierre-d'Oléron" intrinsic=68255872 stats={XF:517.786648ms Perm:4.16039ms Sum:648.45µs B2AZ:84.906µs FComparisons:9616 R:5 T:9780 P:68338560 K:1 Peak:488037584}
+    aggregation_test.go:504: 1000 random + 3 workload-quantile real queries: zero errors
+--- PASS: TestReal1000Queries (1160.08s)
+PASS
+ok  	pmeq/internal/aggregation	1160.131s
+	Command being timed: "/tmp/go/bin/go test -tags phase6native ./internal/aggregation -run ^TestReal1000Queries$ -count=1 -v -timeout=120m"
+	User time (seconds): 1242.63
+	System time (seconds): 351.49
+	Percent of CPU this job got: 142%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 18:37.87
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1536432
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1761
+	Minor (reclaiming a frame) page faults: 15628195
+	Voluntary context switches: 1454207
+	Involuntary context switches: 7066
+	Swaps: 0
+	File system inputs: 298736
+	File system outputs: 17224
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -144,6 +144,9 @@ func loadPersistentQuery(u *UserPacket, packets [2]*PartyPacket, statics [2]*Sta
 	if len(packets[0].anchor) == 0 || packets[0].anchor[0].zeroRef == nil {
 		return cost, ErrBinding
 	}
+	if u.movieBinding != statics[0].movieBinding || u.movieBinding != statics[1].movieBinding || u.movieBinding != packets[0].movieBinding || u.movieBinding != packets[1].movieBinding {
+		return cost, ErrBinding
+	}
 	start := time.Now()
 	defer func() {
 		cost.WallNS = time.Since(start).Nanoseconds()
