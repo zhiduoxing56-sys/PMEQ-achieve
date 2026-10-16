@@ -1,7 +1,7 @@
 //go:build phase6native
 
-// Command imdb_ticket is the local trusted offline/user coordinator. It uses
-// the sealed production index and existing two-cloud cryptographic protocol.
+// Command imdb_ticket is the IMDb D=1 matrix production entrypoint. It uses
+// the sealed index, the independent one-use SCMP stock, and two cloud roles.
 package main
 
 import (
@@ -21,12 +21,15 @@ import (
 	"pmeq/internal/imdbrecovery"
 	"pmeq/internal/indexbuild"
 	"pmeq/internal/scmpnative"
+	"pmeq/internal/scmpstock"
 	"pmeq/internal/targetaggregation"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 )
+
+const productionDTarget = 1
 
 func buckets(text string) ([]uint32, error) {
 	parts := strings.Split(text, ",")
@@ -148,28 +151,30 @@ func requireUnconsumedTicket(ticketDir, ticket string) error {
 }
 func run() error {
 	processStart := time.Now()
-	phase := flag.String("phase", "inspect", "inspect, buckets, labels, issue, verify, or run")
-	aggregationMode := flag.String("target-aggregation", "matrix", "matrix or zero-poly")
-	labelRoot := flag.String("zero-label-root", ".private/imdb-target-zero-shadow-labels", "experiment-only target label root")
+	phase := flag.String("phase", "inspect", "inspect, buckets, auxiliary, stock, status, profile, issue, verify, or run")
+	auxRoot := flag.String("aux-root", ".private/imdb-v4-d1-aux", "isolated D=1 target auxiliary root")
 	start := flag.Bool("generate-full-ticket", false, "explicitly start expensive fixed-capacity preprocessing")
+	startStock := flag.Bool("generate-stock", false, "explicitly create a new independent SCMP bank")
+	stockSlots := flag.Int("stock-slots", imdbprod.CandidateCapacity*imdbprod.TargetSignatures*imdbprod.TargetBucketSlots, "offline inventory slots")
+	stockRoot := flag.String("stock-root", ".private/imdb-v3-scmp-stock", "isolated stock root")
 	ownerRoot := flag.String("owner-root", ".private/imdb-v2-production", "sealed production root")
-	ticketRoot := flag.String("ticket-root", ".private/imdb-v2-tickets", "private ticket root")
+	ticketRoot := flag.String("ticket-root", ".private/imdb-production-d1-tickets", "private D=1 production ticket root")
 	sample := flag.String("sample", "imdb_production_20261015", "frozen sample")
 	keysPath := flag.String("keys", ".private/imdb-production-keypair.json", "local user key file")
 	receipt := flag.String("receipt", ".private/imdb-key-backup-receipt.json", "backup receipt")
 	bucketText := flag.String("buckets", "", "four public bucket IDs in query occurrence order")
 	ticketText := flag.String("ticket", "", "ticket ID for read/run")
 	queryPath := flag.String("query-file", "", "local 0600 JSON query file")
-	resultRoot := flag.String("result-root", ".private/imdb-v2-query-results", "private output root for recovered pairs and metrics")
+	resultRoot := flag.String("result-root", ".private/imdb-production-d1-query-results", "private D=1 production output root")
 	flag.Parse()
-	if *phase != "inspect" && *phase != "buckets" && *phase != "labels" && *phase != "issue" && *phase != "verify" && *phase != "run" {
+	if *phase != "inspect" && *phase != "buckets" && *phase != "auxiliary" && *phase != "stock" && *phase != "status" && *phase != "profile" && *phase != "issue" && *phase != "verify" && *phase != "run" {
 		return fmt.Errorf("unsupported phase")
-	}
-	if *aggregationMode != "matrix" && *aggregationMode != "zero-poly" {
-		return fmt.Errorf("unsupported target aggregation")
 	}
 	if *start != (*phase == "issue") {
 		return fmt.Errorf("ticket generation requires --phase issue --generate-full-ticket; switch is invalid in other phases")
+	}
+	if *startStock != (*phase == "stock") {
+		return fmt.Errorf("stock generation requires --phase stock --generate-stock")
 	}
 	if *phase == "buckets" {
 		q, e := queryFile(*queryPath)
@@ -203,7 +208,7 @@ func run() error {
 		return e
 	}
 	if *phase == "inspect" {
-		fmt.Printf("key=%s anchor_buckets=%d target_max=12/48 complete_ticket_floor=%d bytes\n", gate.Keys.Fingerprint, len(gate.Layout.Metadata.AnchorBuckets), uint64(4793760000))
+		fmt.Printf("key=%s anchor_buckets=%d target_max=12/48 target_coordinate_capacity=1 target_aggregation=matrix scmp=inventory\n", gate.Keys.Fingerprint, len(gate.Layout.Metadata.AnchorBuckets))
 		return nil
 	}
 	owner, e := filepath.Abs(*ownerRoot)
@@ -221,6 +226,19 @@ func run() error {
 		return e
 	}
 	sealHash := sha256.Sum256(sealRaw)
+	if *phase == "auxiliary" {
+		auxPath, err := filepath.Abs(*auxRoot)
+		privatePath, pe := filepath.Abs(".private")
+		if err != nil || pe != nil || filepath.Dir(auxPath) != privatePath {
+			return fmt.Errorf("auxiliary root must be an isolated direct child of .private")
+		}
+		aux, digest, err := imdbowner.BuildTargetAuxiliaryD1(auxPath, owner, gate.Mapping, sealHash)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("auxiliary=%x d_target=%d max_objects_per_join=%d root=%s\n", digest, aux.DTarget, aux.MaxObjectsPerJoin, auxPath)
+		return nil
+	}
 	partyOpenStart := time.Now()
 	st0, e := imdbowner.OpenParty(owner, 0, sealHash)
 	if e != nil {
@@ -232,24 +250,86 @@ func run() error {
 		return e
 	}
 	defer st1.Close()
-	partyOpenNS := time.Since(partyOpenStart).Nanoseconds()
-	if *phase == "labels" {
-		if *aggregationMode != "zero-poly" {
-			return fmt.Errorf("labels phase requires zero-poly")
+	var auxiliaryHash [32]byte
+	if *phase != "stock" {
+		auxPath, err := filepath.Abs(*auxRoot)
+		privatePath, pe := filepath.Abs(".private")
+		if err != nil || pe != nil || filepath.Dir(auxPath) != privatePath {
+			return fmt.Errorf("auxiliary root must be an isolated direct child of .private")
 		}
-		if e = discovery.BuildTargetZeroLabels(st0, st1, *labelRoot); e != nil {
+		aux, digest, err := imdbowner.ReadTargetAuxiliaryD1(auxPath, sealHash, seal.Binding.IndexID)
+		if err != nil {
+			return err
+		}
+		sealedTarget, err := os.ReadFile(filepath.Join(owner, "target", "target-manifest.json"))
+		if err != nil {
+			return err
+		}
+		if err = st0.UseTargetAuxiliary(aux.Sidecar, sealedTarget, filepath.Join(auxPath, "cs0.aggregation.bin"), digest); err != nil {
+			return err
+		}
+		if err = st1.UseTargetAuxiliary(aux.Sidecar, sealedTarget, filepath.Join(auxPath, "cs1.aggregation.bin"), digest); err != nil {
+			return err
+		}
+		auxiliaryHash = digest
+	}
+	partyOpenNS := time.Since(partyOpenStart).Nanoseconds()
+	stockPath, e := filepath.Abs(*stockRoot)
+	privateStockRoot, pe := filepath.Abs(".private")
+	if e != nil || pe != nil || filepath.Dir(stockPath) != privateStockRoot {
+		return fmt.Errorf("stock root must be an isolated direct child of .private")
+	}
+	if *phase == "stock" {
+		if *stockSlots < 1 {
+			return fmt.Errorf("invalid stock capacity")
+		}
+		m, e := scmpstock.Generate(stockPath, seal.Binding.IndexID, seal.Binding.LayoutID, sealHash, imdbprod.PositionBin, imdbprod.PositionMax, *stockSlots, scmpnative.Backend{})
+		if e != nil {
 			return e
 		}
-		fmt.Printf("target_zero_labels=%s\n", *labelRoot)
+		fmt.Printf("bank=%x capacity=%d record_bytes_per_role=%d stock_root=%s\n", m.BankID, m.Capacity, m.RecordBytes, stockPath)
 		return nil
 	}
-	if *aggregationMode == "zero-poly" {
-		if e = st0.LoadTargetZeroLabels(*labelRoot); e != nil {
+	pool0, e := scmpstock.Open(stockPath, 0, seal.Binding.IndexID, seal.Binding.LayoutID, sealHash, imdbprod.PositionBin)
+	if e != nil {
+		return e
+	}
+	defer pool0.Close()
+	pool1, e := scmpstock.Open(stockPath, 1, seal.Binding.IndexID, seal.Binding.LayoutID, sealHash, imdbprod.PositionBin)
+	if e != nil {
+		return e
+	}
+	defer pool1.Close()
+	if pool0.Manifest != pool1.Manifest {
+		return fmt.Errorf("stock role manifests disagree")
+	}
+	ledger, e := pool0.Status()
+	if e != nil {
+		return e
+	}
+	if *phase == "status" {
+		outstanding := 0
+		for _, a := range ledger.Admissions {
+			if !a.Closed {
+				outstanding += a.Guarantee
+			}
+		}
+		fmt.Printf("bank=%x capacity=%d claimed_or_burned=%d unbound=%d reserved_guarantee=%d available_for_admission=%d worst_case_replenishment=%d admissions=%d\n", pool0.Manifest.BankID, pool0.Manifest.Capacity, ledger.NextFree, pool0.Manifest.Capacity-ledger.NextFree, outstanding, pool0.Manifest.Capacity-ledger.NextFree-outstanding, max(0, imdbprod.CandidateCapacity*imdbprod.TargetSignatures*imdbprod.TargetBucketSlots-(pool0.Manifest.Capacity-ledger.NextFree-outstanding)), len(ledger.Admissions))
+		return nil
+	}
+	if *phase == "profile" {
+		bs, e := buckets(*bucketText)
+		if e != nil {
 			return e
 		}
-		if e = st1.LoadTargetZeroLabels(*labelRoot); e != nil {
+		shape := targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures, S: imdbprod.TargetSignatures * imdbprod.TargetGroupCapacity, G: imdbprod.TargetGroupCapacity, D: productionDTarget}
+		caps := []int{imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity}
+		_, _, _, cost, e := discovery.ProvisionInventory(st0, st1, bs, caps, shape, scmpnative.Backend{}, false, pool0.Manifest.BankID)
+		if e != nil {
 			return e
 		}
+		fmt.Printf("profile_only=true d_target=%d timing_ns=%+v stock_claimed=0 ticket_written=false\n", productionDTarget, cost.Timing)
+		return nil
 	}
 	root, e := filepath.Abs(*ticketRoot)
 	if e != nil {
@@ -278,26 +358,54 @@ func run() error {
 		if e = os.MkdirAll(root, 0700); e != nil {
 			return e
 		}
+		// The production query contract allows tau_anchor <= 3 for four
+		// signatures, so every surviving candidate must occupy at least one
+		// of these public anchor slots. This tightens admission without changing
+		// C or consulting any secret hit, threshold, or target object.
+		upper0, e := st0.PublicAnchorSlotUpperBound(bs, imdbprod.CandidateCapacity)
+		if e != nil {
+			return e
+		}
+		upper1, e := st1.PublicAnchorSlotUpperBound(bs, imdbprod.CandidateCapacity)
+		if e != nil || upper0 != upper1 {
+			return fmt.Errorf("public anchor capacity mismatch: %w", discovery.ErrBinding)
+		}
+		guarantee := upper0 * imdbprod.TargetSignatures * imdbprod.TargetBucketSlots
+		outstanding := 0
+		for _, a := range ledger.Admissions {
+			if !a.Closed {
+				outstanding += a.Guarantee
+			}
+		}
+		if pool0.Manifest.Capacity-ledger.NextFree-outstanding < guarantee {
+			return scmpstock.ErrShortage
+		}
 		if e = enoughOfflineResources(root); e != nil {
 			return e
 		}
-		shape := targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures, S: imdbprod.TargetSignatures * imdbprod.TargetGroupCapacity, G: imdbprod.TargetGroupCapacity, D: imdbprod.TargetDimension}
+		if e = scmpstock.CheckBudget(root, discovery.InventoryTicketBudget(productionDTarget)); e != nil {
+			return e
+		}
+		shape := targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures, S: imdbprod.TargetSignatures * imdbprod.TargetGroupCapacity, G: imdbprod.TargetGroupCapacity, D: productionDTarget}
 		caps := []int{imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity}
 		started := time.Now()
 		var u *discovery.UserPacket
 		var a, b *discovery.PartyPacket
 		var estimated discovery.OfflineBytes
-		if *aggregationMode == "zero-poly" {
-			u, a, b, estimated, e = discovery.ProvisionTargetZero(st0, st1, bs, caps, shape, scmpnative.Backend{})
-		} else {
-			u, a, b, estimated, e = discovery.Provision(st0, st1, bs, caps, shape, scmpnative.Backend{})
-		}
+		u, a, b, estimated, e = discovery.ProvisionInventory(st0, st1, bs, caps, shape, scmpnative.Backend{}, false, pool0.Manifest.BankID)
 		if e != nil {
 			return e
 		}
 		provisionNS := time.Since(started).Nanoseconds()
 		sealed, digest, cost, e := discovery.PersistFullTicket(root, sealHash, u, a, b, st0, st1)
 		if e != nil {
+			return e
+		}
+		id, e := discovery.TicketID(sealed)
+		if e != nil {
+			return e
+		}
+		if e = pool0.Admit(id, guarantee); e != nil {
 			return e
 		}
 		receiptPath := filepath.Join(root, sealed.Ticket, "trusted-seal.sha256")
@@ -316,7 +424,7 @@ func run() error {
 		if closeErr != nil {
 			return closeErr
 		}
-		fmt.Printf("ticket=%s seal_sha256=%x roles_bytes=%v zero_bytes=%d elapsed=%s provision_ns=%d persist_ns=%d zero_serialize_ns=%d max_temporary_file_bytes=%d field_accounting=%+v index=%x\n", sealed.Ticket, digest, cost.RoleBytes, cost.Zero.MaterialBytes, time.Since(started).Round(time.Millisecond), provisionNS, cost.WallNS, cost.Zero.SerializeNS, cost.MaxTemporaryFileBytes, estimated, seal.Binding.IndexID)
+		fmt.Printf("ticket=%s seal_sha256=%x public_candidate_upper=%d guaranteed_stock_slots=%d roles_bytes=%v zero_bytes=%d elapsed=%s provision_ns=%d persist_ns=%d zero_serialize_ns=%d max_temporary_file_bytes=%d field_accounting=%+v index=%x\n", sealed.Ticket, digest, upper0, guarantee, cost.RoleBytes, cost.Zero.MaterialBytes, time.Since(started).Round(time.Millisecond), provisionNS, cost.WallNS, cost.Zero.SerializeNS, cost.MaxTemporaryFileBytes, estimated, seal.Binding.IndexID)
 		return nil
 	}
 	var ticketID [16]byte
@@ -348,6 +456,9 @@ func run() error {
 	if ticketSeal.IndexSealSHA256 != hex.EncodeToString(sealHash[:]) {
 		return fmt.Errorf("ticket bound to another production seal")
 	}
+	if ticketSeal.Version != "PMEQ-INVENTORY-SESSION-D-v1" || ticketSeal.BankID != hex.EncodeToString(pool0.Manifest.BankID[:]) || ticketSeal.DTarget != productionDTarget || ticketSeal.AuxiliarySHA256 != hex.EncodeToString(auxiliaryHash[:]) {
+		return fmt.Errorf("ticket, auxiliary or stock version mismatch")
+	}
 	if e = requireUnconsumedTicket(ticketDir, *ticketText); e != nil {
 		return e
 	}
@@ -365,16 +476,22 @@ func run() error {
 		return e
 	}
 	loadStart := time.Now()
-	u, e := discovery.OpenUserTicket(filepath.Join(ticketDir, "user"), ud, seal.Binding, sealHash, ticketID, manifestDigest)
+	u, e := discovery.OpenInventoryUserTicketWithDimension(filepath.Join(ticketDir, "user"), ud, seal.Binding, sealHash, ticketID, manifestDigest, pool0.Manifest.BankID, productionDTarget, auxiliaryHash)
 	if e != nil {
 		return e
 	}
-	a, e := discovery.OpenPartyTicket(filepath.Join(ticketDir, "cs0"), aD, seal.Binding, sealHash, ticketID, st0)
+	a, e := discovery.OpenInventoryPartyTicketWithDimension(filepath.Join(ticketDir, "cs0"), aD, seal.Binding, sealHash, ticketID, st0, pool0.Manifest.BankID, productionDTarget, auxiliaryHash)
 	if e != nil {
 		return e
 	}
-	b, e := discovery.OpenPartyTicket(filepath.Join(ticketDir, "cs1"), bD, seal.Binding, sealHash, ticketID, st1)
+	b, e := discovery.OpenInventoryPartyTicketWithDimension(filepath.Join(ticketDir, "cs1"), bD, seal.Binding, sealHash, ticketID, st1, pool0.Manifest.BankID, productionDTarget, auxiliaryHash)
 	if e != nil {
+		return e
+	}
+	if e = discovery.BindInventoryParty(a, st0, pool0); e != nil {
+		return e
+	}
+	if e = discovery.BindInventoryParty(b, st1, pool1); e != nil {
 		return e
 	}
 	ticketLoadNS := time.Since(loadStart).Nanoseconds()
