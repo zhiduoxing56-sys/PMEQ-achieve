@@ -149,7 +149,7 @@ func requireUnconsumedTicket(ticketDir, ticket string) error {
 }
 func run() error {
 	processStart := time.Now()
-	phase := flag.String("phase", "inspect", "inspect, buckets, auxiliary, labels, stock, status, issue, verify, or run")
+	phase := flag.String("phase", "inspect", "inspect, buckets, auxiliary, labels, stock, status, profile, issue, verify, or run")
 	aggregationMode := flag.String("target-aggregation", "matrix", "matrix or zero-poly")
 	dTarget := flag.Int("d-target", imdbprod.TargetDimension, "public target objects per join; 1 uses the isolated IMDb auxiliary profile")
 	auxRoot := flag.String("aux-root", ".private/imdb-v4-d1-aux", "isolated D=1 target auxiliary root")
@@ -182,7 +182,7 @@ func run() error {
 			*resultRoot = ".private/imdb-v4-d1-query-results"
 		}
 	}
-	if *phase != "inspect" && *phase != "buckets" && *phase != "auxiliary" && *phase != "labels" && *phase != "stock" && *phase != "status" && *phase != "issue" && *phase != "verify" && *phase != "run" {
+	if *phase != "inspect" && *phase != "buckets" && *phase != "auxiliary" && *phase != "labels" && *phase != "stock" && *phase != "status" && *phase != "profile" && *phase != "issue" && *phase != "verify" && *phase != "run" {
 		return fmt.Errorf("unsupported phase")
 	}
 	if *aggregationMode != "matrix" && *aggregationMode != "zero-poly" {
@@ -354,6 +354,20 @@ func run() error {
 			}
 		}
 		fmt.Printf("bank=%x capacity=%d claimed_or_burned=%d unbound=%d reserved_guarantee=%d available_for_admission=%d worst_case_replenishment=%d admissions=%d\n", pool0.Manifest.BankID, pool0.Manifest.Capacity, ledger.NextFree, pool0.Manifest.Capacity-ledger.NextFree, outstanding, pool0.Manifest.Capacity-ledger.NextFree-outstanding, max(0, imdbprod.CandidateCapacity*imdbprod.TargetSignatures*imdbprod.TargetBucketSlots-(pool0.Manifest.Capacity-ledger.NextFree-outstanding)), len(ledger.Admissions))
+		return nil
+	}
+	if *phase == "profile" {
+		bs, e := buckets(*bucketText)
+		if e != nil {
+			return e
+		}
+		shape := targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures, S: imdbprod.TargetSignatures * imdbprod.TargetGroupCapacity, G: imdbprod.TargetGroupCapacity, D: *dTarget}
+		caps := []int{imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity}
+		_, _, _, cost, e := discovery.ProvisionInventory(st0, st1, bs, caps, shape, scmpnative.Backend{}, *aggregationMode == "zero-poly", pool0.Manifest.BankID)
+		if e != nil {
+			return e
+		}
+		fmt.Printf("profile_only=true d_target=%d timing_ns=%+v stock_claimed=0 ticket_written=false\n", *dTarget, cost.Timing)
 		return nil
 	}
 	root, e := filepath.Abs(*ticketRoot)

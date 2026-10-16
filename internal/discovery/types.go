@@ -355,7 +355,20 @@ type cloudToken struct {
 	agg          targetaggregation.ThresholdToken
 	movieBinding [32]byte
 }
-type OfflineBytes struct{ AnchorPosition, AnchorAggregation, Compaction, TargetPE, TargetPosition, TargetAggregation, OutputPermutation uint64 }
+type OfflineTiming struct {
+	TotalNS, OtherNS, AnchorLoadNS, AnchorPositionNS, AnchorZeroNS, AnchorIncidenceNS, AnchorPermutationNS int64
+	AnchorComparisonNS, CompactionNS, TargetPENS, TargetPositionNS, TargetAggregationNS                    int64
+}
+
+func (t OfflineTiming) measuredNS() int64 {
+	return t.AnchorLoadNS + t.AnchorPositionNS + t.AnchorZeroNS + t.AnchorIncidenceNS + t.AnchorPermutationNS +
+		t.AnchorComparisonNS + t.CompactionNS + t.TargetPENS + t.TargetPositionNS + t.TargetAggregationNS
+}
+
+type OfflineBytes struct {
+	AnchorPosition, AnchorAggregation, Compaction, TargetPE, TargetPosition, TargetAggregation, OutputPermutation uint64
+	Timing                                                                                                        OfflineTiming
+}
 type fail struct{ err error }
 
 func check(e error) {

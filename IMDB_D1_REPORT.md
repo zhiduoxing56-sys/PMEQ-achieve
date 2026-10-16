@@ -21,6 +21,21 @@
 
 同查询原 D=26 矩阵票据为 1,945,330,349、1,953,279,775 字节；D=1 分别少 1,636,999,592、1,636,999,598 字节。原 D=26 矩阵云端在线为 174.280、570.761 毫秒，目标聚合为 3.612、87.924 毫秒。D=1 目标聚合公开字段预算为 103,480,000 字节，D=26 为 1,730,480,000 字节。D=1 两方静态 sidecar 总共 4,953,330 字节，辅助封存目录总共 4,954,702 字节。这里不包含已有的 2,956,800,000 字节 SCMP 库存负载；本轮未生成第二份库存。
 
+### 6–7 秒预处理的分阶段墙钟
+
+隔离分支增加 `--phase profile`，对真实封存索引调用同一 `ProvisionInventory`，只在内存生成材料，不持久化票据、不接纳查询、不领取 SCMP。剖析前后库存账本均为 `NextFree=40,404`、6 条 admission。两次剖析生成的材料随机且独立，因此总时间与上表实际发行时的 6.779/6.923 秒略有波动。
+
+| 预处理阶段 | first：6.686 秒中的耗时 / 占比 | tail：7.121 秒中的耗时 / 占比 |
+| --- | ---: | ---: |
+| 目标位置会话及 F2 Beaver 三元组 | 4.322 秒 / 64.6% | 4.607 秒 / 64.7% |
+| 目标矩阵对象聚合材料 | 1.464 秒 / 21.9% | 1.546 秒 / 21.7% |
+| 锚侧全局比较材料 | 0.443 秒 / 6.6% | 0.449 秒 / 6.3% |
+| 候选压缩材料 | 0.291 秒 / 4.4% | 0.302 秒 / 4.2% |
+| 目标 PSMJ 私有等值材料 | 0.140 秒 / 2.1% | 0.140 秒 / 2.0% |
+| 锚桶加载、锚位置与其余步骤 | 约 0.026 秒 / 0.4% | 约 0.078 秒 / 1.1% |
+
+最长的是目标位置阶段。`targetposition.PreprocessInventoryWithDomain` 已不生成目标 SCMP 密钥，但仍按 `4 × 480,000` 最大位置槽为两次 F2 AND 各生成一组 Beaver 三元组，总计 3,840,000 个三元组。当前 `f2beaver.Preprocess` 对每个三元组逐次调用安全随机源抽取原值和份额；这是源码所示的主要工作，计时统计的是整个位置阶段而非对随机数函数单独剖析。目标对象聚合阶段还包含其原生比较密钥及环乘法材料。该表是单机两次墙钟样本，不是稳定的微基准。
+
 SCMP 库存初始 1,920,000 槽，v3 旧验收已消费 26,936 槽；本轮又按实际需求领取并永久消费 180+13,288 槽。目前账本 `NextFree=40,404`，未绑定剩余 1,879,596 槽，低于完整最坏查询需要的 1,920,000 槽；完整最坏保证须在下一查询前补 40,404 槽或拒绝接纳。两次新增换掩码通信仍分别为 3,108、212,836 字节，增加一次云间依赖轮次，与 D 无关。用户无需第二次上线，在线未生成 SCMP 密钥。
 
 高容量发行前分别检查了 WSL 路径和 Windows C 盘。C 盘可用量约 32.80 GB，结束后约 32.61 GB；持久化流写入还要求 15 GiB C 盘余量与 1 GiB 临时预算。D=1 票据的新静态预算为 1 GiB，超出会拒绝写入；两张票据实际合计 624,610,934 字节。Windows C 可用量的变化不等同于 WSL 虚拟磁盘内部文件增量。
@@ -42,5 +57,7 @@ PATH=/home/tenggn/projects/new-pmeq/.tools/go/bin:$PATH GOCACHE=/tmp/pmeq-d1-goc
 以上相关测试通过，D=1 原生双云完整小型链通过。`go test ./internal/targetaggregation/gen` 的全包测试另依赖未随隔离快照提供的 MusicBrainz `area_alias` 外部数据，因此其大样本审计用例未运行成功；D=1 容量和 D=26 重复投递定向用例可独立运行。真实两张 D=1 票据的三方消费标记均存在；跨进程重放被拒为 `one-use ticket has already been consumed`，将 D=1 票据交给旧 D=26 入口被拒为 `ticket, auxiliary or stock version mismatch`。
 
 编译命令：在隔离源码目录执行 `PATH=/home/tenggn/projects/new-pmeq/.tools/go/bin:$PATH GOCACHE=/tmp/pmeq-d1-gocache CGO_LDFLAGS='-L/tmp/pmeq-v3-native -lphase6scmp' go build -tags phase6native -o /tmp/imdb_ticket_d1 ./tools/imdb_ticket_v3`。从 PMEQ 根目录运行 `/tmp/imdb_ticket_d1 --phase auxiliary --d-target 1` 创建一次辅助状态；`--phase buckets --d-target 1 --query-file <冻结查询>` 取四个公开锚桶；`--phase issue --generate-full-ticket --d-target 1 --target-aggregation matrix --buckets <四桶>` 发行新票据；再以 `--phase run --d-target 1 --ticket <新票据ID> --query-file <同一查询>` 执行。原两张票据已消费，不能重跑。辅助状态生成阶段实测耗时未单独计时，本报告不声称其生成速度。
+
+只复测离线分阶段耗时可运行 `/tmp/imdb_ticket_d1 --phase profile --d-target 1 --target-aggregation matrix --buckets <四桶>`；它只输出纳秒计时，不写票据也不消耗库存。
 
 本轮证明的是固定 IMDb 索引满足 D=1 形状且全链路结果正确。`D` 必须在其他数据库的建库审计中按其真实最大连接值多重度设定，并作为公开索引参数绑定；不能把 D=1 当作通用常量。v3 报告中的 SCMP/DCF 多查询安全证明义务和双机角色文件隔离义务仍在，单元测试和这两条真实查询不能代替正式密码学证明。
