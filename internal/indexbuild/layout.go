@@ -98,7 +98,18 @@ func AnalyzeMovieTierLayout(areas []AreaRecord, joins []uint64, movies []AreaAli
 	if len(areas) != len(joins) {
 		return LayoutAnalysis{}, errors.New("indexbuild: object/join input length mismatch")
 	}
-	anchors, targets, stats, err := buildLogicalProjectionMode(areas, movies, joins, kB, kT, 16, 16, true)
+	anchors, targets, stats, err := buildLogicalProjectionMode(areas, movies, joins, kB, kT, 16, 16, profileMoviecastAnchor)
+	if err != nil {
+		return LayoutAnalysis{}, err
+	}
+	return analyzeTierFromLogical(anchors, targets, stats, 16, 16)
+}
+
+func AnalyzeReverseIMDbTierLayout(movies []AreaRecord, joins []uint64, casts []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey) (LayoutAnalysis, error) {
+	if len(movies) != len(joins) {
+		return LayoutAnalysis{}, errors.New("indexbuild: object/join input length mismatch")
+	}
+	anchors, targets, stats, err := buildLogicalProjectionMode(movies, casts, joins, kB, kT, 16, 16, profileMovieAnchor)
 	if err != nil {
 		return LayoutAnalysis{}, err
 	}

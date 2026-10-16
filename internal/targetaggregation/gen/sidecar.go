@@ -37,9 +37,20 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 
 // BuildWithCapacity rebuilds only capacity-dependent auxiliary state, never PSMJ.
 func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer, d int) (targetaggregation.SidecarManifest, Audit, error) {
+	return buildWithShape(rawManifest, files, aliases, outputs, d, targetaggregation.MaxMultiplicity, false)
+}
+
+// BuildReverseOffline writes the same GF127 incidence and ID-sharing matrix
+// for the reverse outsourcing measurement. Version 2 is deliberately not
+// accepted by the production query loader.
+func BuildReverseOffline(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer, d, maxMultiplicity int) (targetaggregation.SidecarManifest, Audit, error) {
+	return buildWithShape(rawManifest, files, aliases, outputs, d, maxMultiplicity, true)
+}
+
+func buildWithShape(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer, d, maxMultiplicity int, reverse bool) (targetaggregation.SidecarManifest, Audit, error) {
 	var out targetaggregation.SidecarManifest
 	var audit Audit
-	if d < 1 || d > 26 {
+	if d < 1 || (!reverse && d > 26) || (reverse && d > len(aliases)) || maxMultiplicity < 1 || maxMultiplicity > 16 {
 		return out, audit, targetaggregation.ErrBinding
 	}
 	m, e := indexbuild.ReadTargetManifest(bytes.NewReader(rawManifest))
@@ -89,7 +100,11 @@ func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild
 		}
 	}
 	digest := sha256.Sum256(rawManifest)
-	out = targetaggregation.SidecarManifest{Version: 1, IndexID: m.IndexID, ManifestSHA256: hex.EncodeToString(digest[:]), DTarget: uint32(d), MaxMultiplicity: targetaggregation.MaxMultiplicity, IncidenceBytes: uint64(d) * m.PaddedSlots, TargetIDBytes: uint64(d) * 8 * m.LogicalGroups}
+	version := uint32(1)
+	if reverse {
+		version = 2
+	}
+	out = targetaggregation.SidecarManifest{Version: version, IndexID: m.IndexID, ManifestSHA256: hex.EncodeToString(digest[:]), DTarget: uint32(d), MaxMultiplicity: uint32(maxMultiplicity), IncidenceBytes: uint64(d) * m.PaddedSlots, TargetIDBytes: uint64(d) * 8 * m.LogicalGroups}
 	var writers [2]*bufio.Writer
 	var counters [2]*counted
 	hashes := [2]io.Writer{}
@@ -158,7 +173,7 @@ func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild
 					coord = ordinal[id]
 					counts[id]++
 					audit.MaxMultiplicity = max(audit.MaxMultiplicity, counts[id])
-					if counts[id] > targetaggregation.MaxMultiplicity {
+					if counts[id] > maxMultiplicity {
 						return out, audit, targetaggregation.ErrBinding
 					}
 					audit.RealSlots++

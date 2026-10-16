@@ -65,6 +65,17 @@ func MovieWordBucketComponent(key MasterKey, qgram string, k int) (BucketCompone
 	return bucketComponentFromHMAC(key, message, k), nil
 }
 
+func MoviecastWordBucketComponent(key MasterKey, qgram string, k int) (BucketComponent, error) {
+	if err := checkBucketBits(k); err != nil {
+		return 0, err
+	}
+	message, err := CanonicalMoviecastWord("PMEQ-TARGET-IMDB-REVERSE-BUCKET-WORD-V1", qgram)
+	if err != nil {
+		return 0, err
+	}
+	return bucketComponentFromHMAC(key, message, k), nil
+}
+
 func bucketComponentFromHMAC(key MasterKey, message []byte, k int) BucketComponent {
 	mac := hmac.New(sha256.New, key[:])
 	_, _ = mac.Write(message)

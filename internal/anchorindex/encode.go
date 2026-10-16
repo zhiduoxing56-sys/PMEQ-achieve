@@ -20,6 +20,10 @@ func EncodeMovie(key Key, qgram string) (Value, error) {
 	return encodeWith(key, qgram, canonicalMovieLogicalKey, "PMEQ-BSMJ-IMDB-INDEX-V1")
 }
 
+func EncodeMovieTitle(key Key, qgram string) (Value, error) {
+	return encodeWith(key, qgram, canonicalMovieTitleLogicalKey, "PMEQ-BSMJ-IMDB-REVERSE-INDEX-V1")
+}
+
 func encodeWith(key Key, qgram string, canonical func(string) ([]byte, error), domain string) (Value, error) {
 	var value Value
 	if !key.valid() {

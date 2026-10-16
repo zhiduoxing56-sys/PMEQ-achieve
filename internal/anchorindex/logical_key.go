@@ -43,6 +43,17 @@ func canonicalMovieLogicalKey(qgram string) ([]byte, error) {
 	return encodeLengthDelimited("BSMJ-IMDB-V1", "MOVIECAST", "aliasTitle", "tconst", qgram)
 }
 
+// canonicalMovieTitleLogicalKey is the separate reverse outsourcing domain.
+func canonicalMovieTitleLogicalKey(qgram string) ([]byte, error) {
+	if !utf8.ValidString(qgram) {
+		return nil, errInvalidUTF8
+	}
+	if utf8.RuneCountInString(qgram) != anchorQ {
+		return nil, errInvalidQ
+	}
+	return encodeLengthDelimited("BSMJ-IMDB-REVERSE-V1", "MOVIE", "primaryTitle", "tconst", qgram)
+}
+
 func encodeLengthDelimited(fields ...string) ([]byte, error) {
 	total := 0
 	for _, field := range fields {

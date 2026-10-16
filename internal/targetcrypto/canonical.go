@@ -82,6 +82,10 @@ func CanonicalMovieWord(domain string, qgram string) ([]byte, error) {
 	return canonicalWordWithFields(domain, qgram, "PSMJ-IMDB-V1", "MOVIE", "primaryTitle", "tconst")
 }
 
+func CanonicalMoviecastWord(domain string, qgram string) ([]byte, error) {
+	return canonicalWordWithFields(domain, qgram, "PSMJ-IMDB-REVERSE-V1", "MOVIECAST", "aliasTitle", "tconst")
+}
+
 func canonicalWordWithFields(domain string, qgram string, label, table, search, join string) ([]byte, error) {
 	if !utf8.ValidString(qgram) {
 		return nil, ErrInvalidUTF8

@@ -18,6 +18,14 @@ import (
 
 const Q = 4
 
+type projectionProfile uint8
+
+const (
+	profileGeneric projectionProfile = iota
+	profileMoviecastAnchor
+	profileMovieAnchor
+)
+
 // AnchorBucketBits is the frozen PHASE 5B2 Anchor production parameter.
 // Explicit Build parameters remain available for historical experiment tests.
 const AnchorBucketBits = 16
@@ -186,14 +194,19 @@ func Build(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.Key, kT
 // BuildMovie uses the versioned IMDb index domains and distinct anchor object
 // and movie join IDs. The trusted caller must verify the frozen mapping first.
 func BuildMovie(areas []AreaRecord, joins []uint64, movies []AreaAliasRecord, kB anchorindex.Key, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
-	return buildProjectionWithMode(areas, movies, joins, kB, kT, 16, 16, true)
+	return buildProjectionWithMode(areas, movies, joins, kB, kT, 16, 16, profileMoviecastAnchor)
 }
 
 // BuildMovieTarget constructs the movie-domain target PSMJ without materializing
 // any anchor index or permutation state. The trusted owner checks the actual
 // keyed bucket layout against the movie contract before calling it.
 func BuildMovieTarget(movies []AreaAliasRecord, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
-	return buildProjectionWithMode(nil, movies, nil, anchorindex.Key{}, kT, 16, 16, true)
+	return buildProjectionWithMode(nil, movies, nil, anchorindex.Key{}, kT, 16, 16, profileMoviecastAnchor)
+}
+
+// BuildMoviecastTarget is the reverse direction's target-only PSMJ.
+func BuildMoviecastTarget(casts []AreaAliasRecord, kT targetcrypto.MasterKey) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+	return buildProjectionWithMode(nil, casts, nil, anchorindex.Key{}, kT, 16, 16, profileMovieAnchor)
 }
 
 // VisitMovieAnchorBuckets shares exactly one keyed movie anchor bucket at a
@@ -201,10 +214,18 @@ func BuildMovieTarget(movies []AreaAliasRecord, kT targetcrypto.MasterKey) (Publ
 // and all subsequent permutation scratch die after visit returns. A filter
 // permits resource-controlled probes and resume without making unused shares.
 func VisitMovieAnchorBuckets(areas []AreaRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, filter func(uint32) bool, visit func(BucketMetadata, AnchorPartyBucket, AnchorPartyBucket, []incidence.Posting) error) error {
+	return visitProfileAnchorBuckets(areas, joins, kB, kT, profileMoviecastAnchor, filter, visit)
+}
+
+func VisitMovieTitleAnchorBuckets(areas []AreaRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, filter func(uint32) bool, visit func(BucketMetadata, AnchorPartyBucket, AnchorPartyBucket, []incidence.Posting) error) error {
+	return visitProfileAnchorBuckets(areas, joins, kB, kT, profileMovieAnchor, filter, visit)
+}
+
+func visitProfileAnchorBuckets(areas []AreaRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, profile projectionProfile, filter func(uint32) bool, visit func(BucketMetadata, AnchorPartyBucket, AnchorPartyBucket, []incidence.Posting) error) error {
 	if len(areas) != len(joins) || visit == nil {
 		return errors.New("indexbuild: invalid movie anchor visitor")
 	}
-	anchors, _, _, err := buildLogicalProjectionMode(areas, nil, joins, kB, kT, 16, 16, true)
+	anchors, _, _, err := buildLogicalProjectionMode(areas, nil, joins, kB, kT, 16, 16, profile)
 	if err != nil {
 		return err
 	}
@@ -262,10 +283,10 @@ func VisitMovieAnchorBuckets(areas []AreaRecord, joins []uint64, kB anchorindex.
 }
 
 func buildProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
-	return buildProjectionWithMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, false)
+	return buildProjectionWithMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, profileGeneric)
 }
 
-func buildProjectionWithMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, movie bool) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
+func buildProjectionWithMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, profile projectionProfile) (PublicMetadata, PartyIndex, PartyIndex, BuildStats, error) {
 	started := time.Now()
 	if joins != nil && len(joins) != len(areas) {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, errors.New("indexbuild: object/join input length mismatch")
@@ -276,7 +297,7 @@ func buildProjectionWithMode(areas []AreaRecord, aliases []AreaAliasRecord, join
 	if _, err := targetcrypto.JoinBucketComponent(kT, 0, targetBits); err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
-	anchorGroups, targetGroups, stats, err := buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, movie)
+	anchorGroups, targetGroups, stats, err := buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, profile)
 	if err != nil {
 		return PublicMetadata{}, PartyIndex{}, PartyIndex{}, BuildStats{}, err
 	}
@@ -296,10 +317,10 @@ func buildLogical(areas []AreaRecord, aliases []AreaAliasRecord, kB anchorindex.
 }
 
 func buildLogicalProjection(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
-	return buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, false)
+	return buildLogicalProjectionMode(areas, aliases, joins, kB, kT, anchorBits, targetBits, profileGeneric)
 }
 
-func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, movie bool) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
+func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, joins []uint64, kB anchorindex.Key, kT targetcrypto.MasterKey, anchorBits, targetBits int, profile projectionProfile) ([]anchorLogicalGroup, []targetLogicalGroup, BuildStats, error) {
 	stats := BuildStats{Anchor: SideStats{RawRecords: len(areas)}, Target: SideStats{RawRecords: len(aliases)}}
 	am := make(map[string]*anchorLogicalGroup)
 	for ri, record := range areas {
@@ -324,8 +345,10 @@ func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, j
 	for qgram, group := range am {
 		var z anchorindex.Value
 		var err error
-		if movie {
+		if profile == profileMoviecastAnchor {
 			z, err = anchorindex.EncodeMovie(kB, qgram)
+		} else if profile == profileMovieAnchor {
+			z, err = anchorindex.EncodeMovieTitle(kB, qgram)
 		} else {
 			z, err = anchorindex.Encode(kB, qgram)
 		}
@@ -363,8 +386,10 @@ func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, j
 	for identity, group := range tm {
 		var target *ristretto255.Element
 		var err error
-		if movie {
+		if profile == profileMoviecastAnchor {
 			target, err = targetcrypto.DeriveMovieGroupPoint(kT, identity.joinID, identity.qgram)
+		} else if profile == profileMovieAnchor {
+			target, err = targetcrypto.DeriveMoviecastGroupPoint(kT, identity.joinID, identity.qgram)
 		} else {
 			target, err = targetcrypto.DeriveTargetGroupPoint(kT, identity.joinID, identity.qgram)
 		}
@@ -382,8 +407,10 @@ func buildLogicalProjectionMode(areas []AreaRecord, aliases []AreaAliasRecord, j
 			return nil, nil, stats, err
 		}
 		var word targetcrypto.BucketComponent
-		if movie {
+		if profile == profileMoviecastAnchor {
 			word, err = targetcrypto.MovieWordBucketComponent(kT, identity.qgram, targetBits)
+		} else if profile == profileMovieAnchor {
+			word, err = targetcrypto.MoviecastWordBucketComponent(kT, identity.qgram, targetBits)
 		} else {
 			word, err = targetcrypto.WordBucketComponent(kT, identity.qgram, targetBits)
 		}
