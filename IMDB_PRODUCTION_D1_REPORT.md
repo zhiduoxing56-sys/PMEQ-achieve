@@ -33,6 +33,8 @@ PATH=/home/tenggn/projects/new-pmeq/.tools/go/bin:$PATH GOCACHE=/tmp/pmeq-prod-d
 
 相关测试均通过。执行命令时从 PMEQ 根目录运行；`--phase buckets --query-file <查询>` 得到四个公开桶，`--phase issue --generate-full-ticket --buckets <四桶>` 发行，`--phase run --ticket <新票据> --query-file <相同查询>` 执行。上述两张票据已消费，不能重跑；用正式命令重新运行第一张票据，实测退出码 1 并报 `one-use ticket has already been consumed`。`--phase status` 读取库存账本；`--phase profile --buckets <四桶>` 只测内存材料生成，不写票据或消费库存。传入 `--d-target 26` 或 `--target-aggregation zero-poly` 均立即报未知参数。库存重复领取、错误版本/角色/域/索引及跨进程消费检查由 `internal/scmpstock` 和 `internal/discovery` 的原生测试覆盖。
 
-原封存主索引仍绑定旧 D=26 目标辅助文件，`VerifyProduction` 和 `OpenParty` 启动时会检查它们，然后本入口载入单独封存的 D=1 辅助文件。故 `.private/imdb-v2-production/target/cs0.aggregation.bin` 和 `cs1.aggregation.bin` 各 43,997,865 字节现在仍不可删除；不修改旧封存即可保持原验收证据。将来若重封完整 D=1 主索引，需再次审计可清理性。本次没有清理旧材料。
+原封存主索引仍绑定旧 D=26 目标辅助文件，`VerifyProduction` 和 `OpenParty` 启动时会检查它们，然后本入口载入单独封存的 D=1 辅助文件。故 `.private/imdb-v2-production/target/cs0.aggregation.bin` 和 `cs1.aggregation.bin` 各 43,997,865 字节现在仍不可删除；不修改旧封存即可保持原验收证据。将来若重封完整 D=1 主索引，需再次审计可清理性。
+
+2026-10-16 后续清理：经用户明确授权，只删除 `.private/imdb-v2-tickets` 中三张已经三方消费的旧 D=26 票据：`2dd8bad25cfc426e58e504f232644078`（4,840,690,049 字节）、`4bdd92d0ca7532421f2892abf76c6447`（4,848,639,475 字节）和 `bc4e7b1ec1abc02e0f15e582936ab14c`（4,840,690,053 字节），合计 14,530,019,577 字节。删除前的 159 个文件路径、大小、SHA-256 与三方消费标记记录在仅本地保存的 0600 文件 `.private/imdb-v2-consumed-ticket-cleanup-20261016.json`。旧结果、独立明文 oracle、新旧 D=1 票据、SCMP 库存、账本、D=1 辅助状态、主索引及旧 D=26 辅助文件均保留。WSL 内部可用空间相应增加，但 Windows C 盘可用量未因删除立即增加；虚拟磁盘未执行压缩。
 
 此验收证明固定索引上全链路运行与一次性状态约束；底层 DCF 单方密钥联合视图、多查询换掩码组合安全和真实分机密钥隔离仍需正式密码学及部署验收。不能以这些测试宣称完整生产安全证明已完成。
