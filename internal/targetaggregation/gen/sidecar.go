@@ -39,7 +39,7 @@ func Build(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRe
 func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer, d int) (targetaggregation.SidecarManifest, Audit, error) {
 	var out targetaggregation.SidecarManifest
 	var audit Audit
-	if d != 16 && d != 26 {
+	if d < 1 || d > 26 {
 		return out, audit, targetaggregation.ErrBinding
 	}
 	m, e := indexbuild.ReadTargetManifest(bytes.NewReader(rawManifest))

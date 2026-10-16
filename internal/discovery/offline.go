@@ -63,7 +63,7 @@ func provision(a, b *Static, buckets []uint32, capacities []int, shape targetagg
 	}
 	movie := a.movieBinding != [32]byte{}
 	if movie {
-		if len(buckets) != imdbprod.AnchorSignatures || shape.K != imdbprod.CandidateCapacity || shape.R != imdbprod.TargetSignatures || shape.Capacity() != imdbprod.TargetDimension || shape.S != imdbprod.TargetSignatures*imdbprod.TargetGroupCapacity || shape.G != imdbprod.TargetGroupCapacity {
+		if len(buckets) != imdbprod.AnchorSignatures || shape.K != imdbprod.CandidateCapacity || shape.R != imdbprod.TargetSignatures || (!inventoryV3 && shape.Capacity() != imdbprod.TargetDimension) || shape.S != imdbprod.TargetSignatures*imdbprod.TargetGroupCapacity || shape.G != imdbprod.TargetGroupCapacity {
 			return nil, nil, nil, cost, ErrBinding
 		}
 		for _, capacity := range capacities {

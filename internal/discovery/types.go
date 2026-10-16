@@ -83,6 +83,7 @@ type Static struct {
 	payload        aggregation.PartyPayload
 	target         *targetpe.PartyIndex
 	sidecar        *targetaggregation.PartySidecar
+	auxiliarySeal  [32]byte
 	movieBinding   [32]byte
 	productionSeal [32]byte
 	keyFingerprint string
@@ -148,6 +149,27 @@ func (s *Static) Close() error {
 		return nil
 	}
 	return s.sidecar.Close()
+}
+
+// UseTargetAuxiliary switches one verified cloud static to an independently
+// sealed public-D sidecar. The main production index and anchor store remain
+// unchanged; the auxiliary digest is bound in the new ticket alongside the
+// original production seal.
+func (s *Static) UseTargetAuxiliary(manifest targetaggregation.SidecarManifest, sealedTarget []byte, path string, auxiliarySeal [32]byte) error {
+	if s == nil || s.target == nil || s.sidecar == nil || auxiliarySeal == [32]byte{} || s.productionSeal == [32]byte{} || manifest.DTarget < 1 || manifest.DTarget > 26 {
+		return ErrBinding
+	}
+	side, err := targetaggregation.OpenSidecarLazy(manifest, sealedTarget, s.target, path)
+	if err != nil {
+		return err
+	}
+	if err := s.sidecar.Close(); err != nil {
+		side.Close()
+		return err
+	}
+	s.sidecar = side
+	s.auxiliarySeal = auxiliarySeal
+	return nil
 }
 
 // anchorFor returns an invocation-owned bucket. Store-backed statics never

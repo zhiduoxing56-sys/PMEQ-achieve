@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestD16Capacity(t *testing.T) {
+func TestPublicCoordinateCapacity(t *testing.T) {
 	ak, e := anchorindex.NewKey([32]byte{1})
 	if e != nil {
 		t.Fatal(e)
@@ -21,7 +21,8 @@ func TestD16Capacity(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	for _, n := range []int{16, 17} {
+	for _, tc := range []struct{ d, n int }{{1, 1}, {1, 2}, {16, 16}, {16, 17}} {
+		n := tc.n
 		aliases := make([]indexbuild.AreaAliasRecord, n)
 		for i := range aliases {
 			aliases[i] = indexbuild.AreaAliasRecord{ID: uint64(i + 1), Area: 99, Name: "abcdabcd"}
@@ -47,12 +48,12 @@ func TestD16Capacity(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		sm, audit, e := BuildWithCapacity(mr, [2][]byte{out[0].Bytes(), out[1].Bytes()}, aliases, [2]io.Writer{io.Discard, io.Discard}, 16)
-		if n == 17 {
+		sm, audit, e := BuildWithCapacity(mr, [2][]byte{out[0].Bytes(), out[1].Bytes()}, aliases, [2]io.Writer{io.Discard, io.Discard}, tc.d)
+		if n > tc.d {
 			if e == nil {
-				t.Fatal("D16 overflow silently accepted")
+				t.Fatalf("D=%d overflow silently accepted", tc.d)
 			}
-		} else if e != nil || sm.DTarget != 16 || audit.MaxAliases != 16 {
+		} else if e != nil || sm.DTarget != uint32(tc.d) || audit.MaxAliases != tc.d {
 			t.Fatal(sm, audit, e)
 		}
 	}

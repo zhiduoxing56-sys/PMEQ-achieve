@@ -15,9 +15,13 @@ import (
 )
 
 func productionShape() targetaggregation.Shape {
+	return productionShapeForD(imdbprod.TargetDimension)
+}
+
+func productionShapeForD(d int) targetaggregation.Shape {
 	return targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures,
 		S: imdbprod.CandidateCapacity * imdbprod.TargetSignatures * imdbprod.TargetBucketSlots,
-		G: imdbprod.CandidateCapacity * imdbprod.TargetBucketSlots, D: imdbprod.TargetDimension}
+		G: imdbprod.CandidateCapacity * imdbprod.TargetBucketSlots, D: d}
 }
 
 func (u *UserPacket) writeOwn(e *material.StreamEncoder) {
@@ -51,7 +55,7 @@ func (u *UserPacket) writeOwn(e *material.StreamEncoder) {
 	u.agg.WriteOwn(e)
 }
 
-func readUserOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, layout [16]byte, fingerprint string, roleDir string, buckets []uint32, inventoryV3 bool, bankID [16]byte) (*UserPacket, error) {
+func readUserOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, layout [16]byte, fingerprint string, roleDir string, buckets []uint32, inventoryV3 bool, bankID [16]byte, dTarget int) (*UserPacket, error) {
 	version := d.U8()
 	if (inventoryV3 && version != 3) || (!inventoryV3 && version != 1) {
 		return nil, ErrBinding
@@ -99,7 +103,7 @@ func readUserOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, l
 			return nil, err
 		}
 	}
-	u.agg, err = targetaggregation.ReadUserOwn(d, productionShape())
+	u.agg, err = targetaggregation.ReadUserOwn(d, productionShapeForD(dTarget))
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +174,7 @@ func (p *PartyPacket) writeOwn(e *material.StreamEncoder, s *Static) {
 	p.agg.WriteOwn(e)
 }
 
-func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, roleDir string, buckets []uint32, s *Static, inventoryV3 bool, bankID [16]byte) (*PartyPacket, error) {
+func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, roleDir string, buckets []uint32, s *Static, inventoryV3 bool, bankID [16]byte, dTarget int) (*PartyPacket, error) {
 	version := d.U8()
 	if s == nil || s.party > 1 || (inventoryV3 && version != 3) || (!inventoryV3 && version != 1) || d.U8() != s.party {
 		return nil, ErrBinding
@@ -280,7 +284,7 @@ func readPartyOwn(d *material.StreamDecoder, ticket [16]byte, binding [32]byte, 
 	if err != nil {
 		return nil, err
 	}
-	p.agg, err = targetaggregation.ReadPacketOwn(d, s.party, s.target.Lineage(), productionShape())
+	p.agg, err = targetaggregation.ReadPacketOwn(d, s.party, s.target.Lineage(), productionShapeForD(dTarget))
 	if err != nil {
 		return nil, err
 	}

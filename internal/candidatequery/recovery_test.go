@@ -11,7 +11,7 @@ import (
 
 func fixture(t *testing.T, k int) (Binding, [2]targetaggregation.CandidatePairShares) {
 	t.Helper()
-	w := Binding{targetrouting.Manifest{IndexID: [16]byte{1}, TargetBucketBits: 16, Q: 4}, [16]byte{2}, [16]byte{3}, [16]byte{4}}
+	w := Binding{Manifest: targetrouting.Manifest{IndexID: [16]byte{1}, TargetBucketBits: 16, Q: 4}, LayoutID: [16]byte{2}, CompactionID: [16]byte{3}, QueryID: [16]byte{4}}
 	var s [2]targetaggregation.CandidatePairShares
 	for u := range s {
 		s[u] = targetaggregation.CandidatePairShares{Manifest: w.Manifest, LayoutID: w.LayoutID, CompactionID: w.CompactionID, QueryID: w.QueryID, K: k, DTarget: 26, PairKeepShares: make([]share.BitShare, 26*k), AnchorIDShares: make([]share.Ring64Share, 26*k), TargetIDShares: make([]share.Ring64Share, 26*k)}
@@ -100,5 +100,33 @@ func TestRecoveryRejectsMalformed(t *testing.T) {
 	b[0][HeaderBytes] = 2
 	if _, e := Recover(w, b[0], b[1]); e == nil {
 		t.Fatal("noncanonical bit")
+	}
+}
+
+func TestRecoveryD1AndDimensionBinding(t *testing.T) {
+	w, s := fixture(t, 1)
+	w.DTarget = 1
+	for i := range s {
+		s[i].DTarget = 1
+		s[i].PairKeepShares = s[i].PairKeepShares[:1]
+		s[i].AnchorIDShares = s[i].AnchorIDShares[:1]
+		s[i].TargetIDShares = s[i].TargetIDShares[:1]
+	}
+	setSlot(t, &s, 0, true, 71, 901)
+	var wire [2][]byte
+	for i := range wire {
+		var err error
+		wire[i], err = EncodeShares(uint8(i), s[i])
+		if err != nil || len(wire[i]) != HeaderBytes+17 {
+			t.Fatalf("D=1 encode: %v", err)
+		}
+	}
+	got, err := Recover(w, wire[0], wire[1])
+	if err != nil || len(got.Pairs) != 1 || got.Pairs[0] != (Pair{71, 901}) {
+		t.Fatalf("D=1 recover: %v %+v", err, got)
+	}
+	w.DTarget = 26
+	if _, err = Recover(w, wire[0], wire[1]); err == nil {
+		t.Fatal("D=1 shares accepted under D=26 binding")
 	}
 }

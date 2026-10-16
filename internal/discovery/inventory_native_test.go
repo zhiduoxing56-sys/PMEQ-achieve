@@ -91,6 +91,37 @@ func TestInventoryFullCryptographicChain(t *testing.T) {
 	}
 }
 
+func TestInventoryD1FullCryptographicChain(t *testing.T) {
+	f := newDomainFixtureWithBitsAndD(t, 7, true, 16, 1)
+	lineage := f.st[0].target.Lineage()
+	seal := [32]byte{31}
+	root := filepath.Join(t.TempDir(), "d1-stock")
+	m, err := scmpstock.Generate(root, lineage.IndexID, lineage.LayoutID, seal, 7, 62, f.shape.S+2, scmpnative.Backend{})
+	domainMust(t, err)
+	var pools [2]*scmpstock.Pool
+	for role := range pools {
+		pools[role], err = scmpstock.Open(root, uint8(role), lineage.IndexID, lineage.LayoutID, seal, 7)
+		domainMust(t, err)
+		defer pools[role].Close()
+	}
+	u, a, b, _, err := ProvisionInventory(f.st[0], f.st[1], f.buckets, f.cap, f.shape, scmpnative.Backend{}, false, m.BankID)
+	domainMust(t, err)
+	_, err = PersistReservation(t.TempDir(), t.TempDir(), u, a, b, f.st[0], f.st[1])
+	domainMust(t, err)
+	domainMust(t, BindInventoryParty(a, f.st[0], pools[0]))
+	domainMust(t, BindInventoryParty(b, f.st[1], pools[1]))
+	domainMust(t, pools[0].Admit(u.id, f.shape.S))
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	out, metrics, err := RunLocal(ctx, f.q, f.keys, u, f.st, [2]*PartyPacket{a, b}, scmpnative.Backend{})
+	if err != nil {
+		t.Fatalf("D1 full-chain failed: %v; metrics=%+v", err, metrics)
+	}
+	if len(out.Pairs) != 1 || out.Pairs[0] != (candidatequery.Pair{AnchorRecordID: 1001, TargetRecordID: 901}) || metrics.K != 1 || metrics.Slots != f.shape.S {
+		t.Fatal("D1 full-chain mismatch", out, metrics)
+	}
+}
+
 func TestInventoryZeroPolynomialFullChain(t *testing.T) {
 	f := newDomainFixture(t, 7, true)
 	labels := filepath.Join(t.TempDir(), "labels")

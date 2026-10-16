@@ -27,7 +27,7 @@ func OpenSidecarLazy(m SidecarManifest, sealedManifest []byte, idx *targetpe.Par
 		return nil, err
 	}
 	digest := sha256.Sum256(sealedManifest)
-	if digest != idx.ManifestDigest() || m.Version != 1 || m.IndexID != sm.IndexID || m.IndexID != idx.Manifest().IndexID || m.ManifestSHA256 != hex.EncodeToString(digest[:]) || m.StructureDigest != idx.StructureDigest() || m.DTarget != 26 || m.MaxMultiplicity != MaxMultiplicity || m.IncidenceBytes != uint64(m.DTarget)*sm.PaddedSlots || m.TargetIDBytes != uint64(m.DTarget)*8*sm.LogicalGroups {
+	if digest != idx.ManifestDigest() || m.Version != 1 || m.IndexID != sm.IndexID || m.IndexID != idx.Manifest().IndexID || m.ManifestSHA256 != hex.EncodeToString(digest[:]) || m.StructureDigest != idx.StructureDigest() || m.DTarget < 1 || m.DTarget > 26 || m.MaxMultiplicity != MaxMultiplicity || m.IncidenceBytes != uint64(m.DTarget)*sm.PaddedSlots || m.TargetIDBytes != uint64(m.DTarget)*8*sm.LogicalGroups {
 		return nil, ErrBinding
 	}
 	expected := uint64(57) + uint64(1<<sm.TargetBucketBits)*4 + sm.LogicalGroups*4 + m.IncidenceBytes + m.TargetIDBytes

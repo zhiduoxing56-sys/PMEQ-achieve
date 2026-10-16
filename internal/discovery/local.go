@@ -196,7 +196,7 @@ func RunCloudLocal(ctx context.Context, q Query, keys UserKeys, u *UserPacket, s
 	if e != nil {
 		return wires, binding, m, e
 	}
-	binding = candidatequery.Binding{Manifest: statics[0].target.Manifest(), LayoutID: u.layout, CompactionID: u.compaction, QueryID: t.target.QueryID}
+	binding = candidatequery.Binding{Manifest: statics[0].target.Manifest(), LayoutID: u.layout, CompactionID: u.compaction, QueryID: t.target.QueryID, DTarget: statics[0].sidecar.Capacity()}
 	m.LocalE2E = time.Since(start)
 	return
 }

@@ -75,6 +75,10 @@ func newDomainFixture(t *testing.T, n int, present bool) domainFixture {
 }
 
 func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int, extraAliases ...indexbuild.AreaAliasRecord) domainFixture {
+	return newDomainFixtureWithBitsAndD(t, n, present, bits, 26, extraAliases...)
+}
+
+func newDomainFixtureWithBitsAndD(t *testing.T, n int, present bool, bits, dTarget int, extraAliases ...indexbuild.AreaAliasRecord) domainFixture {
 	t.Helper()
 	f := domainFixture{q: Query{Anchor: "abcd", Target: "efgh"}}
 	if !present {
@@ -92,7 +96,10 @@ func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int, extra
 		areas[i] = indexbuild.AreaRecord{ID: ids[i], Name: "x"}
 	}
 	areas[0].Name = "abcd"
-	aliases := []indexbuild.AreaAliasRecord{{ID: 900, Name: "x", Area: ids[0]}, {ID: 901, Name: "efgh", Area: ids[0]}}
+	aliases := []indexbuild.AreaAliasRecord{{ID: 901, Name: "efgh", Area: ids[0]}}
+	if dTarget != 1 {
+		aliases = append([]indexbuild.AreaAliasRecord{{ID: 900, Name: "x", Area: ids[0]}}, aliases...)
+	}
 	aliases = append(aliases, extraAliases...)
 	_, a0, a1, _, e := indexbuild.Build(areas, nil, f.keys.Anchor, f.keys.Target, bits, bits)
 	domainMust(t, e)
@@ -123,7 +130,7 @@ func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int, extra
 	}
 	pr := domainJSON(t, pm)
 	var sb [2]bytes.Buffer
-	sm, _, e := gen.Build(mr, files, aliases, [2]io.Writer{&sb[0], &sb[1]})
+	sm, _, e := gen.BuildWithCapacity(mr, files, aliases, [2]io.Writer{&sb[0], &sb[1]}, dTarget)
 	domainMust(t, e)
 	z, e := anchorindex.Encode(f.keys.Anchor, f.q.Anchor)
 	domainMust(t, e)
@@ -165,7 +172,7 @@ func newDomainFixtureWithBits(t *testing.T, n int, present bool, bits int, extra
 		f.st[u], e = NewStatic(uint8(u), anchors[u], payload, idx, side)
 		domainMust(t, e)
 	}
-	f.shape = targetaggregation.Shape{R: 1}
+	f.shape = targetaggregation.Shape{R: 1, D: dTarget}
 	f.cap = []int{0}
 	if present {
 		j, e := targetcrypto.JoinBucketComponent(f.keys.Target, ids[0], bits)

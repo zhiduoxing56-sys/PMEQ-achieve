@@ -155,6 +155,51 @@ func TestTicketRoleFileIntegrityAndRestartBurn(t *testing.T) {
 	}
 }
 
+func TestD1TicketRequiresMatchingAuxiliaryAndDimension(t *testing.T) {
+	binding := syntheticBinding(t)
+	bind, err := binding.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(t.TempDir(), "user")
+	if err = os.Mkdir(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	var ticket [16]byte
+	ticket[0] = 9
+	var indexSeal, targetDigest, auxHash [32]byte
+	indexSeal[0], targetDigest[0], auxHash[0] = 3, 4, 5
+	m := TicketRoleManifest{
+		Version: ticketStoreVersionD, BankID: strings.Repeat("a", 32), DTarget: 1,
+		AuxiliarySHA256: hex.EncodeToString(auxHash[:]), Role: "user", Ticket: hex.EncodeToString(ticket[:]),
+		BindingSHA256: hex.EncodeToString(bind[:]), IndexSealSHA256: hex.EncodeToString(indexSeal[:]),
+		LayoutID: hex.EncodeToString(binding.LayoutID[:]), KeyFingerprint: binding.KeyFingerprint,
+		TargetManifestSHA256: hex.EncodeToString(targetDigest[:]), Buckets: []uint32{1, 2, 3, 4},
+		CandidateCapacity: imdbprod.CandidateCapacity, TargetRoutes: imdbprod.CandidateCapacity * imdbprod.TargetSignatures,
+		TargetSlots:  imdbprod.CandidateCapacity * imdbprod.TargetSignatures * imdbprod.TargetBucketSlots,
+		TargetGroups: imdbprod.TargetGroupCapacity, Uses: 1, MaterialBytes: 64,
+		MaterialSHA256: strings.Repeat("b", 64),
+	}
+	raw, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(dir, "manifest.json"), raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(raw)
+	read := func(d int, aux [32]byte, version string) error {
+		_, e := readRoleManifestVersion(dir, digest, "user", binding, indexSeal, ticket, targetDigest, version, m.BankID, d, aux)
+		return e
+	}
+	if err = read(1, auxHash, ticketStoreVersionD); err != nil {
+		t.Fatalf("valid D=1 auxiliary rejected: %v", err)
+	}
+	if read(26, auxHash, ticketStoreVersionD) == nil || read(1, [32]byte{6}, ticketStoreVersionD) == nil || read(1, auxHash, ticketStoreVersionV3) == nil {
+		t.Fatal("wrong dimension, auxiliary or ticket version accepted")
+	}
+}
+
 func TestV3BudgetedTicketStreamRejectsBeforeOversizeWrite(t *testing.T) {
 	makeRole := func() string {
 		dir := filepath.Join(t.TempDir(), "cs0")

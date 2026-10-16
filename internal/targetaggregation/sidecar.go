@@ -78,7 +78,7 @@ func LoadSidecar(m SidecarManifest, sealedManifest []byte, idx *targetpe.PartyIn
 	if digest != idx.ManifestDigest() {
 		return nil, ErrBinding
 	}
-	if m.Version != 1 || m.IndexID != sm.IndexID || m.IndexID != idx.Manifest().IndexID || m.ManifestSHA256 != hex.EncodeToString(digest[:]) || m.StructureDigest != idx.StructureDigest() || (m.DTarget != 16 && m.DTarget != 26) || m.MaxMultiplicity != MaxMultiplicity || m.IncidenceBytes != uint64(m.DTarget)*sm.PaddedSlots || m.TargetIDBytes != uint64(m.DTarget)*8*sm.LogicalGroups {
+	if m.Version != 1 || m.IndexID != sm.IndexID || m.IndexID != idx.Manifest().IndexID || m.ManifestSHA256 != hex.EncodeToString(digest[:]) || m.StructureDigest != idx.StructureDigest() || m.DTarget < 1 || m.DTarget > 26 || m.MaxMultiplicity != MaxMultiplicity || m.IncidenceBytes != uint64(m.DTarget)*sm.PaddedSlots || m.TargetIDBytes != uint64(m.DTarget)*8*sm.LogicalGroups {
 		return nil, ErrBinding
 	}
 	d := int(m.DTarget)
@@ -162,3 +162,5 @@ func (r *countReader) Read(b []byte) (int, error) { n, e := r.r.Read(b); r.n += 
 // Capacity is public static metadata, bound by the sealed manifest.
 func (s *PartySidecar) Capacity() int     { return int(s.manifest.DTarget) }
 func (s *PartySidecar) Multiplicity() int { return int(s.manifest.MaxMultiplicity) }
+func (s *PartySidecar) Party() uint8      { return s.party }
+func (s *PartySidecar) IndexID() [16]byte { return s.manifest.IndexID }

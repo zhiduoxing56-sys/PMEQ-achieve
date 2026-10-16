@@ -19,7 +19,8 @@ type Shape struct {
 	D          int
 }
 
-// Capacity keeps historical 26-slot packets usable. Queries may also select 16 slots.
+// Capacity keeps historical 26-slot packets usable. New public index profiles
+// may choose a smaller, audited upper bound for objects sharing one join.
 func (s Shape) Capacity() int {
 	if s.D == 0 {
 		return 26
@@ -29,7 +30,7 @@ func (s Shape) Capacity() int {
 
 func (s Shape) validate(n int) error {
 	d := s.Capacity()
-	if (d != 16 && d != 26) || n < 0 || uint64(n) > uint64(^uint32(0)) || s.K < 0 || s.K > n || s.R < 1 || s.R > 16 || s.K > int(^uint(0)>>1)/d/s.R/48 || s.S < 0 || s.G < 0 || s.G > s.S || s.S > int(^uint(0)>>1)/128 || s.G > int(^uint(0)>>1)/(d*24) || (s.K == 0 && (s.S != 0 || s.G != 0)) {
+	if d < 1 || d > 26 || n < 0 || uint64(n) > uint64(^uint32(0)) || s.K < 0 || s.K > n || s.R < 1 || s.R > 16 || s.K > int(^uint(0)>>1)/d/s.R/48 || s.S < 0 || s.G < 0 || s.G > s.S || s.S > int(^uint(0)>>1)/128 || s.G > int(^uint(0)>>1)/(d*24) || (s.K == 0 && (s.S != 0 || s.G != 0)) {
 		return ErrBinding
 	}
 	return nil

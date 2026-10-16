@@ -149,8 +149,10 @@ func requireUnconsumedTicket(ticketDir, ticket string) error {
 }
 func run() error {
 	processStart := time.Now()
-	phase := flag.String("phase", "inspect", "inspect, buckets, labels, stock, status, issue, verify, or run")
+	phase := flag.String("phase", "inspect", "inspect, buckets, auxiliary, labels, stock, status, issue, verify, or run")
 	aggregationMode := flag.String("target-aggregation", "matrix", "matrix or zero-poly")
+	dTarget := flag.Int("d-target", imdbprod.TargetDimension, "public target objects per join; 1 uses the isolated IMDb auxiliary profile")
+	auxRoot := flag.String("aux-root", ".private/imdb-v4-d1-aux", "isolated D=1 target auxiliary root")
 	labelRoot := flag.String("zero-label-root", ".private/imdb-v3-target-zero-labels", "v3 target label root")
 	start := flag.Bool("generate-full-ticket", false, "explicitly start expensive fixed-capacity preprocessing")
 	startStock := flag.Bool("generate-stock", false, "explicitly create a new independent SCMP bank")
@@ -166,7 +168,21 @@ func run() error {
 	queryPath := flag.String("query-file", "", "local 0600 JSON query file")
 	resultRoot := flag.String("result-root", ".private/imdb-v3-query-results", "private v3 output root")
 	flag.Parse()
-	if *phase != "inspect" && *phase != "buckets" && *phase != "labels" && *phase != "stock" && *phase != "status" && *phase != "issue" && *phase != "verify" && *phase != "run" {
+	if *dTarget != 1 && *dTarget != imdbprod.TargetDimension {
+		return fmt.Errorf("unsupported IMDb auxiliary dimension")
+	}
+	if *dTarget == 1 {
+		if *aggregationMode != "matrix" {
+			return fmt.Errorf("D=1 profile currently requires matrix aggregation")
+		}
+		if *ticketRoot == ".private/imdb-v3-tickets" {
+			*ticketRoot = ".private/imdb-v4-d1-tickets"
+		}
+		if *resultRoot == ".private/imdb-v3-query-results" {
+			*resultRoot = ".private/imdb-v4-d1-query-results"
+		}
+	}
+	if *phase != "inspect" && *phase != "buckets" && *phase != "auxiliary" && *phase != "labels" && *phase != "stock" && *phase != "status" && *phase != "issue" && *phase != "verify" && *phase != "run" {
 		return fmt.Errorf("unsupported phase")
 	}
 	if *aggregationMode != "matrix" && *aggregationMode != "zero-poly" {
@@ -228,6 +244,22 @@ func run() error {
 		return e
 	}
 	sealHash := sha256.Sum256(sealRaw)
+	if *phase == "auxiliary" {
+		if *dTarget != 1 {
+			return fmt.Errorf("auxiliary phase requires --d-target 1")
+		}
+		auxPath, err := filepath.Abs(*auxRoot)
+		privatePath, pe := filepath.Abs(".private")
+		if err != nil || pe != nil || filepath.Dir(auxPath) != privatePath {
+			return fmt.Errorf("auxiliary root must be an isolated direct child of .private")
+		}
+		aux, digest, err := imdbowner.BuildTargetAuxiliaryD1(auxPath, owner, gate.Mapping, sealHash)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("auxiliary=%x d_target=%d max_objects_per_join=%d root=%s\n", digest, aux.DTarget, aux.MaxObjectsPerJoin, auxPath)
+		return nil
+	}
 	partyOpenStart := time.Now()
 	st0, e := imdbowner.OpenParty(owner, 0, sealHash)
 	if e != nil {
@@ -239,6 +271,29 @@ func run() error {
 		return e
 	}
 	defer st1.Close()
+	var auxiliaryHash [32]byte
+	if *dTarget == 1 && *phase != "stock" && *phase != "status" {
+		auxPath, err := filepath.Abs(*auxRoot)
+		privatePath, pe := filepath.Abs(".private")
+		if err != nil || pe != nil || filepath.Dir(auxPath) != privatePath {
+			return fmt.Errorf("auxiliary root must be an isolated direct child of .private")
+		}
+		aux, digest, err := imdbowner.ReadTargetAuxiliaryD1(auxPath, sealHash, seal.Binding.IndexID)
+		if err != nil {
+			return err
+		}
+		sealedTarget, err := os.ReadFile(filepath.Join(owner, "target", "target-manifest.json"))
+		if err != nil {
+			return err
+		}
+		if err = st0.UseTargetAuxiliary(aux.Sidecar, sealedTarget, filepath.Join(auxPath, "cs0.aggregation.bin"), digest); err != nil {
+			return err
+		}
+		if err = st1.UseTargetAuxiliary(aux.Sidecar, sealedTarget, filepath.Join(auxPath, "cs1.aggregation.bin"), digest); err != nil {
+			return err
+		}
+		auxiliaryHash = digest
+	}
 	partyOpenNS := time.Since(partyOpenStart).Nanoseconds()
 	stockPath, e := filepath.Abs(*stockRoot)
 	privateStockRoot, pe := filepath.Abs(".private")
@@ -353,10 +408,10 @@ func run() error {
 		if e = enoughOfflineResources(root); e != nil {
 			return e
 		}
-		if e = scmpstock.CheckBudget(root, 3<<30); e != nil {
+		if e = scmpstock.CheckBudget(root, discovery.InventoryTicketBudget(*dTarget)); e != nil {
 			return e
 		}
-		shape := targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures, S: imdbprod.TargetSignatures * imdbprod.TargetGroupCapacity, G: imdbprod.TargetGroupCapacity, D: imdbprod.TargetDimension}
+		shape := targetaggregation.Shape{K: imdbprod.CandidateCapacity, R: imdbprod.TargetSignatures, S: imdbprod.TargetSignatures * imdbprod.TargetGroupCapacity, G: imdbprod.TargetGroupCapacity, D: *dTarget}
 		caps := []int{imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity, imdbprod.TargetGroupCapacity}
 		started := time.Now()
 		var u *discovery.UserPacket
@@ -426,8 +481,12 @@ func run() error {
 	if ticketSeal.IndexSealSHA256 != hex.EncodeToString(sealHash[:]) {
 		return fmt.Errorf("ticket bound to another production seal")
 	}
-	if ticketSeal.Version != "PMEQ-INVENTORY-SESSION-v3" || ticketSeal.BankID != hex.EncodeToString(pool0.Manifest.BankID[:]) {
-		return fmt.Errorf("v3 ticket/stock version mismatch")
+	expectedTicketVersion := "PMEQ-INVENTORY-SESSION-v3"
+	if *dTarget == 1 {
+		expectedTicketVersion = "PMEQ-INVENTORY-SESSION-D-v1"
+	}
+	if ticketSeal.Version != expectedTicketVersion || ticketSeal.BankID != hex.EncodeToString(pool0.Manifest.BankID[:]) || (ticketSeal.DTarget != 0 && ticketSeal.DTarget != *dTarget) || (*dTarget == 1 && ticketSeal.AuxiliarySHA256 != hex.EncodeToString(auxiliaryHash[:])) {
+		return fmt.Errorf("ticket, auxiliary or stock version mismatch")
 	}
 	if e = requireUnconsumedTicket(ticketDir, *ticketText); e != nil {
 		return e
@@ -446,15 +505,29 @@ func run() error {
 		return e
 	}
 	loadStart := time.Now()
-	u, e := discovery.OpenInventoryUserTicket(filepath.Join(ticketDir, "user"), ud, seal.Binding, sealHash, ticketID, manifestDigest, pool0.Manifest.BankID)
+	var u *discovery.UserPacket
+	if *dTarget == 1 {
+		u, e = discovery.OpenInventoryUserTicketWithDimension(filepath.Join(ticketDir, "user"), ud, seal.Binding, sealHash, ticketID, manifestDigest, pool0.Manifest.BankID, *dTarget, auxiliaryHash)
+	} else {
+		u, e = discovery.OpenInventoryUserTicket(filepath.Join(ticketDir, "user"), ud, seal.Binding, sealHash, ticketID, manifestDigest, pool0.Manifest.BankID)
+	}
 	if e != nil {
 		return e
 	}
-	a, e := discovery.OpenInventoryPartyTicket(filepath.Join(ticketDir, "cs0"), aD, seal.Binding, sealHash, ticketID, st0, pool0.Manifest.BankID)
+	var a, b *discovery.PartyPacket
+	if *dTarget == 1 {
+		a, e = discovery.OpenInventoryPartyTicketWithDimension(filepath.Join(ticketDir, "cs0"), aD, seal.Binding, sealHash, ticketID, st0, pool0.Manifest.BankID, *dTarget, auxiliaryHash)
+	} else {
+		a, e = discovery.OpenInventoryPartyTicket(filepath.Join(ticketDir, "cs0"), aD, seal.Binding, sealHash, ticketID, st0, pool0.Manifest.BankID)
+	}
 	if e != nil {
 		return e
 	}
-	b, e := discovery.OpenInventoryPartyTicket(filepath.Join(ticketDir, "cs1"), bD, seal.Binding, sealHash, ticketID, st1, pool0.Manifest.BankID)
+	if *dTarget == 1 {
+		b, e = discovery.OpenInventoryPartyTicketWithDimension(filepath.Join(ticketDir, "cs1"), bD, seal.Binding, sealHash, ticketID, st1, pool0.Manifest.BankID, *dTarget, auxiliaryHash)
+	} else {
+		b, e = discovery.OpenInventoryPartyTicket(filepath.Join(ticketDir, "cs1"), bD, seal.Binding, sealHash, ticketID, st1, pool0.Manifest.BankID)
+	}
 	if e != nil {
 		return e
 	}
