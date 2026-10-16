@@ -10,7 +10,7 @@ The existing `MOVIECAST.BSMJ -> MOVIE.PSMJ` sealed query index is read-only.
 The frozen 100,000+10,000 sample and existing owner keys are verified and read
 only. The reverse target dimension is the actual maximum number of MOVIECAST
 objects sharing one movie join value; the repeated q-gram bound is measured
-from the full sample. The matrix producer uses the original GF127 coefficient
+from the full sample. The matrix producer uses the original Z128 coefficient
 and Ring64 object-ID sharing equations, but writes matrix manifest version 2.
 The official query loader accepts neither this D nor version 2; this is an
 offline-only index artifact, as requested.

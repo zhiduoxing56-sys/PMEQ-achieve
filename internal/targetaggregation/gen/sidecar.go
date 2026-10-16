@@ -40,7 +40,7 @@ func BuildWithCapacity(rawManifest []byte, files [2][]byte, aliases []indexbuild
 	return buildWithShape(rawManifest, files, aliases, outputs, d, targetaggregation.MaxMultiplicity, false)
 }
 
-// BuildReverseOffline writes the same GF127 incidence and ID-sharing matrix
+// BuildReverseOffline writes the same Z128 incidence and ID-sharing matrix
 // for the reverse outsourcing measurement. Version 2 is deliberately not
 // accepted by the production query loader.
 func BuildReverseOffline(rawManifest []byte, files [2][]byte, aliases []indexbuild.AreaAliasRecord, outputs [2]io.Writer, d, maxMultiplicity int) (targetaggregation.SidecarManifest, Audit, error) {
